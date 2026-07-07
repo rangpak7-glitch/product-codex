@@ -1,9 +1,8 @@
 const VIDEOS = [
-  ["염려가 내려놓아지지 않는 밤","수면 치유기도","베드로전서 5장 7절","https://www.youtube.com/watch?v=GTr3L4h-Rzg","하루가 끝났는데도 마음이 계속 긴장되어 있을 때 듣기 좋은 밤기도입니다. 염려를 없애려고 애쓰기보다 주님께 맡기는 믿음으로 초대합니다."],
-  ["아버지 품의 안식","은혜와 쉼","마태복음 11장 28절","https://www.youtube.com/watch?v=WgntGuOHd_I","의무감과 책임감으로 지친 마음이 주님의 품 안에서 쉬도록 돕는 영상입니다. 신앙생활마저 부담처럼 느껴질 때 주님의 부르심을 묵상합니다."],
-  ["다윗의 광야처럼","기다림과 훈련","시편 63편","https://www.youtube.com/watch?v=hWJsflNXBFo","기다림의 시간이 길어질 때 광야의 의미를 묵상하는 영상입니다. 하나님이 보이지 않는 시간에도 영혼을 빚으신다는 믿음을 붙듭니다."],
-  ["에스더의 위탁기도","결단과 용기","에스더 4장","https://www.youtube.com/watch?v=MwJp82Fqkno","중요한 선택 앞에서 두려움보다 믿음의 결단을 구하는 영상입니다. 모든 것을 통제하려는 마음을 내려놓고 하나님의 주권을 신뢰하도록 돕습니다."],
-  ["아브라함의 25년","약속과 기다림","창세기 15장","https://www.youtube.com/watch?v=zVO-9RfgQio","응답이 늦어지는 시간에 약속을 붙드는 믿음을 묵상합니다. 기다림이 실패가 아니라 하나님이 믿음을 깊게 하시는 과정일 수 있음을 돌아봅니다."],
-  ["이사야 53장 침상 치유 밤기도","치유와 회복","이사야 53장","https://www.youtube.com/watch?v=PwP1VXO7AxU","몸의 통증과 마음의 무력감이 있는 밤에 들을 수 있는 치유 기도입니다. 고통 속에서도 주님의 위로를 붙드는 말씀 묵상입니다."],
-  ["시편 139편 안식기도","하나님이 아시는 나","시편 139편","https://www.youtube.com/watch?v=TTSAyG4pTAM","나를 깊이 아시는 하나님 앞에서 숨지 않고 쉬도록 돕는 영상입니다. 생각이 많아 잠들기 어려운 밤에 마음을 정돈합니다."]
+  ["염려가 내려앉지 않는 밤", "수면 치유기도", "베드로전서 5장 7절", "https://www.youtube.com/channel/UCFrsilNKJ8xcmn0RUrFz6XQ?si=hM09ebhKwa9m_3W0", "하루가 끝났는데도 마음이 계속 긴장되어 있을 때 듣기 좋은 밤기도입니다. 염려를 붙잡기보다 주님께 맡기는 믿음으로 초대합니다."],
+  ["아버지 품 안의 안식", "위로와 쉼", "마태복음 11장 28절", "https://www.youtube.com/channel/UCFrsilNKJ8xcmn0RUrFz6XQ?si=hM09ebhKwa9m_3W0", "무거운 책임감과 피로로 지친 마음을 주님의 쉼 안에 내려놓도록 돕는 영상입니다."],
+  ["광야 같은 시간을 지나는 기도", "기다림과 훈련", "시편 63편", "https://www.youtube.com/channel/UCFrsilNKJ8xcmn0RUrFz6XQ?si=hM09ebhKwa9m_3W0", "기다림의 시간이 길어질 때 하나님의 신실하심을 붙드는 묵상 영상입니다."],
+  ["선택 앞에서 드리는 기도", "결단과 용기", "잠언 3장 5-6절", "https://www.youtube.com/channel/UCFrsilNKJ8xcmn0RUrFz6XQ?si=hM09ebhKwa9m_3W0", "중요한 선택 앞에서 조급함보다 지혜와 믿음의 결단을 구하는 영상입니다."],
+  ["회복을 구하는 밤기도", "치유와 회복", "이사야 41장 10절", "https://www.youtube.com/channel/UCFrsilNKJ8xcmn0RUrFz6XQ?si=hM09ebhKwa9m_3W0", "몸과 마음이 약해진 밤에 주님의 위로와 붙드심을 구하는 기도입니다."],
+  ["하루를 감사로 마치는 기도", "감사 묵상", "데살로니가전서 5장 18절", "https://www.youtube.com/channel/UCFrsilNKJ8xcmn0RUrFz6XQ?si=hM09ebhKwa9m_3W0", "평범한 하루 속에서도 은혜를 다시 발견하며 마음을 정돈하는 감사 기도입니다."]
 ].map(([title, theme, scripture, url, description]) => ({ title, theme, scripture, url, description }));

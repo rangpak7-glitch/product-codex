@@ -34,7 +34,7 @@ function searchPrayers() {
     : PRAYERS;
   renderPrayers(list);
   const help = $("#searchHelp");
-  if (help) help.textContent = list.length ? `${list.length}개의 기도문을 찾았습니다.` : "가까운 주제의 기도문을 다시 추천해 드립니다.";
+  if (help) help.textContent = list.length ? `${list.length}개의 기도문을 찾았습니다.` : "가까운 주제의 기도문을 다시 추천해 드리겠습니다.";
 }
 
 if ($("#prayerResults")) {
@@ -70,10 +70,36 @@ function videoCard(v) {
     <a class="button secondary" href="${v.url}" target="_blank" rel="noopener">영상 바로 보기</a>
   </article>`;
 }
+
 const videoList = $("#videoList");
 if (videoList) videoList.innerHTML = VIDEOS.map(videoCard).join("");
 const homeVideos = $("#homeVideos");
 if (homeVideos) homeVideos.innerHTML = VIDEOS.slice(0, 3).map(videoCard).join("");
+
+function pdfProductCard(product) {
+  const purchaseHref = product.purchaseUrl || "contact.html";
+  const purchaseLabel = product.purchaseUrl ? "구매하기" : "구매 링크 준비 중";
+  const badge = product.isFeatured ? '<span class="product-badge">대표 상품</span>' : "";
+  return `<article class="pdf-product-card${product.isFeatured ? " featured" : ""}">
+    <div class="product-card-top">
+      <p class="eyebrow">${product.category}</p>
+      ${badge}
+    </div>
+    <h3>${product.title}</h3>
+    <p class="product-audience">${product.audience}</p>
+    <ul class="compact-list">${product.composition.map((item) => `<li>${item}</li>`).join("")}</ul>
+    <div class="product-price">${product.priceRange}</div>
+    <div class="product-actions">
+      <a class="button secondary" href="${product.sampleUrl}">샘플 문의</a>
+      <a class="button primary" href="${purchaseHref}">${purchaseLabel}</a>
+    </div>
+  </article>`;
+}
+
+const pdfProductGrid = $("#pdfProductGrid");
+if (pdfProductGrid && typeof PDF_PRODUCTS !== "undefined") {
+  pdfProductGrid.innerHTML = PDF_PRODUCTS.map(pdfProductCard).join("");
+}
 
 const prayerCardList = $("#prayerCardList");
 if (prayerCardList) {
