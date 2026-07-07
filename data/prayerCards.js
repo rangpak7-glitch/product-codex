@@ -7,4 +7,4 @@ const PRAYER_CARDS = [
   ["relationship", "관계 회복 말씀 카드", "관계", "상처와 용서의 자리에서 지혜로운 마음을 구합니다.", "로마서 12장 18절", "소그룹 나눔, 개인 묵상", ["관계", "용서"], "화평"],
   ["family", "가정예배 나눔 카드", "가정", "가정 안에서 함께 읽고 짧게 기도할 수 있는 구성입니다.", "여호수아 24장 15절", "가정예배, 주일 저녁 나눔", ["가정", "예배"], "가정"],
   ["smallgroup", "소그룹 묵상 카드", "소그룹", "모임 시작 전 말씀과 기도 제목을 나누기 좋습니다.", "히브리서 10장 24절", "교회 소그룹, 구역 모임", ["소그룹", "묵상"], "나눔"]
-].map(([id, title, category, description, scripture, useCase, tags, imagePlaceholderText]) => ({ id, title, category, description, scripture, useCase, tags, imagePlaceholderText }));
+].map(([id, title, category, description, scripture, useCase, tags, label]) => ({ id, title, category, description, scripture, useCase, tags, label }));

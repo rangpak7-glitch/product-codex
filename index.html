@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ko">
 <head>
 <!-- Google tag (gtag.js) -->
@@ -36,7 +36,7 @@
   <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-nav"><span></span><span></span><span></span><span class="sr-only">메뉴 열기</span></button>
   <nav id="site-nav" class="site-nav" aria-label="주요 메뉴"><a href="about.html">기도의샘물 소개</a>
 <a href="prayers.html">말씀 붙들기</a>
-<a href="night-prayer.html">수면기도</a>
+<a href="night-prayer.html">저녁기도</a>
 <a href="morning-prayer.html">아침기도</a>
 <a href="meditation.html">영상묵상</a>
 <a href="prayer-cards.html">신앙자료</a>
@@ -44,99 +44,95 @@
 <a href="contact.html">문의하기</a></nav>
 </header>
 <main>
-<section class="page-hero brand-hero">
+<section class="page-hero brand-hero hero-photo hero-photo--home archive-home-hero">
   <div class="brand-hero-copy">
     <p class="eyebrow">Christian Prayer & Meditation</p>
-    <h1>기도와 말씀으로<br>지친 마음이 쉬어가는 곳</h1>
-    <p>기도의샘물은 하루의 끝에서 마음이 무너진 사람, 아침을 말씀으로 시작하고 싶은 사람, 가족과 자녀를 위해 조용히 기도하고 싶은 사람을 위한 기독교 말씀·기도 묵상 공간입니다.</p>
+    <h1>오늘의 말씀과 기도로<br>마음을 다시 세우는 곳</h1>
+    <p>기도의샘물은 매일 붙들 말씀과 기도문을 모아, 지친 마음이 하나님 앞에서 쉬어가도록 돕는 기독교 말씀·기도 아카이브입니다.</p>
     <div class="hero-actions">
-      <a class="button primary" href="prayers.html">오늘의 기도문 읽기</a>
-      <a class="button secondary" href="https://youtube.com/channel/UCFrsilNKJ8xcmn0RUrFz6XQ?si=hM09ebhKwa9m_3W0" target="_blank" rel="noopener">기도의샘물 유튜브 보기</a>
+      <a class="button primary" href="#todayWordSection">오늘의 기도문 읽기</a>
+      <a class="button secondary" href="https://youtube.com/channel/UCFrsilNKJ8xcmn0RUrFz6XQ?si=hM09ebhKwa9m_3W0" target="_blank" rel="noopener">유튜브 채널 보기</a>
     </div>
   </div>
+  <!-- 향후 실제 히어로 배경 이미지 삽입 위치 -->
 </section>
 
-<section class="section brand-story">
+<section id="todayWordSection" class="section today-word-section">
+  <div class="section-heading-row">
+    <div>
+      <p class="eyebrow">Daily Word</p>
+      <h2>오늘 붙드는 말씀</h2>
+    </div>
+    <a class="button secondary" href="archive.html">지난 말씀 보기</a>
+  </div>
+  <div id="todayWordCard" class="today-word-card" role="region" aria-live="polite"></div>
+</section>
+
+<section class="section category-daily-section">
+  <div class="section-heading-row">
+    <div>
+      <p class="eyebrow">Today's Prayer Flow</p>
+      <h2>오늘의 말씀과 기도</h2>
+    </div>
+  </div>
+  <div id="categoryPreviewGrid" class="daily-preview-grid" aria-live="polite"></div>
+</section>
+
+<section class="section visual-hub-section">
+  <p class="eyebrow">Visual Guide</p>
+  <h2>말씀과 기도가 머무는 자리</h2>
+  <div id="categoryVisualGrid" class="visual-hub-grid"></div>
+  <!-- 향후 카테고리 대표 이미지 삽입 위치 -->
+</section>
+
+<section class="section archive-entrance-section">
+  <div class="archive-entrance-copy">
+    <p class="eyebrow">Archive</p>
+    <h2>지난 말씀 다시 보기</h2>
+    <p>매일의 말씀과 기도는 날짜별로 모아두어, 지난 묵상도 다시 찾아볼 수 있습니다.</p>
+    <div class="hero-actions">
+      <a class="button primary" href="archive.html">아카이브 열기</a>
+      <a class="button secondary" href="#homeSearchSection">말씀 검색하기</a>
+    </div>
+  </div>
+  <div class="archive-preview-panel">
+    <div id="homeArchiveFilters" class="filter-row" aria-label="카테고리 필터"></div>
+    <div id="recentWordsPreview" class="archive-preview-list" aria-live="polite"></div>
+  </div>
+</section>
+
+<section id="homeSearchSection" class="section home-search-section">
+  <p class="eyebrow">Search</p>
+  <h2>지금 마음에 필요한 말씀을 찾아보세요</h2>
+  <form id="homeDailySearchForm" class="daily-search-form" role="search">
+    <label class="sr-only" for="homeDailySearch">말씀 검색</label>
+    <input id="homeDailySearch" type="search" placeholder="예: 불안, 자녀, 건강, 잠, 감사, 용서" autocomplete="off">
+    <button class="button primary" type="submit" aria-label="말씀 검색하기">검색</button>
+  </form>
+  <div id="homeSearchResults" class="search-results-grid" aria-live="polite"></div>
+</section>
+
+<section class="section resource-cta-section">
   <div>
-    <p class="eyebrow">Brand Story</p>
-    <h2>왜 기도의샘물을 만들었나요?</h2>
-    <p>기도는 거창한 말이 아니라, 무너진 마음을 하나님 앞에 조용히 내려놓는 시간이라고 믿습니다. 그래서 기도의샘물은 영상으로 듣는 기도와 함께, 글로 천천히 읽고 붙들 수 있는 기도문과 말씀 묵상을 한곳에 모으기 위해 만들어졌습니다.</p>
-    <p>마음이 복잡한 밤, 하루를 시작하는 아침, 가족과 자녀를 위해 기도하고 싶은 시간에 누구나 쉽게 찾아와 말씀을 붙들 수 있는 신앙 자료실을 지향합니다.</p>
+    <p class="eyebrow">Faith Resources</p>
+    <h2>신앙생활을 돕는 자료</h2>
+    <p>무료 말씀과 기도 콘텐츠를 중심으로 운영하며, 더 오래 곁에 두고 읽고 싶은 분들을 위한 자료로 자연스럽게 확장합니다.</p>
   </div>
-  <div class="story-steps" aria-label="기도의샘물 콘텐츠 흐름">
-    <article><span>01</span><strong>영상으로 듣기</strong><p>유튜브 묵상과 기도 영상을 통해 지친 마음을 조용히 정돈합니다.</p></article>
-    <article><span>02</span><strong>글로 읽기</strong><p>큰 글씨 기도문과 말씀 묵상으로 오늘 붙들 문장을 천천히 읽습니다.</p></article>
-    <article><span>03</span><strong>자료로 간직하기</strong><p>말씀·기도 카드, 30일 챌린지, PDF 자료로 묵상 흐름을 이어갑니다.</p></article>
-  </div>
-</section>
-
-<section class="section">
-  <p class="eyebrow">Who We Serve</p>
-  <h2>누구에게 도움이 되나요?</h2>
-  <div class="audience-grid">
-    <a class="audience-card" href="night-prayer.html"><strong>잠들기 전 마음이 복잡한 분</strong><p>하루의 염려를 내려놓고 말씀 안에서 평안을 구하고 싶은 분을 돕습니다.</p></a>
-    <a class="audience-card" href="prayers.html?q=자녀"><strong>자녀와 가족을 위해 기도하고 싶은 분</strong><p>가족의 믿음, 건강, 관계를 주님께 맡기는 기도문을 찾을 수 있습니다.</p></a>
-    <a class="audience-card" href="morning-prayer.html"><strong>아침을 말씀으로 시작하고 싶은 분</strong><p>말과 생각, 일정과 만남을 기도로 정돈하며 하루를 시작합니다.</p></a>
-    <a class="audience-card" href="premium-pdf.html"><strong>큰 글씨로 천천히 읽을 기도문이 필요한 분</strong><p>40~70대 성도도 읽기 편한 큰 글씨 자료 방향을 준비합니다.</p></a>
-    <a class="audience-card" href="videos.html"><strong>유튜브 영상과 함께 글 묵상도 원하는 분</strong><p>듣는 기도와 읽는 묵상이 서로 이어지도록 관련 콘텐츠를 연결합니다.</p></a>
-    <a class="audience-card" href="prayer-cards.html"><strong>소그룹이나 가정예배에서 나눌 자료가 필요한 분</strong><p>가족 단톡방, 소그룹, 가정예배에서 함께 나눌 수 있는 자료를 안내합니다.</p></a>
-  </div>
-</section>
-
-<section class="section">
-  <p class="eyebrow">Content Journey</p>
-  <h2>기도의샘물에서 만나는 말씀과 기도</h2>
-  <div class="journey-grid">
-    <a class="journey-card" href="prayers.html"><span>기도</span><strong>오늘의 기도문</strong><p>상황별 기도문을 검색하고 오늘 마음에 필요한 문장을 붙듭니다.</p></a>
-    <a class="journey-card" href="night-prayer.html"><span>밤</span><strong>잠들기 전 수면기도</strong><p>밤의 염려와 긴장을 내려놓는 기도 흐름으로 이어집니다.</p></a>
-    <a class="journey-card" href="morning-prayer.html"><span>아침</span><strong>하루를 여는 아침기도</strong><p>말씀과 기도로 하루의 방향을 세웁니다.</p></a>
-    <a class="journey-card" href="meditation.html"><span>묵상</span><strong>말씀 묵상</strong><p>짧은 말씀 설명과 적용 문장으로 마음을 정돈합니다.</p></a>
-    <a class="journey-card video-journey" href="videos.html"><span>영상</span><strong>영상 묵상</strong><p>유튜브 기도 영상과 관련 말씀을 함께 볼 수 있습니다.</p></a>
-    <a class="journey-card" href="prayer-cards.html"><span>카드</span><strong>말씀·기도 카드 이미지팩</strong><p>가족과 소그룹에 나눌 수 있는 카드형 자료를 준비합니다.</p></a>
-    <a class="journey-card" href="prayer-challenge.html"><span>30일</span><strong>30일 기도 챌린지</strong><p>매일 한 편의 말씀과 기도로 꾸준히 따라가는 여정입니다.</p></a>
-    <a class="journey-card" href="premium-pdf.html"><span>PDF</span><strong>프리미엄 기도문 PDF</strong><p>더 오래 곁에 두고 읽을 수 있는 큰 글씨 기도자료로 확장합니다.</p></a>
-  </div>
-</section>
-
-<section class="section">
-  <p class="eyebrow">Principles</p>
-  <h2>운영 원칙</h2>
-  <div class="principle-grid">
-    <article><strong>말씀을 가볍게 소비하지 않습니다.</strong><p>짧은 콘텐츠라도 말씀의 무게와 신앙의 맥락을 존중합니다.</p></article>
-    <article><strong>과장된 약속을 하지 않습니다.</strong><p>기도문은 문제 해결을 보장하는 말이 아니라 위로와 묵상의 언어로 작성합니다.</p></article>
-    <article><strong>콘텐츠 경험을 먼저 생각합니다.</strong><p>광고와 수익화는 읽기와 묵상을 방해하지 않는 선에서 운영합니다.</p></article>
-    <article><strong>실제로 도움이 되는 자료를 준비합니다.</strong><p>유료자료는 신앙생활에 오래 곁에 둘 수 있는 기도문, 카드, PDF 중심으로 확장합니다.</p></article>
-  </div>
-</section>
-
-<section class="section resource-bridge">
-  <div>
-    <p class="eyebrow">Premium Resources</p>
-    <h2>더 깊은 묵상을 위한 자료</h2>
-    <p>기도의샘물은 무료 기도문과 말씀 묵상을 중심으로 운영됩니다. 다만 더 오래 곁에 두고 읽고 싶은 분들을 위해 말씀·기도 카드, 30일 기도 챌린지, 큰 글씨 기도문 PDF와 같은 자료를 준비할 수 있습니다.</p>
-  </div>
-  <div class="resource-grid">
+  <div class="resource-cta-grid">
     <a href="prayer-cards.html"><strong>말씀·기도 카드 이미지팩</strong><span>신앙자료 둘러보기</span></a>
     <a href="prayer-challenge.html"><strong>30일 기도 챌린지</strong><span>30일 기도 여정 보기</span></a>
-    <a href="premium-pdf.html"><strong>큰 글씨 기도문 PDF</strong><span>기도자료 문의하기</span></a>
-    <a href="contact.html"><strong>광고 없는 오디오 묵상</strong><span>소식 받기</span></a>
+    <a href="premium-pdf.html"><strong>프리미엄 기도문 PDF</strong><span>기도자료 문의하기</span></a>
+    <a href="contact.html"><strong>광고 없는 오디오 묵상</strong><span>유튜브에서 먼저 듣기</span></a>
   </div>
-</section>
-
-<section class="section closing-cta">
-  <p class="eyebrow">Start Here</p>
-  <h2>오늘 마음에 필요한 기도문을 찾아보세요</h2>
-  <p>지금의 마음을 숨기지 않고 말씀 앞에 내려놓을 수 있도록, 기도의샘물이 조용한 길잡이가 되겠습니다.</p>
-  <div class="hero-actions">
-    <a class="button primary" href="prayers.html">기도문 검색</a>
-    <a class="button secondary" href="prayer-request.html">기도 제목 남기기</a>
-  </div>
+  <!-- 향후 토스페이먼츠/포트원 결제 버튼 삽입 위치 -->
 </section>
 </main>
 <footer class="site-footer">
   <div><strong>기도의샘물</strong><p>기도문과 말씀 묵상을 정성스럽게 모아 전하는 기독교 콘텐츠 공간입니다.</p></div>
   <div class="footer-links"><a href="privacy.html">개인정보처리방침</a><a href="terms.html">이용약관</a><a href="disclaimer.html">콘텐츠 안내</a><a href="sitemap.xml">사이트맵</a></div>
 </footer>
+<script src="data/categories.js"></script>
+<script src="data/dailyWords.js"></script>
 <script src="data/prayers.js"></script>
 <script src="data/meditations.js"></script>
 <script src="data/videos.js"></script>
