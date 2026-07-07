@@ -142,11 +142,25 @@ textarea {
 }
 
 .site-nav a {
+  display: flex;
+  align-items: center;
+  gap: 9px;
   padding: 12px 14px;
   border-radius: 8px;
   color: var(--navy);
   text-decoration: none;
   font-weight: 700;
+}
+
+.nav-icon {
+  width: 21px;
+  height: 21px;
+  flex: 0 0 21px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .site-nav a:hover,
@@ -178,7 +192,7 @@ main {
   border-radius: 8px;
   background:
     linear-gradient(90deg, rgba(23, 43, 77, 0.94), rgba(23, 43, 77, 0.72)),
-    url("https://images.unsplash.com/photo-1507692049790-de58290a4334?auto=format&fit=crop&w=1600&q=80");
+    url("assets/hero-19.png");
   background-size: cover;
   background-position: center;
   color: var(--white);
@@ -516,8 +530,15 @@ main {
   }
 
   .site-nav a {
+    gap: 6px;
     padding: 8px 10px;
     font-size: 0.95rem;
+  }
+
+  .nav-icon {
+    width: 18px;
+    height: 18px;
+    flex-basis: 18px;
   }
 }
 
