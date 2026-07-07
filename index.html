@@ -94,7 +94,22 @@
         <h1>오늘의 기도문</h1>
         <p>마음의 형편에 맞는 기도문을 골라 천천히 읽어보세요.</p>
       </div>
-      <div id="prayer-list" class="prayer-list" aria-live="polite"></div>
+      <div class="prayer-carousel" aria-label="오늘의 기도문 플래시카드">
+        <button id="prayer-prev" class="carousel-button" type="button" aria-label="이전 기도문 보기">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 8 12l7 7"/></svg>
+          <span>이전</span>
+        </button>
+
+        <div class="flashcard-window" aria-live="polite">
+          <article id="prayer-card" class="prayer-card flashcard"></article>
+        </div>
+
+        <button id="prayer-next" class="carousel-button" type="button" aria-label="다음 기도문 보기">
+          <span>다음</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>
+        </button>
+      </div>
+      <p id="prayer-card-status" class="carousel-status">기도문 1 / 10</p>
     </section>
 
     <section id="night-prayer" class="page-section" data-page="night-prayer">

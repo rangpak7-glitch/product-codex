@@ -306,8 +306,7 @@ main {
 }
 
 .feature-grid,
-.video-grid,
-.prayer-list {
+.video-grid {
   display: grid;
   gap: 18px;
 }
@@ -325,9 +324,100 @@ main {
 }
 
 .feature-card,
-.video-card,
-.prayer-card {
+.video-card {
   padding: 22px;
+}
+
+.prayer-carousel {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  align-items: center;
+  margin-top: 22px;
+}
+
+.flashcard-window {
+  position: relative;
+  overflow: hidden;
+  min-height: 360px;
+  grid-column: 1 / -1;
+  order: 1;
+}
+
+#prayer-prev {
+  order: 2;
+}
+
+#prayer-next {
+  order: 3;
+}
+
+.prayer-card.flashcard {
+  min-height: 360px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 34px 28px;
+  background:
+    linear-gradient(145deg, rgba(255, 250, 241, 0.96), rgba(247, 239, 226, 0.84)),
+    var(--white);
+  border-color: #d6bd87;
+  transform-origin: center;
+  will-change: transform, opacity;
+}
+
+.carousel-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 52px;
+  padding: 12px 18px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--navy);
+  color: var(--white);
+  cursor: pointer;
+  font-weight: 800;
+  box-shadow: var(--shadow);
+}
+
+.carousel-button:hover {
+  background: var(--navy-soft);
+}
+
+.carousel-button svg {
+  width: 23px;
+  height: 23px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.carousel-status {
+  margin: 14px 0 0;
+  color: var(--gold-deep);
+  font-weight: 800;
+  text-align: center;
+}
+
+.flashcard.slide-out-left {
+  animation: slideOutLeft 260ms ease-in forwards;
+}
+
+.flashcard.slide-out-right {
+  animation: slideOutRight 260ms ease-in forwards;
+}
+
+.flashcard.slide-in-right {
+  animation: slideInRight 320ms ease-out forwards;
+}
+
+.flashcard.slide-in-left {
+  animation: slideInLeft 320ms ease-out forwards;
 }
 
 .feature-card h3,
@@ -343,6 +433,35 @@ main {
 .video-card p,
 .prayer-card p {
   color: var(--muted);
+}
+
+@keyframes slideOutLeft {
+  from { opacity: 1; transform: translateX(0) scale(1); }
+  to { opacity: 0; transform: translateX(-46px) scale(0.97); }
+}
+
+@keyframes slideOutRight {
+  from { opacity: 1; transform: translateX(0) scale(1); }
+  to { opacity: 0; transform: translateX(46px) scale(0.97); }
+}
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(58px) scale(0.98); }
+  to { opacity: 1; transform: translateX(0) scale(1); }
+}
+
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-58px) scale(0.98); }
+  to { opacity: 1; transform: translateX(0) scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flashcard.slide-out-left,
+  .flashcard.slide-out-right,
+  .flashcard.slide-in-right,
+  .flashcard.slide-in-left {
+    animation-duration: 1ms;
+  }
 }
 
 .text-button {
@@ -502,8 +621,23 @@ main {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
-  .prayer-list {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .prayer-carousel {
+    grid-template-columns: auto minmax(0, 760px) auto;
+    justify-content: center;
+  }
+
+  .flashcard-window {
+    grid-column: auto;
+    order: initial;
+  }
+
+  #prayer-prev,
+  #prayer-next {
+    order: initial;
+  }
+
+  .carousel-button {
+    width: auto;
   }
 }
 

@@ -2,6 +2,8 @@ const pages = Array.from(document.querySelectorAll(".page-section"));
 const navLinks = Array.from(document.querySelectorAll("[data-page-link]"));
 const siteNav = document.querySelector("#site-nav");
 const menuToggle = document.querySelector(".menu-toggle");
+let currentPrayerIndex = 0;
+let isPrayerAnimating = false;
 
 const prayers = [
   {
@@ -72,17 +74,62 @@ function showPage(pageId, options = {}) {
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
-function renderPrayers() {
-  const list = document.querySelector("#prayer-list");
-  if (!list) return;
+function getLoopedPrayerIndex(index) {
+  return (index + prayers.length) % prayers.length;
+}
 
-  list.innerHTML = prayers.map((prayer, index) => `
-    <article class="prayer-card">
-      <p class="eyebrow">기도문 ${index + 1}</p>
-      <h2>${prayer.title}</h2>
-      <p>${prayer.body}</p>
-    </article>
-  `).join("");
+function updatePrayerCard() {
+  const card = document.querySelector("#prayer-card");
+  const status = document.querySelector("#prayer-card-status");
+  if (!card || !status) return;
+
+  const prayer = prayers[currentPrayerIndex];
+  card.innerHTML = `
+    <p class="eyebrow">기도문 ${currentPrayerIndex + 1}</p>
+    <h2>${prayer.title}</h2>
+    <p>${prayer.body}</p>
+  `;
+  status.textContent = `기도문 ${currentPrayerIndex + 1} / ${prayers.length}`;
+}
+
+function movePrayerCard(direction) {
+  const card = document.querySelector("#prayer-card");
+  if (!card || isPrayerAnimating) return;
+
+  isPrayerAnimating = true;
+  const isNext = direction === "next";
+  const outClass = isNext ? "slide-out-left" : "slide-out-right";
+  const inClass = isNext ? "slide-in-right" : "slide-in-left";
+
+  card.classList.remove("slide-in-right", "slide-in-left", "slide-out-left", "slide-out-right");
+  card.classList.add(outClass);
+
+  card.addEventListener("animationend", () => {
+    currentPrayerIndex = getLoopedPrayerIndex(currentPrayerIndex + (isNext ? 1 : -1));
+    updatePrayerCard();
+    card.classList.remove(outClass);
+    card.classList.add(inClass);
+
+    card.addEventListener("animationend", () => {
+      card.classList.remove(inClass);
+      isPrayerAnimating = false;
+    }, { once: true });
+  }, { once: true });
+}
+
+function renderPrayers() {
+  updatePrayerCard();
+
+  const prevButton = document.querySelector("#prayer-prev");
+  const nextButton = document.querySelector("#prayer-next");
+
+  if (prevButton) {
+    prevButton.addEventListener("click", () => movePrayerCard("prev"));
+  }
+
+  if (nextButton) {
+    nextButton.addEventListener("click", () => movePrayerCard("next"));
+  }
 }
 
 function handleForm(formId, messageId, message) {
