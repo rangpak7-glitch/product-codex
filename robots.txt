@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://rangpak7-glitch.github.io/product-codex/sitemap.xml
