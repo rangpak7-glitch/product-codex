@@ -1323,3 +1323,110 @@ body {
     padding: 24px 20px;
   }
 }
+.biblical-visuals {
+  margin-top: 46px;
+  padding: 34px;
+  border: 1px solid rgba(199, 161, 90, 0.24);
+  border-radius: 8px;
+  background:
+    radial-gradient(circle at 14% 18%, rgba(168, 184, 160, 0.28), transparent 28%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.78), rgba(239, 231, 218, 0.74));
+  box-shadow: var(--shadow);
+}
+
+.section-intro.compact {
+  margin-top: 0;
+  margin-bottom: 24px;
+}
+
+.scene-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 18px;
+}
+
+.scene-card {
+  position: relative;
+  overflow: hidden;
+  padding: 22px;
+  border: 1px solid rgba(199, 161, 90, 0.28);
+  border-radius: 8px;
+  background: #FFFDF7;
+  box-shadow: 0 14px 34px rgba(23, 33, 59, 0.1);
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+}
+
+.scene-card:hover {
+  transform: translateY(-5px);
+  border-color: rgba(199, 161, 90, 0.52);
+  box-shadow: 0 22px 54px rgba(23, 33, 59, 0.16);
+}
+
+.scene-art {
+  display: grid;
+  place-items: center;
+  min-height: 172px;
+  margin-bottom: 16px;
+  border-radius: 8px;
+  background:
+    radial-gradient(circle at 50% 42%, rgba(255, 255, 255, 0.92), transparent 38%),
+    linear-gradient(135deg, #F5F1D0, #E4EFE2);
+}
+
+.scene-table .scene-art {
+  background:
+    radial-gradient(circle at 48% 42%, rgba(255, 255, 255, 0.9), transparent 36%),
+    linear-gradient(135deg, #F7EBCF, #EDE2C3);
+}
+
+.scene-cross .scene-art {
+  background:
+    radial-gradient(circle at 48% 42%, rgba(255, 255, 255, 0.9), transparent 36%),
+    linear-gradient(135deg, #F8F5EF, #E8EFE5);
+}
+
+.scene-art svg {
+  width: min(100%, 250px);
+  height: auto;
+  filter: drop-shadow(0 8px 18px rgba(23, 33, 59, 0.12));
+}
+
+.scene-label {
+  margin: 0 0 8px;
+  color: var(--gold-deep);
+  font-family: var(--font-label);
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.scene-card h3 {
+  margin: 0 0 8px;
+  color: var(--navy);
+  font-family: var(--font-heading);
+  font-size: 1.34rem;
+  line-height: 1.35;
+}
+
+.scene-card p:not(.scene-label) {
+  margin: 0;
+  color: var(--muted);
+  font-weight: 600;
+  line-height: 1.75;
+}
+
+@media (min-width: 760px) {
+  .scene-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .biblical-visuals {
+    padding: 24px 18px;
+  }
+
+  .scene-art {
+    min-height: 150px;
+  }
+}
