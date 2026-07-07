@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="기도의 샘물은 오늘의 기도문, 아침기도, 밤기도, 성경 말씀 묵상을 전하는 기독교 기도와 말씀 채널입니다.">
+  <title>기도의 샘물 | 기독교 기도문과 말씀 묵상</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="#home" data-page-link="home" aria-label="기도의 샘물 홈으로 이동">
+      <span class="brand-mark">샘</span>
+      <span>
+        <strong>기도의 샘물</strong>
+        <small>기도와 말씀으로 쉬어가는 곳</small>
+      </span>
+    </a>
+
+    <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-nav">
+      <span></span>
+      <span></span>
+      <span></span>
+      <span class="sr-only">메뉴 열기</span>
+    </button>
+
+    <nav id="site-nav" class="site-nav" aria-label="주요 메뉴">
+      <a href="#home" data-page-link="home">홈</a>
+      <a href="#today-prayer" data-page-link="today-prayer">오늘의 기도문</a>
+      <a href="#night-prayer" data-page-link="night-prayer">밤기도</a>
+      <a href="#morning-prayer" data-page-link="morning-prayer">아침기도</a>
+      <a href="#bible-meditation" data-page-link="bible-meditation">말씀 묵상</a>
+      <a href="#videos" data-page-link="videos">영상 모음</a>
+      <a href="#prayer-request" data-page-link="prayer-request">기도 제목</a>
+      <a href="#premium" data-page-link="premium">프리미엄 PDF</a>
+      <a href="#privacy" data-page-link="privacy">개인정보처리방침</a>
+      <a href="#contact" data-page-link="contact">문의하기</a>
+    </nav>
+  </header>
+
+  <main>
+    <section id="home" class="page-section active" data-page="home">
+      <div class="hero">
+        <div class="hero-content">
+          <p class="eyebrow">Christian Prayer & Meditation</p>
+          <h1>기도의 샘물</h1>
+          <p class="hero-copy">
+            마음이 지치고 생각이 많아지는 날, 조용히 주님 앞에 머무를 수 있도록
+            따뜻한 기도문과 말씀 묵상을 전합니다.
+          </p>
+          <div class="hero-actions">
+            <button class="button primary" type="button" data-page-link="today-prayer">오늘의 기도문 보기</button>
+            <a class="button secondary" href="https://youtube.com/channel/UCFrsilNKJ8xcmn0RUrFz6XQ?si=djJ2EIDNC_PMbJbj" target="_blank" rel="noopener">유튜브 채널 방문</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="ad-slot" aria-label="광고 영역">
+        <span>광고 영역</span>
+        <p>본문 읽기를 방해하지 않는 위치에 광고를 배치할 예정입니다.</p>
+      </div>
+
+      <div class="section-intro">
+        <p class="eyebrow">For Daily Faith</p>
+        <h2>하루의 시작과 끝을 기도로 정돈하세요</h2>
+        <p>
+          기도의 샘물은 아침의 감사, 밤의 평안, 하루 중 문득 필요한 위로의 기도를
+          담아내는 공간입니다. 모든 글은 큰 글씨와 넉넉한 줄간격으로 읽기 편하게 구성했습니다.
+        </p>
+      </div>
+
+      <div class="feature-grid">
+        <article class="feature-card">
+          <h3>오늘의 기도문</h3>
+          <p>매일의 삶에서 바로 따라 읽을 수 있는 짧고 깊은 기도문을 제공합니다.</p>
+          <button type="button" class="text-button" data-page-link="today-prayer">기도문 읽기</button>
+        </article>
+        <article class="feature-card">
+          <h3>잠잘 때 듣는 밤기도</h3>
+          <p>하루의 무거운 마음을 내려놓고 평안히 잠들도록 돕는 기도입니다.</p>
+          <button type="button" class="text-button" data-page-link="night-prayer">밤기도 보기</button>
+        </article>
+        <article class="feature-card">
+          <h3>성경 말씀 묵상</h3>
+          <p>말씀 한 구절을 붙들고 삶에 적용할 수 있도록 묵상 문장을 나눕니다.</p>
+          <button type="button" class="text-button" data-page-link="bible-meditation">묵상 보기</button>
+        </article>
+      </div>
+    </section>
+
+    <section id="today-prayer" class="page-section" data-page="today-prayer">
+      <div class="page-heading">
+        <p class="eyebrow">Daily Prayer</p>
+        <h1>오늘의 기도문</h1>
+        <p>마음의 형편에 맞는 기도문을 골라 천천히 읽어보세요.</p>
+      </div>
+      <div id="prayer-list" class="prayer-list" aria-live="polite"></div>
+    </section>
+
+    <section id="night-prayer" class="page-section" data-page="night-prayer">
+      <div class="page-heading">
+        <p class="eyebrow">Night Prayer</p>
+        <h1>잠잘 때 듣는 밤기도</h1>
+        <p>하루를 주님께 맡기며 마음을 고요하게 정돈하는 기도입니다.</p>
+      </div>
+      <article class="content-article">
+        <h2>잠들기 전 드리는 평안의 기도</h2>
+        <p>
+          사랑의 하나님 아버지, 오늘 하루도 저를 붙드시고 여기까지 인도해 주셔서 감사합니다.
+          기뻤던 순간도 있었고 마음이 무거웠던 시간도 있었지만, 모든 순간 속에 주님의 은혜가
+          함께 있었음을 믿습니다.
+        </p>
+        <p>
+          주님, 잠자리에 들기 전 제 마음에 남아 있는 염려와 후회와 두려움을 주님 앞에 내려놓습니다.
+          제가 다 해결하지 못한 일들도 주님 손에 맡깁니다. 내일의 걱정을 오늘 밤까지 끌어안지 않게 하시고,
+          주님께서 주시는 평안으로 제 생각과 마음을 지켜 주세요.
+        </p>
+        <p>
+          가족과 이웃, 사랑하는 사람들의 밤도 지켜 주세요. 아픈 이에게는 회복을, 외로운 이에게는 위로를,
+          낙심한 이에게는 다시 일어설 힘을 허락해 주세요. 우리의 집과 마음에 주님의 빛이 머물게 하시고,
+          잠자는 동안에도 주님 품 안에서 쉼을 얻게 해 주세요.
+        </p>
+        <p>
+          예수님의 이름으로 기도드립니다. 아멘.
+        </p>
+      </article>
+      <div class="ad-slot subtle">
+        <span>광고 영역</span>
+        <p>기도문을 모두 읽은 뒤 자연스럽게 보이는 하단 광고 자리입니다.</p>
+      </div>
+    </section>
+
+    <section id="morning-prayer" class="page-section" data-page="morning-prayer">
+      <div class="page-heading">
+        <p class="eyebrow">Morning Prayer</p>
+        <h1>아침기도</h1>
+        <p>새 하루를 감사와 믿음으로 시작하도록 돕는 기도입니다.</p>
+      </div>
+      <article class="content-article">
+        <h2>새 아침을 여는 감사의 기도</h2>
+        <p>
+          은혜로우신 하나님 아버지, 새로운 아침을 허락해 주셔서 감사합니다.
+          눈을 뜨고 숨을 쉬며 하루를 시작할 수 있다는 것이 주님의 선물임을 고백합니다.
+          오늘 제 발걸음이 분주함에 쫓기기보다 주님의 뜻을 먼저 구하는 하루가 되게 해 주세요.
+        </p>
+        <p>
+          주님, 오늘 만나는 사람들에게 따뜻한 말과 선한 마음으로 다가가게 하시고,
+          작은 일에도 성실함을 잃지 않게 해 주세요. 제 마음이 쉽게 흔들릴 때 말씀을 기억하게 하시고,
+          불평보다 감사를, 두려움보다 믿음을 선택하게 해 주세요.
+        </p>
+        <p>
+          가정과 일터와 교회 안에서 제가 감당해야 할 몫을 지혜롭게 감당하게 하시며,
+          제 힘으로 할 수 없는 일은 주님께 의지하는 겸손을 허락해 주세요.
+          오늘 하루도 주님의 손에 맡기며 예수님의 이름으로 기도드립니다. 아멘.
+        </p>
+      </article>
+    </section>
+
+    <section id="bible-meditation" class="page-section" data-page="bible-meditation">
+      <div class="page-heading">
+        <p class="eyebrow">Bible Meditation</p>
+        <h1>성경 말씀 묵상</h1>
+        <p>말씀을 천천히 읽고 오늘의 삶에 적용해 보는 공간입니다.</p>
+      </div>
+      <article class="content-article">
+        <h2>오늘 붙들 말씀: 시편 23편 1절</h2>
+        <blockquote>
+          여호와는 나의 목자시니 내게 부족함이 없으리로다.
+        </blockquote>
+        <p>
+          이 말씀은 상황이 넉넉해서 부족함이 없다는 선언이 아니라, 하나님께서 나의 목자가 되시기 때문에
+          참된 부족함이 없다는 믿음의 고백입니다. 삶의 형편은 날마다 달라질 수 있지만, 우리를 인도하시는
+          주님의 신실하심은 변하지 않습니다.
+        </p>
+        <p>
+          오늘 마음에 부족함이 크게 느껴진다면 그 마음을 숨기지 말고 주님께 말씀드려 보세요.
+          사랑이 부족하다고, 힘이 부족하다고, 지혜가 부족하다고 고백할 때 주님은 우리를 책망하지 않으시고
+          목자처럼 다시 길로 이끌어 주십니다.
+        </p>
+        <p>
+          묵상 질문: 오늘 내가 주님께 맡기지 못하고 혼자 붙들고 있는 염려는 무엇인가요?
+          그 염려를 한 문장으로 적고, “주님, 저의 목자가 되어 주세요”라고 기도해 보세요.
+        </p>
+      </article>
+    </section>
+
+    <section id="videos" class="page-section" data-page="videos">
+      <div class="page-heading">
+        <p class="eyebrow">YouTube</p>
+        <h1>유튜브 영상 모음</h1>
+        <p>기도의 샘물 채널에서 만날 수 있는 기도와 말씀 콘텐츠입니다.</p>
+      </div>
+      <div class="video-grid">
+        <article class="video-card">
+          <div class="video-thumb">밤기도</div>
+          <h2>잠들기 전 마음을 맡기는 기도</h2>
+          <p>하루의 염려를 내려놓고 평안한 쉼을 구하는 기도 콘텐츠입니다.</p>
+          <a href="https://youtube.com/channel/UCFrsilNKJ8xcmn0RUrFz6XQ?si=djJ2EIDNC_PMbJbj" target="_blank" rel="noopener">채널에서 보기</a>
+        </article>
+        <article class="video-card">
+          <div class="video-thumb">아침기도</div>
+          <h2>하루를 여는 감사와 보호의 기도</h2>
+          <p>새 아침을 믿음으로 시작하고 싶은 분들을 위한 기도입니다.</p>
+          <a href="https://youtube.com/channel/UCFrsilNKJ8xcmn0RUrFz6XQ?si=djJ2EIDNC_PMbJbj" target="_blank" rel="noopener">채널에서 보기</a>
+        </article>
+        <article class="video-card">
+          <div class="video-thumb">말씀</div>
+          <h2>성경 말씀으로 받는 오늘의 위로</h2>
+          <p>말씀 한 구절을 붙들고 하루를 살아갈 힘을 얻는 묵상입니다.</p>
+          <a href="https://youtube.com/channel/UCFrsilNKJ8xcmn0RUrFz6XQ?si=djJ2EIDNC_PMbJbj" target="_blank" rel="noopener">채널에서 보기</a>
+        </article>
+      </div>
+    </section>
+
+    <section id="prayer-request" class="page-section" data-page="prayer-request">
+      <div class="page-heading">
+        <p class="eyebrow">Prayer Request</p>
+        <h1>기도 제목 남기기</h1>
+        <p>함께 기도받고 싶은 제목을 남길 수 있는 공간입니다. 현재는 MVP 예시 폼입니다.</p>
+      </div>
+      <form id="prayer-form" class="form-panel">
+        <label>
+          이름 또는 별칭
+          <input type="text" name="name" placeholder="예: 김집사, 익명" required>
+        </label>
+        <label>
+          기도 제목
+          <textarea name="request" rows="7" placeholder="기도받고 싶은 내용을 적어주세요." required></textarea>
+        </label>
+        <label class="checkbox-label">
+          <input type="checkbox" required>
+          <span>개인정보를 포함하지 않거나, 공개되어도 괜찮은 내용만 작성하겠습니다.</span>
+        </label>
+        <button class="button primary" type="submit">기도 제목 남기기</button>
+        <p id="prayer-form-message" class="form-message" role="status"></p>
+      </form>
+    </section>
+
+    <section id="premium" class="page-section" data-page="premium">
+      <div class="page-heading">
+        <p class="eyebrow">Premium PDF</p>
+        <h1>프리미엄 기도문 PDF</h1>
+        <p>인쇄해서 보관하거나 가족과 함께 읽을 수 있는 기도문 PDF를 준비 중입니다.</p>
+      </div>
+      <div class="premium-layout">
+        <div class="premium-panel">
+          <h2>월별 기도문 PDF 패키지</h2>
+          <p>
+            아침기도, 밤기도, 자녀를 위한 기도, 가정을 위한 기도, 치유와 회복을 위한 기도문을
+            큰 글씨 PDF로 정리할 예정입니다.
+          </p>
+          <ul class="check-list">
+            <li>큰 글씨와 넉넉한 줄간격</li>
+            <li>인쇄하기 좋은 A4 구성</li>
+            <li>말씀 묵상과 짧은 적용 질문 포함</li>
+            <li>향후 토스페이먼츠 또는 포트원 결제 연동 예정</li>
+          </ul>
+          <button id="premium-button" class="button primary" type="button">준비 중</button>
+          <p id="premium-message" class="form-message" role="status"></p>
+        </div>
+      </div>
+    </section>
+
+    <section id="privacy" class="page-section" data-page="privacy">
+      <div class="page-heading">
+        <p class="eyebrow">Privacy Policy</p>
+        <h1>개인정보처리방침</h1>
+        <p>기도의 샘물 정적 웹사이트 MVP 기준의 개인정보 안내입니다.</p>
+      </div>
+      <article class="content-article">
+        <h2>1. 수집하는 개인정보</h2>
+        <p>
+          현재 본 웹사이트는 회원가입, 결제, 서버 저장 기능을 제공하지 않습니다.
+          기도 제목 남기기와 문의하기 양식은 MVP 화면 예시이며, 실제 서버로 전송되거나 저장되지 않습니다.
+        </p>
+        <h2>2. 이용 목적</h2>
+        <p>
+          향후 문의 응대, 기도 제목 접수, 디지털 상품 구매 지원 기능이 추가될 경우
+          이름, 이메일, 문의 내용 등 최소한의 정보만 수집할 수 있습니다.
+        </p>
+        <h2>3. 광고와 외부 링크</h2>
+        <p>
+          본 사이트는 향후 Google AdSense 등 광고 서비스를 사용할 수 있으며,
+          유튜브 채널과 같은 외부 사이트로 이동하는 링크를 포함할 수 있습니다.
+          외부 사이트의 개인정보 처리방침은 해당 서비스의 정책을 따릅니다.
+        </p>
+        <h2>4. 정책 변경</h2>
+        <p>
+          실제 개인정보 수집, 결제, 이메일 발송 기능이 추가되면 본 방침을 업데이트하고
+          수집 항목과 보관 기간을 명확히 안내하겠습니다.
+        </p>
+      </article>
+    </section>
+
+    <section id="contact" class="page-section" data-page="contact">
+      <div class="page-heading">
+        <p class="eyebrow">Contact</p>
+        <h1>문의하기</h1>
+        <p>협업, 문의, 콘텐츠 제안이 있으시면 아래 양식에 내용을 적어주세요.</p>
+      </div>
+      <form id="contact-form" class="form-panel">
+        <label>
+          이름
+          <input type="text" name="name" placeholder="이름을 입력하세요" required>
+        </label>
+        <label>
+          이메일
+          <input type="email" name="email" placeholder="example@email.com" required>
+        </label>
+        <label>
+          문의 내용
+          <textarea name="message" rows="7" placeholder="문의 내용을 입력하세요" required></textarea>
+        </label>
+        <button class="button primary" type="submit">문의 남기기</button>
+        <p id="contact-form-message" class="form-message" role="status"></p>
+      </form>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <strong>기도의 샘물</strong>
+    <p>기도와 말씀으로 하루를 새롭게 하는 조용한 공간</p>
+    <div class="footer-links">
+      <button type="button" data-page-link="privacy">개인정보처리방침</button>
+      <button type="button" data-page-link="contact">문의하기</button>
+      <a href="https://youtube.com/channel/UCFrsilNKJ8xcmn0RUrFz6XQ?si=djJ2EIDNC_PMbJbj" target="_blank" rel="noopener">YouTube</a>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
