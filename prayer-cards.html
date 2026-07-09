@@ -52,7 +52,103 @@
 <a href="prayer-request.html">기도제목</a>
 <a href="contact.html">문의하기</a></nav>
 </header>
-<main><section class="page-hero sub-hero hero-photo hero-photo--cards"><div><p class="eyebrow">Faith & Meditation</p><h1>신앙자료</h1><p>기도문을 읽고, 오디오로 듣고, 말씀·기도카드로 나눌 수 있는 신앙 자료를 차분히 소개합니다.</p><div class="hero-actions"><a class="button primary" href="#resourceCatalog">자료 목차 보기</a><a class="button secondary" href="contact.html">자료 문의하기</a></div></div><span class="sub-hero-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="16" rx="2"></rect><path d="M8 8h8M8 12h5M9 16h6"></path></svg></span><!-- 향후 말씀 카드 실제 이미지 삽입 위치 --></section><section id="resourceCatalog" class="section"><p class="eyebrow">Resource Catalog</p><h2>신앙자료 하위 카테고리</h2><div class="resource-subcategory-grid"><a href="premium-pdf.html"><span>목차 1</span><strong>주제별 기도문PDF</strong><p>상황과 주제별로 천천히 읽고 보관할 수 있는 기도문 자료입니다.</p></a><a href="contact.html"><span>목차 2</span><strong>기도 오디오북</strong><p>잠들기 전이나 이동 중에도 들을 수 있는 기도 오디오 자료로 확장합니다.</p></a><a href="#cardPreview"><span>목차 3</span><strong>말씀·기도카드 이미지</strong><p>가족, 소그룹, 카카오톡 나눔에 활용할 수 있는 이미지형 말씀 자료입니다.</p></a></div></section><section class="section"><p class="eyebrow">Use Cases</p><h2>어디에 사용할 수 있나요?</h2><div id="prayerCardList" class="content-grid"></div></section><section id="cardPreview" class="section"><p class="eyebrow">Card Collection</p><h2>말씀·기도카드 구성</h2><div class="visual-card-grid"><div class="visual-prayer-card"><span>평안</span><strong>주님께 마음을 맡깁니다</strong><p>염려가 나를 끌고 가지 않도록 오늘의 생각을 말씀 앞에 내려놓습니다.</p></div><div class="visual-prayer-card"><span>감사</span><strong>작은 은혜를 다시 봅니다</strong><p>평범한 하루 속에 숨은 주님의 손길을 기억하며 마음을 새롭게 합니다.</p></div><div class="visual-prayer-card"><span>회복</span><strong>상처 위에 은혜를 구합니다</strong><p>관계의 아픔을 주님께 맡기고 지혜로운 말과 침묵을 배우게 하소서.</p></div><div class="visual-prayer-card"><span>자녀</span><strong>사랑하는 자녀를 주님께 맡깁니다</strong><p>보이지 않는 길에서도 주님의 손이 먼저 인도하시길 구합니다.</p></div><div class="visual-prayer-card"><span>가정</span><strong>우리 집에 평안을 허락하소서</strong><p>서로를 정죄하기보다 이해와 사랑을 선택하게 하소서.</p></div><div class="visual-prayer-card"><span>아침</span><strong>오늘의 말과 생각을 지켜 주소서</strong><p>만나는 사람마다 작은 평안의 통로가 되게 하소서.</p></div></div><div class="hero-actions"><a class="button primary" href="contact.html">자료 문의하기</a><a class="button secondary" href="contact.html">소식 받기</a></div></section></main>
+<main>
+  <a class="floating-signup-button" href="#memberSignup" aria-label="회원가입 영역으로 이동">회원가입</a>
+  <section class="page-hero sub-hero hero-photo hero-photo--cards">
+    <div>
+      <p class="eyebrow">Faith Resources</p>
+      <h1>신앙자료</h1>
+      <p>기도문 PDF, 오디오북, 말씀·기도카드를 한곳에서 둘러보고 주제에 맞는 자료를 찾아볼 수 있습니다.</p>
+      <div class="hero-actions">
+        <a class="button primary" href="#resourceCatalog">자료 목차 보기</a>
+        <a class="button secondary" href="#memberSignup">회원가입</a>
+      </div>
+    </div>
+    <span class="sub-hero-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="16" rx="2"></rect><path d="M8 8h8M8 12h5M9 16h6"></path></svg></span>
+  </section>
+
+  <section id="resourceCatalog" class="section faith-resource-shell">
+    <p class="eyebrow">Resource Catalog</p>
+    <h2>신앙자료 하위 카테고리</h2>
+    <div class="resource-subcategory-grid" role="tablist" aria-label="신앙자료 목차">
+      <button class="resource-tab is-active" type="button" data-resource-tab="pdf" role="tab" aria-selected="true">
+        <span>목차 1</span>
+        <strong>주제별 기도문 PDF</strong>
+        <p>상황과 주제별로 천천히 읽고 보관할 수 있는 기도문 자료입니다.</p>
+      </button>
+      <button class="resource-tab" type="button" data-resource-tab="audio" role="tab" aria-selected="false">
+        <span>목차 2</span>
+        <strong>기도 오디오북</strong>
+        <p>잠들기 전이나 이동 중에도 들을 수 있는 MP3 오디오 자료입니다.</p>
+      </button>
+      <button class="resource-tab" type="button" data-resource-tab="card" role="tab" aria-selected="false">
+        <span>목차 3</span>
+        <strong>말씀·기도카드 이미지</strong>
+        <p>요일별 말씀달력처럼 저장하고 나눌 수 있는 카드 컬렉션입니다.</p>
+      </button>
+    </div>
+    <div id="resourcePreview" class="resource-preview-panel" aria-live="polite"></div>
+  </section>
+
+  <section class="section resource-board-section">
+    <div class="resource-board-head">
+      <div>
+        <p class="eyebrow">Resource Board</p>
+        <h2>상황별 전체 기도 자료</h2>
+      </div>
+      <p>무료회원은 자료의 제목과 요약을 먼저 살펴볼 수 있고, 구독회원은 파일 다운로드 흐름으로 이어집니다.</p>
+    </div>
+    <div id="faithResourceTags" class="resource-tag-filter" aria-label="신앙자료 키워드 필터"></div>
+    <div id="faithResourceList" class="resource-board-list"></div>
+  </section>
+
+  <section id="cardThreadDetail" class="section card-thread-detail" hidden>
+    <div class="thread-detail-head">
+      <div>
+        <p class="eyebrow">Card Thread</p>
+        <h2 id="cardThreadTitle">말씀·기도카드 전체 보기</h2>
+      </div>
+      <button class="button secondary" type="button" data-close-thread>닫기</button>
+    </div>
+    <p id="cardThreadDescription"></p>
+    <div id="cardThreadGallery" class="thread-gallery-grid"></div>
+  </section>
+
+  <section id="memberSignup" class="section member-signup-panel">
+    <div>
+      <p class="eyebrow">Member Access</p>
+      <h2>회원가입</h2>
+      <p>이메일 인증 기반의 최소 정보 가입 흐름으로 시작하고, 구독 권한은 다음 단계에서 다운로드 권한과 연결합니다.</p>
+    </div>
+    <form class="signup-form" aria-label="회원가입 양식">
+      <label>이메일<input type="email" name="email" autocomplete="email" placeholder="example@email.com"></label>
+      <label>비밀번호<input type="password" name="password" autocomplete="new-password" placeholder="8자 이상"></label>
+      <label>닉네임<input type="text" name="nickname" autocomplete="nickname" placeholder="선택 입력"></label>
+      <button class="button primary" type="button">인증 메일 받기</button>
+    </form>
+  </section>
+
+  <section class="section admin-resource-panel">
+    <div>
+      <p class="eyebrow">Admin Board</p>
+      <h2>관리자 전용 자료 등록</h2>
+      <p>관리자 계정으로 글을 작성하고 PDF, MP3, 카드 이미지를 드래그앤드롭으로 연결하는 흐름입니다.</p>
+    </div>
+    <div class="admin-upload-layout">
+      <form class="admin-resource-form" aria-label="관리자 자료 등록 양식">
+        <label>자료 제목<input type="text" placeholder="예: 불안 내려놓기 기도문"></label>
+        <label>자료 유형<select><option>주제별 기도문 PDF</option><option>기도 오디오북</option><option>말씀·기도카드 이미지</option></select></label>
+        <label>키워드<input type="text" placeholder="예: 불안, 걱정, 결정"></label>
+        <label>설명<textarea rows="5" placeholder="자료 구성과 사용 상황을 입력합니다."></textarea></label>
+      </form>
+      <div class="dropzone-panel" aria-label="자료 파일 업로드 영역">
+        <strong>파일 드래그앤드롭</strong>
+        <p>PDF, MP3, 카드 이미지를 자료 글에 연결합니다.</p>
+        <span>관리자 권한 확인 후 저장</span>
+      </div>
+    </div>
+  </section>
+</main>
 <footer class="site-footer">
   <div><strong>기도의 샘물</strong><p>기도문과 말씀 묵상을 정성스럽게 모아 전하는 기독교 콘텐츠 공간입니다.</p></div>
   <div class="footer-links"><a href="privacy.html">개인정보처리방침</a><a href="terms.html">이용약관</a><a href="disclaimer.html">콘텐츠 안내</a><a href="sitemap.xml">사이트맵</a></div>
@@ -62,6 +158,7 @@
 <script src="data/videos.js"></script>
 <script src="data/prayerCards.js"></script>
 <script src="data/prayerChallenge.js"></script>
+<script src="data/faithResources.js"></script>
 <script src="assets/js/script.js"></script>
 </body>
 </html>

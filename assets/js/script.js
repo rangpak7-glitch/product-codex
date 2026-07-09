@@ -185,7 +185,6 @@ function pdfProductCard(product) {
     <h3>${escapeHtml(product.title)}</h3>
     <p class="product-audience">${escapeHtml(product.audience)}</p>
     <ul class="compact-list">${product.composition.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
-    <div class="product-price">${escapeHtml(product.priceRange)}</div>
     <div class="product-actions">
       <a class="button secondary" href="${product.sampleUrl}">미리보기 문의</a>
       <a class="button primary" href="${purchaseHref}">${purchaseLabel}</a>
@@ -207,6 +206,177 @@ const visualPrayerCards = $("#visualPrayerCards");
 if (visualPrayerCards) {
   renderCarousel(visualPrayerCards, PRAYER_CARDS.slice(0, 6), prayerImageCard, "카드 미리보기");
 }
+
+(() => {
+  const resources = Array.isArray(window.FAITH_RESOURCES) ? window.FAITH_RESOURCES : [];
+  const previewRoot = $("#resourcePreview");
+  const listRoot = $("#faithResourceList");
+  const tagRoot = $("#faithResourceTags");
+  const threadPanel = $("#cardThreadDetail");
+  if (!resources.length || !previewRoot || !listRoot || !tagRoot) return;
+
+  const typeMeta = {
+    pdf: {
+      eyebrow: "Premium PDF",
+      title: "주제별 기도문 PDF",
+      summary: "상황별 기도문을 게시판처럼 둘러보고 키워드로 골라볼 수 있습니다.",
+      action: "PDF 목록 보기"
+    },
+    audio: {
+      eyebrow: "Prayer Audiobook",
+      title: "기도 오디오북",
+      summary: "업로드한 MP3 자료를 주제별로 정리해 같은 방식으로 찾아 듣는 구조입니다.",
+      action: "오디오 목록 보기"
+    },
+    card: {
+      eyebrow: "Prayer Card Thread",
+      title: "말씀·기도카드 이미지",
+      summary: "요일별 말씀달력처럼 컬렉션을 열고 전체 카드 이미지를 이어서 확인합니다.",
+      action: "카드 목록 보기"
+    }
+  };
+  let activeType = "pdf";
+  let activeTag = "all";
+
+  function resourcesByType() {
+    return resources.filter((resource) => resource.type === activeType);
+  }
+
+  function filteredResources() {
+    const list = resourcesByType();
+    return activeTag === "all" ? list : list.filter((resource) => resource.tags?.includes(activeTag));
+  }
+
+  function renderPreview() {
+    const meta = typeMeta[activeType];
+    const items = resourcesByType().slice(0, 3);
+    previewRoot.innerHTML = `<div class="resource-preview-copy">
+      <p class="eyebrow">${escapeHtml(meta.eyebrow)}</p>
+      <h3>${escapeHtml(meta.title)}</h3>
+      <p>${escapeHtml(meta.summary)}</p>
+      <a class="button secondary" href="#faithResourceList">${escapeHtml(meta.action)}</a>
+    </div>
+    <div class="resource-preview-items">
+      ${items.map((item) => `<article>
+        <span>${escapeHtml(item.tags?.[0] || meta.title)}</span>
+        <strong>${escapeHtml(item.title)}</strong>
+        <p>${escapeHtml(item.summary)}</p>
+      </article>`).join("")}
+    </div>`;
+  }
+
+  function renderTags() {
+    const tags = [...new Set(resourcesByType().flatMap((resource) => resource.tags || []))];
+    tagRoot.innerHTML = [`<button class="${activeTag === "all" ? "is-active" : ""}" type="button" data-resource-tag="all">전체</button>`]
+      .concat(tags.map((tag) => `<button class="${activeTag === tag ? "is-active" : ""}" type="button" data-resource-tag="${escapeHtml(tag)}">${escapeHtml(tag)}</button>`))
+      .join("");
+  }
+
+  function lockedPanel(resource) {
+    const fileLabel = resource.type === "audio" ? "MP3 파일" : resource.type === "card" ? "카드 이미지 전체" : "PDF 파일";
+    return `<div class="resource-locked-panel">
+      <div class="locked-blur">
+        <p>${escapeHtml(resource.description)}</p>
+        <ul>${(resource.previewItems || []).map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
+      </div>
+      <div class="download-row">
+        <span>${escapeHtml(fileLabel)}</span>
+        <button class="button primary" type="button" disabled>구독회원 다운로드</button>
+      </div>
+    </div>`;
+  }
+
+  function previewChips(resource) {
+    if (resource.type !== "card") return "";
+    return `<div class="thread-preview-row" aria-label="${escapeHtml(resource.title)} 미리보기">
+      ${(resource.previewItems || []).slice(0, 3).map((item) => `<span>${escapeHtml(item)}</span>`).join("")}
+    </div>`;
+  }
+
+  function resourceCard(resource) {
+    const tags = (resource.tags || []).map((tag) => `<span>${escapeHtml(tag)}</span>`).join("");
+    const threadAction = resource.type === "card"
+      ? `<button class="button secondary" type="button" data-open-thread="${escapeHtml(resource.id)}">전체 카드 보기</button>`
+      : "";
+    return `<article class="faith-resource-card" data-resource-id="${escapeHtml(resource.id)}">
+      <div class="resource-card-head">
+        <p class="eyebrow">${escapeHtml(typeMeta[resource.type]?.title || "신앙자료")}</p>
+        <span class="access-pill">구독 자료</span>
+      </div>
+      <h3>${escapeHtml(resource.title)}</h3>
+      <p class="resource-summary">${escapeHtml(resource.summary)}</p>
+      <div class="resource-card-tags">${tags}</div>
+      ${previewChips(resource)}
+      ${lockedPanel(resource)}
+      ${threadAction}
+    </article>`;
+  }
+
+  function renderList() {
+    const list = filteredResources();
+    listRoot.innerHTML = list.length
+      ? list.map(resourceCard).join("")
+      : '<p class="muted">선택한 키워드에 맞는 자료를 찾지 못했습니다.</p>';
+  }
+
+  function paintTabs() {
+    document.querySelectorAll("[data-resource-tab]").forEach((button) => {
+      const selected = button.dataset.resourceTab === activeType;
+      button.classList.toggle("is-active", selected);
+      button.setAttribute("aria-selected", String(selected));
+    });
+  }
+
+  function renderAll() {
+    paintTabs();
+    renderPreview();
+    renderTags();
+    renderList();
+  }
+
+  document.querySelectorAll("[data-resource-tab]").forEach((button) => {
+    button.addEventListener("click", () => {
+      activeType = button.dataset.resourceTab || "pdf";
+      activeTag = "all";
+      renderAll();
+    });
+  });
+
+  tagRoot.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-resource-tag]");
+    if (!button) return;
+    activeTag = button.dataset.resourceTag || "all";
+    renderTags();
+    renderList();
+  });
+
+  listRoot.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-open-thread]");
+    if (!button || !threadPanel) return;
+    const resource = resources.find((item) => item.id === button.dataset.openThread);
+    if (!resource) return;
+    const title = $("#cardThreadTitle");
+    const description = $("#cardThreadDescription");
+    const gallery = $("#cardThreadGallery");
+    if (title) title.textContent = resource.title;
+    if (description) description.textContent = resource.description;
+    if (gallery) {
+      gallery.innerHTML = (resource.galleryItems || resource.previewItems || []).map((item, index) => `<article class="thread-gallery-card">
+        <span>${index + 1}</span>
+        <strong>${escapeHtml(item)}</strong>
+        <p>${escapeHtml(resource.summary)}</p>
+      </article>`).join("");
+    }
+    threadPanel.hidden = false;
+    threadPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+
+  document.querySelector("[data-close-thread]")?.addEventListener("click", () => {
+    if (threadPanel) threadPanel.hidden = true;
+  });
+
+  renderAll();
+})();
 
 const challengeList = $("#challengeList");
 if (challengeList) {
