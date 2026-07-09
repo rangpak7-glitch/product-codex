@@ -526,6 +526,7 @@ if (visualPrayerCards) {
   const dropzone = document.querySelector("[data-upload-dropzone]");
   const fileInput = uploadForm?.querySelector("[name='files']");
   const fileSummary = document.querySelector("[data-upload-file-summary]");
+  const resetPasswordButton = document.querySelector("[data-admin-reset-password]");
   let adminUser = null;
   const setLoginStatus = (message) => { if (loginStatus) loginStatus.textContent = message; };
   const setUploadStatus = (message) => { if (uploadStatus) uploadStatus.textContent = message; };
@@ -575,6 +576,15 @@ if (visualPrayerCards) {
     const { error } = await client.auth.signInWithPassword({ email: formData.get("email"), password: formData.get("password") });
     if (error) return setLoginStatus(error.message);
     await refreshAdminAccess();
+  });
+
+  resetPasswordButton?.addEventListener("click", async () => {
+    if (!client || !loginForm) return setLoginStatus("관리자 연결을 불러오지 못했습니다.");
+    const email = loginForm.elements.email.value.trim();
+    if (!email) return setLoginStatus("재설정할 이메일을 입력해 주세요.");
+    const redirectTo = new URL("reset-password.html", window.location.href).href;
+    const { error } = await client.auth.resetPasswordForEmail(email, { redirectTo });
+    setLoginStatus(error ? error.message : "비밀번호 재설정 메일을 보냈습니다. 메일의 링크에서 새 비밀번호를 설정해 주세요.");
   });
 
   document.querySelector("[data-admin-logout]")?.addEventListener("click", async () => {
