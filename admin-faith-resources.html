@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex,nofollow">
+  <title>관리자 전용 자료 등록 | 기도의 샘물</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800&family=Noto+Sans+KR:wght@400;500;600;700;800;900&family=Noto+Serif+KR:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body class="admin-page">
+<main>
+  <section class="section admin-gate-panel" data-admin-gate>
+    <div>
+      <p class="eyebrow">Admin Access</p>
+      <h1>관리자 전용 자료 등록</h1>
+      <p>관리자 확인 후 자료 등록 화면을 엽니다. 실제 파일 저장과 권한 제한은 구독/관리자 인증 단계에서 연결합니다.</p>
+    </div>
+    <form class="admin-gate-form" aria-label="관리자 접근 확인">
+      <label>관리자 확인 코드<input type="password" name="adminCode" autocomplete="off" placeholder="관리자 코드"></label>
+      <button class="button primary" type="button" data-admin-unlock>관리자 화면 열기</button>
+      <p class="form-message" role="status"></p>
+    </form>
+  </section>
+
+  <section class="section admin-resource-panel" data-admin-panel hidden>
+    <div>
+      <p class="eyebrow">Admin Board</p>
+      <h2>관리자 전용 자료 등록</h2>
+      <p>자료를 등록하면 제목, 유형, 키워드가 공개 자료 목록의 스레드와 필터 키워드에 반영되는 구조입니다.</p>
+    </div>
+    <div class="admin-upload-layout">
+      <form class="admin-resource-form" aria-label="관리자 자료 등록 양식">
+        <label>자료 제목<input type="text" placeholder="예: 불안 내려놓기 기도문"></label>
+        <label>자료 유형<select><option>주제별 기도문 PDF</option><option>기도 오디오북</option><option>말씀·기도카드 이미지</option></select></label>
+        <label>키워드<input type="text" placeholder="예: 불안, 걱정, 결정"></label>
+        <label>설명<textarea rows="5" placeholder="자료 구성과 사용 상황을 입력합니다."></textarea></label>
+      </form>
+      <div class="dropzone-panel" aria-label="자료 파일 업로드 영역">
+        <strong>파일 드래그앤드롭</strong>
+        <p>PDF, MP3, 카드 이미지를 자료 글에 연결합니다.</p>
+        <span>관리자 권한 확인 후 저장</span>
+      </div>
+    </div>
+  </section>
+</main>
+<script src="data/prayers.js"></script>
+<script src="assets/js/script.js"></script>
+</body>
+</html>

@@ -212,6 +212,7 @@ if (visualPrayerCards) {
   const previewRoot = $("#resourcePreview");
   const listRoot = $("#faithResourceList");
   const tagRoot = $("#faithResourceTags");
+  const filterStatus = $("#faithResourceFilterStatus");
   const threadPanel = $("#cardThreadDetail");
   if (!resources.length || !previewRoot || !listRoot || !tagRoot) return;
 
@@ -236,15 +237,20 @@ if (visualPrayerCards) {
     }
   };
   let activeType = "pdf";
-  let activeTag = "all";
+  const activeTags = new Set();
 
   function resourcesByType() {
     return resources.filter((resource) => resource.type === activeType);
   }
 
+  function uploadedThreads() {
+    return resources.filter((resource) => resource.isUploaded);
+  }
+
   function filteredResources() {
-    const list = resourcesByType();
-    return activeTag === "all" ? list : list.filter((resource) => resource.tags?.includes(activeTag));
+    const list = uploadedThreads();
+    if (!activeTags.size) return list;
+    return list.filter((resource) => [...activeTags].every((tag) => resource.tags?.includes(tag)));
   }
 
   function renderPreview() {
@@ -266,10 +272,15 @@ if (visualPrayerCards) {
   }
 
   function renderTags() {
-    const tags = [...new Set(resourcesByType().flatMap((resource) => resource.tags || []))];
-    tagRoot.innerHTML = [`<button class="${activeTag === "all" ? "is-active" : ""}" type="button" data-resource-tag="all">전체</button>`]
-      .concat(tags.map((tag) => `<button class="${activeTag === tag ? "is-active" : ""}" type="button" data-resource-tag="${escapeHtml(tag)}">${escapeHtml(tag)}</button>`))
+    const tags = [...new Set(uploadedThreads().flatMap((resource) => resource.tags || []))];
+    tagRoot.innerHTML = [`<button class="${activeTags.size ? "" : "is-active"}" type="button" data-clear-tags>전체</button>`]
+      .concat(tags.map((tag) => `<label class="${activeTags.has(tag) ? "is-active" : ""}"><input type="checkbox" value="${escapeHtml(tag)}" ${activeTags.has(tag) ? "checked" : ""}>${escapeHtml(tag)}</label>`))
       .join("");
+    if (filterStatus) {
+      filterStatus.textContent = activeTags.size
+        ? `${[...activeTags].join(", ")} 키워드를 모두 포함한 자료를 보여드립니다.`
+        : "업로드된 전체 스레드형 자료를 보여드립니다.";
+    }
   }
 
   function lockedPanel(resource) {
@@ -295,9 +306,7 @@ if (visualPrayerCards) {
 
   function resourceCard(resource) {
     const tags = (resource.tags || []).map((tag) => `<span>${escapeHtml(tag)}</span>`).join("");
-    const threadAction = resource.type === "card"
-      ? `<button class="button secondary" type="button" data-open-thread="${escapeHtml(resource.id)}">전체 카드 보기</button>`
-      : "";
+    const fileLabel = resource.type === "audio" ? "오디오 자료" : resource.type === "card" ? "카드 이미지 전체" : "기도문 PDF";
     return `<article class="faith-resource-card" data-resource-id="${escapeHtml(resource.id)}">
       <div class="resource-card-head">
         <p class="eyebrow">${escapeHtml(typeMeta[resource.type]?.title || "신앙자료")}</p>
@@ -308,7 +317,7 @@ if (visualPrayerCards) {
       <div class="resource-card-tags">${tags}</div>
       ${previewChips(resource)}
       ${lockedPanel(resource)}
-      ${threadAction}
+      <button class="button secondary" type="button" data-open-thread="${escapeHtml(resource.id)}">${escapeHtml(fileLabel)} 보기</button>
     </article>`;
   }
 
@@ -337,15 +346,29 @@ if (visualPrayerCards) {
   document.querySelectorAll("[data-resource-tab]").forEach((button) => {
     button.addEventListener("click", () => {
       activeType = button.dataset.resourceTab || "pdf";
-      activeTag = "all";
-      renderAll();
+      paintTabs();
+      renderPreview();
     });
   });
 
   tagRoot.addEventListener("click", (event) => {
-    const button = event.target.closest("[data-resource-tag]");
-    if (!button) return;
-    activeTag = button.dataset.resourceTag || "all";
+    const clearButton = event.target.closest("[data-clear-tags]");
+    if (clearButton) {
+      activeTags.clear();
+      renderTags();
+      renderList();
+      return;
+    }
+  });
+
+  tagRoot.addEventListener("change", (event) => {
+    const input = event.target.closest("input[type='checkbox']");
+    if (!input) return;
+    if (input.checked) {
+      activeTags.add(input.value);
+    } else {
+      activeTags.delete(input.value);
+    }
     renderTags();
     renderList();
   });
@@ -376,6 +399,33 @@ if (visualPrayerCards) {
   });
 
   renderAll();
+})();
+
+(() => {
+  const gate = document.querySelector("[data-admin-gate]");
+  const panel = document.querySelector("[data-admin-panel]");
+  if (!gate || !panel) return;
+  const button = document.querySelector("[data-admin-unlock]");
+  const input = gate.querySelector("input[name='adminCode']");
+  const message = gate.querySelector(".form-message");
+
+  function unlock() {
+    const code = input?.value.trim();
+    if (code !== "sam-admin") {
+      if (message) message.textContent = "관리자 확인 코드가 필요합니다.";
+      return;
+    }
+    gate.hidden = true;
+    panel.hidden = false;
+  }
+
+  button?.addEventListener("click", unlock);
+  input?.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      unlock();
+    }
+  });
 })();
 
 const challengeList = $("#challengeList");

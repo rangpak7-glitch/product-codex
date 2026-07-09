@@ -1503,7 +1503,12 @@ label { font-weight: 900; }
   gap: 10px;
   margin: 24px 0;
 }
-.resource-tag-filter button {
+.resource-tag-filter button,
+.resource-tag-filter label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   min-height: 42px;
   padding: 9px 15px;
   border: 1px solid rgba(167,124,53,.24);
@@ -1514,11 +1519,36 @@ label { font-weight: 900; }
   font-weight: 900;
   cursor: pointer;
 }
+.resource-tag-filter input {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
 .resource-tag-filter button:hover,
-.resource-tag-filter button.is-active {
+.resource-tag-filter button.is-active,
+.resource-tag-filter label:hover,
+.resource-tag-filter label.is-active {
   background: var(--navy);
   color: var(--color-surface);
   border-color: var(--navy);
+}
+.resource-tag-filter label::before {
+  content: "";
+  width: 13px;
+  height: 13px;
+  border: 2px solid currentColor;
+  border-radius: 4px;
+}
+.resource-tag-filter label.is-active::before {
+  background: currentColor;
+  box-shadow: inset 0 0 0 3px var(--navy);
+}
+.resource-filter-status {
+  margin: -10px 0 22px;
+  color: var(--gray);
+  font-weight: 800;
 }
 .resource-board-list {
   display: grid;
@@ -1652,7 +1682,12 @@ label { font-weight: 900; }
   margin: 0;
   color: var(--gray);
 }
+.admin-page {
+  min-height: 100vh;
+  padding-top: clamp(28px, 5vw, 64px);
+}
 .member-signup-panel,
+.admin-gate-panel,
 .admin-resource-panel {
   align-items: center;
   padding: 30px;
@@ -1663,12 +1698,19 @@ label { font-weight: 900; }
     linear-gradient(145deg, rgba(255,253,243,.98), rgba(239,231,218,.74));
   box-shadow: 0 16px 42px rgba(16,24,50,.08);
 }
+.admin-gate-panel {
+  display: grid;
+  grid-template-columns: 1fr .62fr;
+  gap: 28px;
+}
 .signup-form,
+.admin-gate-form,
 .admin-resource-form {
   display: grid;
   gap: 12px;
 }
 .signup-form label,
+.admin-gate-form label,
 .admin-resource-form label {
   display: grid;
   gap: 7px;
@@ -1676,6 +1718,7 @@ label { font-weight: 900; }
   font-weight: 900;
 }
 .signup-form input,
+.admin-gate-form input,
 .admin-resource-form input,
 .admin-resource-form select,
 .admin-resource-form textarea {
@@ -1687,6 +1730,10 @@ label { font-weight: 900; }
   background: rgba(255,253,243,.9);
   color: var(--navy);
   font: inherit;
+}
+.admin-gate-panel[hidden],
+.admin-resource-panel[hidden] {
+  display: none;
 }
 .dropzone-panel {
   min-height: 100%;
@@ -1737,6 +1784,7 @@ label { font-weight: 900; }
   .resource-board-head,
   .thread-detail-head,
   .member-signup-panel,
+  .admin-gate-panel,
   .admin-resource-panel,
   .admin-upload-layout {
     grid-template-columns: 1fr;
@@ -1745,6 +1793,7 @@ label { font-weight: 900; }
     grid-template-columns: 1fr;
   }
   .member-signup-panel,
+  .admin-gate-panel,
   .admin-resource-panel {
     width: min(1120px, calc(100% - 40px));
   }
