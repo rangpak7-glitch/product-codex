@@ -124,8 +124,12 @@
     <form class="signup-form" aria-label="회원가입 양식">
       <label>이메일<input type="email" name="email" autocomplete="email" placeholder="example@email.com"></label>
       <label>비밀번호<input type="password" name="password" autocomplete="new-password" placeholder="8자 이상"></label>
-      <label>닉네임<input type="text" name="nickname" autocomplete="nickname" placeholder="선택 입력"></label>
-      <button class="button primary" type="button">인증 메일 받기</button>
+      <div class="auth-action-row">
+        <button class="button primary" type="submit" data-member-signup>인증 메일 받기</button>
+        <button class="button secondary" type="button" data-member-login>로그인</button>
+      </div>
+      <button class="text-button" type="button" data-member-logout hidden>로그아웃</button>
+      <p class="form-message" data-member-auth-status role="status"></p>
     </form>
   </section>
 
@@ -140,6 +144,8 @@
 <script src="data/prayerCards.js"></script>
 <script src="data/prayerChallenge.js"></script>
 <script src="data/faithResources.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.1/dist/umd/supabase.js"></script>
+<script src="assets/js/supabase-config.js"></script>
 <script src="assets/js/script.js"></script>
 </body>
 </html>

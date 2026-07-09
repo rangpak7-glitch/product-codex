@@ -208,43 +208,56 @@ if (visualPrayerCards) {
 }
 
 (() => {
-  const resources = Array.isArray(window.FAITH_RESOURCES) ? window.FAITH_RESOURCES : [];
+  const fallbackResources = Array.isArray(window.FAITH_RESOURCES) ? window.FAITH_RESOURCES : [];
+  const client = window.FaithSupabase;
   const previewRoot = $("#resourcePreview");
   const listRoot = $("#faithResourceList");
   const tagRoot = $("#faithResourceTags");
   const filterStatus = $("#faithResourceFilterStatus");
   const threadPanel = $("#cardThreadDetail");
-  if (!resources.length || !previewRoot || !listRoot || !tagRoot) return;
+  if (!previewRoot || !listRoot || !tagRoot) return;
 
   const typeMeta = {
-    pdf: {
-      eyebrow: "Premium PDF",
-      title: "주제별 기도문 PDF",
-      summary: "상황별 기도문을 게시판처럼 둘러보고 키워드로 골라볼 수 있습니다.",
-      action: "PDF 목록 보기"
-    },
-    audio: {
-      eyebrow: "Prayer Audiobook",
-      title: "기도 오디오북",
-      summary: "업로드한 MP3 자료를 주제별로 정리해 같은 방식으로 찾아 듣는 구조입니다.",
-      action: "오디오 목록 보기"
-    },
-    card: {
-      eyebrow: "Prayer Card Thread",
-      title: "말씀·기도카드 이미지",
-      summary: "요일별 말씀달력처럼 컬렉션을 열고 전체 카드 이미지를 이어서 확인합니다.",
-      action: "카드 목록 보기"
-    }
+    pdf: { eyebrow: "Premium PDF", title: "주제별 기도문 PDF", summary: "상황별 기도문을 게시판처럼 둘러보고 키워드로 골라볼 수 있습니다.", action: "PDF 목록 보기" },
+    audio: { eyebrow: "Prayer Audiobook", title: "기도 오디오북", summary: "업로드한 MP3 자료를 주제별로 정리해 같은 방식으로 찾아 들을 수 있습니다.", action: "오디오 목록 보기" },
+    card: { eyebrow: "Prayer Card Thread", title: "말씀·기도카드 이미지", summary: "말씀달력처럼 컬렉션을 열고 전체 카드 이미지를 이어서 확인합니다.", action: "카드 목록 보기" }
   };
+  let resources = [];
+  let viewer = null;
   let activeType = "pdf";
   const activeTags = new Set();
+
+  const hasSubscriberAccess = () => Boolean(viewer && (viewer.role === "admin" || viewer.subscription_status === "active"));
+
+  async function loadViewer() {
+    if (!client) return null;
+    const { data: { user } } = await client.auth.getUser();
+    if (!user) return null;
+    const { data: profile } = await client
+      .from("profiles")
+      .select("role, subscription_status")
+      .eq("id", user.id)
+      .maybeSingle();
+    return profile ? { ...profile, user } : { role: "member", subscription_status: "free", user };
+  }
+
+  async function loadResources() {
+    if (!client) return null;
+    const { data, error } = await client
+      .from("faith_resources")
+      .select("id, type, title, summary, tags, access_level, created_at")
+      .eq("published", true)
+      .order("created_at", { ascending: false });
+    if (error) return null;
+    return (data || []).map((resource) => ({ ...resource, isUploaded: true }));
+  }
 
   function resourcesByType() {
     return resources.filter((resource) => resource.type === activeType);
   }
 
   function uploadedThreads() {
-    return resources.filter((resource) => resource.isUploaded);
+    return resourcesByType().filter((resource) => resource.isUploaded);
   }
 
   function filteredResources() {
@@ -263,11 +276,11 @@ if (visualPrayerCards) {
       <a class="button secondary" href="#faithResourceList">${escapeHtml(meta.action)}</a>
     </div>
     <div class="resource-preview-items">
-      ${items.map((item) => `<article>
+      ${items.length ? items.map((item) => `<article>
         <span>${escapeHtml(item.tags?.[0] || meta.title)}</span>
         <strong>${escapeHtml(item.title)}</strong>
         <p>${escapeHtml(item.summary)}</p>
-      </article>`).join("")}
+      </article>`).join("") : `<article><strong>등록된 자료가 없습니다.</strong><p>관리자가 새 자료를 발행하면 이곳에 표시됩니다.</p></article>`}
     </div>`;
   }
 
@@ -279,39 +292,32 @@ if (visualPrayerCards) {
     if (filterStatus) {
       filterStatus.textContent = activeTags.size
         ? `${[...activeTags].join(", ")} 키워드를 모두 포함한 자료를 보여드립니다.`
-        : "업로드된 전체 스레드형 자료를 보여드립니다.";
+        : `${typeMeta[activeType].title}의 전체 스레드형 자료를 보여드립니다.`;
     }
   }
 
   function lockedPanel(resource) {
     const fileLabel = resource.type === "audio" ? "MP3 파일" : resource.type === "card" ? "카드 이미지 전체" : "PDF 파일";
+    if (hasSubscriberAccess()) {
+      return `<div class="download-row"><span>${escapeHtml(fileLabel)}</span><button class="button primary" type="button" data-resource-download="${escapeHtml(resource.id)}">다운로드</button></div>`;
+    }
     return `<div class="resource-locked-panel">
-      <div class="locked-blur">
-        <p>${escapeHtml(resource.description)}</p>
-        <ul>${(resource.previewItems || []).map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
-      </div>
-      <div class="download-row">
-        <span>${escapeHtml(fileLabel)}</span>
-        <button class="button primary" type="button" disabled>구독회원 다운로드</button>
-      </div>
+      <div class="locked-blur"><p>구독회원 전용 상세 설명과 파일 구성</p><ul><li>자료 구성 안내</li><li>파일 정보</li><li>전체 내용 보기</li></ul></div>
+      <div class="download-row"><span>${escapeHtml(fileLabel)}</span><button class="button primary" type="button" data-member-action>${viewer ? "구독 권한 확인" : "회원가입 후 이용"}</button></div>
     </div>`;
   }
 
   function previewChips(resource) {
-    if (resource.type !== "card") return "";
-    return `<div class="thread-preview-row" aria-label="${escapeHtml(resource.title)} 미리보기">
-      ${(resource.previewItems || []).slice(0, 3).map((item) => `<span>${escapeHtml(item)}</span>`).join("")}
-    </div>`;
+    if (resource.type !== "card" || !hasSubscriberAccess()) return "";
+    const items = resource.previewItems || [];
+    return `<div class="thread-preview-row" aria-label="${escapeHtml(resource.title)} 미리보기">${items.slice(0, 3).map((item) => `<span>${escapeHtml(item)}</span>`).join("")}</div>`;
   }
 
   function resourceCard(resource) {
     const tags = (resource.tags || []).map((tag) => `<span>${escapeHtml(tag)}</span>`).join("");
     const fileLabel = resource.type === "audio" ? "오디오 자료" : resource.type === "card" ? "카드 이미지 전체" : "기도문 PDF";
     return `<article class="faith-resource-card" data-resource-id="${escapeHtml(resource.id)}">
-      <div class="resource-card-head">
-        <p class="eyebrow">${escapeHtml(typeMeta[resource.type]?.title || "신앙자료")}</p>
-        <span class="access-pill">구독 자료</span>
-      </div>
+      <div class="resource-card-head"><p class="eyebrow">${escapeHtml(typeMeta[resource.type]?.title || "신앙자료")}</p><span class="access-pill">구독 자료</span></div>
       <h3>${escapeHtml(resource.title)}</h3>
       <p class="resource-summary">${escapeHtml(resource.summary)}</p>
       <div class="resource-card-tags">${tags}</div>
@@ -325,7 +331,7 @@ if (visualPrayerCards) {
     const list = filteredResources();
     listRoot.innerHTML = list.length
       ? list.map(resourceCard).join("")
-      : '<p class="muted">선택한 키워드에 맞는 자료를 찾지 못했습니다.</p>';
+      : `<p class="muted">선택한 키워드에 맞는 ${escapeHtml(typeMeta[activeType].title)} 자료를 찾지 못했습니다.</p>`;
   }
 
   function paintTabs() {
@@ -343,89 +349,301 @@ if (visualPrayerCards) {
     renderList();
   }
 
+  function promptMemberAccess() {
+    const status = document.querySelector("[data-member-auth-status]");
+    if (status) status.textContent = viewer ? "현재 계정은 구독 권한이 필요합니다." : "회원가입 또는 로그인 후 구독 권한을 확인할 수 있습니다.";
+    document.querySelector("#memberSignup")?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+
+  async function getPrivateResource(resourceId) {
+    const [{ data: details, error: detailError }, { data: files, error: fileError }] = await Promise.all([
+      client.from("faith_resource_private_details").select("description, preview_items, gallery_items").eq("resource_id", resourceId).maybeSingle(),
+      client.from("resource_files").select("id, object_path, file_name, mime_type, sort_order").eq("resource_id", resourceId).order("sort_order")
+    ]);
+    if (detailError || fileError) throw new Error("구독 권한이 필요합니다.");
+    return { details: details || {}, files: files || [] };
+  }
+
+  async function createDownloadUrl(file) {
+    const { data, error } = await client.storage
+      .from("faith-resources")
+      .createSignedUrl(file.object_path, 300, { download: file.file_name });
+    if (error) throw error;
+    return data.signedUrl;
+  }
+
+  async function openThread(resource) {
+    if (!hasSubscriberAccess()) {
+      promptMemberAccess();
+      return;
+    }
+    const title = $("#cardThreadTitle");
+    const description = $("#cardThreadDescription");
+    const gallery = $("#cardThreadGallery");
+    if (!threadPanel || !client) return;
+    try {
+      const { details, files } = await getPrivateResource(resource.id);
+      const signedFiles = await Promise.all(files.map(async (file) => ({ ...file, signedUrl: await createDownloadUrl(file) })));
+      if (title) title.textContent = resource.title;
+      if (description) description.textContent = details.description || resource.summary;
+      if (gallery) {
+        gallery.innerHTML = signedFiles.length ? signedFiles.map((file, index) => {
+          if (resource.type === "card" && file.mime_type.startsWith("image/")) {
+            return `<article class="thread-gallery-card"><img src="${escapeHtml(file.signedUrl)}" alt="${escapeHtml(resource.title)} ${index + 1}"><strong>${escapeHtml(file.file_name)}</strong></article>`;
+          }
+          if (resource.type === "audio") {
+            return `<article class="thread-gallery-card"><span>${index + 1}</span><strong>${escapeHtml(file.file_name)}</strong><audio controls preload="metadata" src="${escapeHtml(file.signedUrl)}"></audio></article>`;
+          }
+          return `<article class="thread-gallery-card"><span>${index + 1}</span><strong>${escapeHtml(file.file_name)}</strong><a class="button secondary" href="${escapeHtml(file.signedUrl)}">파일 다운로드</a></article>`;
+        }).join("") : '<p class="muted">연결된 파일이 없습니다.</p>';
+      }
+      threadPanel.hidden = false;
+      threadPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+    } catch (error) {
+      promptMemberAccess();
+    }
+  }
+
+  async function downloadResource(resourceId) {
+    if (!hasSubscriberAccess() || !client) {
+      promptMemberAccess();
+      return;
+    }
+    try {
+      const { files } = await getPrivateResource(resourceId);
+      if (!files.length) throw new Error("연결된 파일이 없습니다.");
+      window.location.assign(await createDownloadUrl(files[0]));
+    } catch (error) {
+      const status = document.querySelector("[data-member-auth-status]");
+      if (status) status.textContent = error.message || "파일을 열 수 없습니다.";
+    }
+  }
+
   document.querySelectorAll("[data-resource-tab]").forEach((button) => {
     button.addEventListener("click", () => {
       activeType = button.dataset.resourceTab || "pdf";
-      paintTabs();
-      renderPreview();
+      activeTags.clear();
+      renderAll();
     });
   });
 
   tagRoot.addEventListener("click", (event) => {
-    const clearButton = event.target.closest("[data-clear-tags]");
-    if (clearButton) {
-      activeTags.clear();
-      renderTags();
-      renderList();
-      return;
-    }
+    if (!event.target.closest("[data-clear-tags]")) return;
+    activeTags.clear();
+    renderTags();
+    renderList();
   });
 
   tagRoot.addEventListener("change", (event) => {
     const input = event.target.closest("input[type='checkbox']");
     if (!input) return;
-    if (input.checked) {
-      activeTags.add(input.value);
-    } else {
-      activeTags.delete(input.value);
-    }
+    input.checked ? activeTags.add(input.value) : activeTags.delete(input.value);
     renderTags();
     renderList();
   });
 
   listRoot.addEventListener("click", (event) => {
-    const button = event.target.closest("[data-open-thread]");
-    if (!button || !threadPanel) return;
-    const resource = resources.find((item) => item.id === button.dataset.openThread);
-    if (!resource) return;
-    const title = $("#cardThreadTitle");
-    const description = $("#cardThreadDescription");
-    const gallery = $("#cardThreadGallery");
-    if (title) title.textContent = resource.title;
-    if (description) description.textContent = resource.description;
-    if (gallery) {
-      gallery.innerHTML = (resource.galleryItems || resource.previewItems || []).map((item, index) => `<article class="thread-gallery-card">
-        <span>${index + 1}</span>
-        <strong>${escapeHtml(item)}</strong>
-        <p>${escapeHtml(resource.summary)}</p>
-      </article>`).join("");
-    }
-    threadPanel.hidden = false;
-    threadPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+    if (event.target.closest("[data-member-action]")) return promptMemberAccess();
+    const downloadButton = event.target.closest("[data-resource-download]");
+    if (downloadButton) return downloadResource(downloadButton.dataset.resourceDownload);
+    const openButton = event.target.closest("[data-open-thread]");
+    const resource = resources.find((item) => item.id === openButton?.dataset.openThread);
+    if (resource) openThread(resource);
   });
 
   document.querySelector("[data-close-thread]")?.addEventListener("click", () => {
     if (threadPanel) threadPanel.hidden = true;
   });
 
-  renderAll();
+  window.addEventListener("faith-auth-changed", async () => {
+    viewer = await loadViewer();
+    renderAll();
+  });
+
+  (async () => {
+    viewer = await loadViewer();
+    const remoteResources = await loadResources();
+    resources = remoteResources ?? fallbackResources;
+    renderAll();
+  })();
+})();
+
+(() => {
+  const form = document.querySelector(".signup-form");
+  const client = window.FaithSupabase;
+  if (!form) return;
+  const email = form.querySelector("[name='email']");
+  const password = form.querySelector("[name='password']");
+  const status = form.querySelector("[data-member-auth-status]");
+  const loginButton = form.querySelector("[data-member-login]");
+  const logoutButton = form.querySelector("[data-member-logout]");
+  const setStatus = (message) => { if (status) status.textContent = message; };
+
+  async function refreshSession() {
+    if (!client) return setStatus("회원 연결을 불러오지 못했습니다.");
+    const { data: { user } } = await client.auth.getUser();
+    if (!user) return;
+    const { data: profile } = await client.from("profiles").select("role, subscription_status").eq("id", user.id).maybeSingle();
+    logoutButton.hidden = false;
+    setStatus(profile?.subscription_status === "active" || profile?.role === "admin" ? "구독회원으로 로그인되어 있습니다." : "로그인되어 있습니다. 구독 권한은 결제 완료 후 활성화됩니다.");
+  }
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (!client) return setStatus("회원 연결을 불러오지 못했습니다.");
+    if ((password.value || "").length < 8) return setStatus("비밀번호는 8자 이상으로 입력해 주세요.");
+    const { error } = await client.auth.signUp({ email: email.value.trim(), password: password.value });
+    setStatus(error ? error.message : "인증 메일을 보냈습니다. 메일 인증 후 로그인해 주세요.");
+  });
+
+  loginButton?.addEventListener("click", async () => {
+    if (!client) return setStatus("회원 연결을 불러오지 못했습니다.");
+    const { error } = await client.auth.signInWithPassword({ email: email.value.trim(), password: password.value });
+    if (error) return setStatus(error.message);
+    await refreshSession();
+    window.dispatchEvent(new Event("faith-auth-changed"));
+  });
+
+  logoutButton?.addEventListener("click", async () => {
+    await client?.auth.signOut();
+    logoutButton.hidden = true;
+    setStatus("로그아웃했습니다.");
+    window.dispatchEvent(new Event("faith-auth-changed"));
+  });
+
+  refreshSession();
 })();
 
 (() => {
   const gate = document.querySelector("[data-admin-gate]");
   const panel = document.querySelector("[data-admin-panel]");
+  const client = window.FaithSupabase;
   if (!gate || !panel) return;
-  const button = document.querySelector("[data-admin-unlock]");
-  const input = gate.querySelector("input[name='adminCode']");
-  const message = gate.querySelector(".form-message");
+  const loginForm = document.querySelector("[data-admin-login-form]");
+  const loginStatus = document.querySelector("[data-admin-auth-status]");
+  const uploadForm = document.querySelector("[data-admin-resource-form]");
+  const uploadStatus = document.querySelector("[data-admin-upload-status]");
+  const dropzone = document.querySelector("[data-upload-dropzone]");
+  const fileInput = uploadForm?.querySelector("[name='files']");
+  const fileSummary = document.querySelector("[data-upload-file-summary]");
+  let adminUser = null;
+  const setLoginStatus = (message) => { if (loginStatus) loginStatus.textContent = message; };
+  const setUploadStatus = (message) => { if (uploadStatus) uploadStatus.textContent = message; };
 
-  function unlock() {
-    const code = input?.value.trim();
-    if (code !== "sam-admin") {
-      if (message) message.textContent = "관리자 확인 코드가 필요합니다.";
+  function updateFileSummary() {
+    if (!fileSummary || !fileInput) return;
+    const files = [...fileInput.files];
+    fileSummary.textContent = files.length ? files.map((file) => file.name).join(", ") : "선택된 파일 없음";
+  }
+
+  async function refreshAdminAccess() {
+    if (!client) return setLoginStatus("관리자 연결을 불러오지 못했습니다.");
+    const { data: { user } } = await client.auth.getUser();
+    if (!user) {
+      adminUser = null;
+      gate.hidden = false;
+      panel.hidden = true;
       return;
     }
+    const { data: profile } = await client.from("profiles").select("role").eq("id", user.id).maybeSingle();
+    if (profile?.role !== "admin") {
+      adminUser = null;
+      gate.hidden = false;
+      panel.hidden = true;
+      return setLoginStatus("이 계정에는 관리자 권한이 없습니다.");
+    }
+    adminUser = user;
     gate.hidden = true;
     panel.hidden = false;
   }
 
-  button?.addEventListener("click", unlock);
-  input?.addEventListener("keydown", (event) => {
-    if (event.key === "Enter") {
-      event.preventDefault();
-      unlock();
-    }
+  function safeFileName(name) {
+    return name.normalize("NFKD").replace(/[^a-zA-Z0-9가-힣._-]+/g, "-").replace(/-+/g, "-");
+  }
+
+  function filesMatchType(type, files) {
+    if (!files.length) return false;
+    if (type === "pdf") return files.length === 1 && (files[0].type === "application/pdf" || /\.pdf$/i.test(files[0].name));
+    if (type === "audio") return files.length === 1 && (/^audio\//.test(files[0].type) || /\.mp3$/i.test(files[0].name));
+    return files.every((file) => /^image\//.test(file.type) || /\.(jpe?g|png|webp)$/i.test(file.name));
+  }
+
+  loginForm?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (!client) return setLoginStatus("관리자 연결을 불러오지 못했습니다.");
+    const formData = new FormData(loginForm);
+    const { error } = await client.auth.signInWithPassword({ email: formData.get("email"), password: formData.get("password") });
+    if (error) return setLoginStatus(error.message);
+    await refreshAdminAccess();
   });
+
+  document.querySelector("[data-admin-logout]")?.addEventListener("click", async () => {
+    await client?.auth.signOut();
+    await refreshAdminAccess();
+  });
+
+  fileInput?.addEventListener("change", updateFileSummary);
+  dropzone?.addEventListener("click", () => fileInput?.click());
+  dropzone?.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" || event.key === " ") fileInput?.click();
+  });
+  ["dragenter", "dragover"].forEach((eventName) => dropzone?.addEventListener(eventName, (event) => {
+    event.preventDefault();
+    dropzone.classList.add("is-dragging");
+  }));
+  ["dragleave", "drop"].forEach((eventName) => dropzone?.addEventListener(eventName, (event) => {
+    event.preventDefault();
+    dropzone.classList.remove("is-dragging");
+  }));
+  dropzone?.addEventListener("drop", (event) => {
+    if (!fileInput || !event.dataTransfer?.files.length) return;
+    fileInput.files = event.dataTransfer.files;
+    updateFileSummary();
+  });
+
+  uploadForm?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (!client || !adminUser || !fileInput) return setUploadStatus("관리자 로그인이 필요합니다.");
+    const formData = new FormData(uploadForm);
+    const type = String(formData.get("type"));
+    const files = [...fileInput.files];
+    if (!filesMatchType(type, files)) return setUploadStatus(type === "card" ? "카드 자료에는 이미지 파일을 선택해 주세요." : "선택한 자료 유형에 맞는 파일 한 개를 선택해 주세요.");
+    const tags = String(formData.get("tags") || "").split(",").map((tag) => tag.trim()).filter(Boolean);
+    if (!tags.length) return setUploadStatus("키워드를 하나 이상 입력해 주세요.");
+    setUploadStatus("자료와 파일을 저장하고 있습니다.");
+    const { data: resource, error: resourceError } = await client.from("faith_resources").insert({
+      type,
+      title: String(formData.get("title")).trim(),
+      summary: String(formData.get("summary")).trim(),
+      tags,
+      created_by: adminUser.id
+    }).select("id").single();
+    if (resourceError) return setUploadStatus(resourceError.message);
+    const { error: detailError } = await client.from("faith_resource_private_details").insert({
+      resource_id: resource.id,
+      description: String(formData.get("description")).trim(),
+      preview_items: files.slice(0, 3).map((file) => file.name),
+      gallery_items: files.map((file) => file.name)
+    });
+    if (detailError) return setUploadStatus(detailError.message);
+    const fileRows = [];
+    for (const [index, file] of files.entries()) {
+      const objectPath = `${resource.id}/${crypto.randomUUID()}-${safeFileName(file.name)}`;
+      const { error: uploadError } = await client.storage.from("faith-resources").upload(objectPath, file, { cacheControl: "3600", contentType: file.type || undefined, upsert: false });
+      if (uploadError) return setUploadStatus(uploadError.message);
+      fileRows.push({ resource_id: resource.id, object_path: objectPath, file_name: file.name, mime_type: file.type || "application/octet-stream", file_size: file.size, sort_order: index });
+    }
+    const { error: fileError } = await client.from("resource_files").insert(fileRows);
+    if (fileError) return setUploadStatus(fileError.message);
+    const { error: publishError } = await client.from("faith_resources").update({ published: true, updated_at: new Date().toISOString() }).eq("id", resource.id);
+    if (publishError) return setUploadStatus(publishError.message);
+    uploadForm.reset();
+    updateFileSummary();
+    setUploadStatus("자료를 등록하고 발행했습니다.");
+  });
+
+  window.addEventListener("faith-auth-changed", refreshAdminAccess);
+  refreshAdminAccess();
 })();
 
 const challengeList = $("#challengeList");

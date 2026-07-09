@@ -1682,6 +1682,17 @@ label { font-weight: 900; }
   margin: 0;
   color: var(--gray);
 }
+.thread-gallery-card img {
+  width: 100%;
+  height: auto;
+  max-height: 420px;
+  object-fit: contain;
+  border-radius: 14px;
+  background: rgba(255,253,248,.72);
+}
+.thread-gallery-card audio {
+  width: 100%;
+}
 .admin-page {
   min-height: 100vh;
   padding-top: clamp(28px, 5vw, 64px);
@@ -1708,6 +1719,22 @@ label { font-weight: 900; }
 .admin-resource-form {
   display: grid;
   gap: 12px;
+}
+.auth-action-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.text-button {
+  width: fit-content;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--navy);
+  font: inherit;
+  font-weight: 900;
+  text-decoration: underline;
+  cursor: pointer;
 }
 .signup-form label,
 .admin-gate-form label,
@@ -1757,6 +1784,10 @@ label { font-weight: 900; }
 .dropzone-panel span {
   color: var(--gold-deep);
   font-weight: 900;
+}
+.dropzone-panel.is-dragging {
+  border-color: var(--navy);
+  background: rgba(207,243,209,.42);
 }
 @media (max-width: 860px) {
   .category-archive-layout,
