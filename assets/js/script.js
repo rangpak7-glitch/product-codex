@@ -228,6 +228,42 @@ if (prayerForm) {
   });
 }
 
+function normalizeSiteNav() {
+  const nav = document.getElementById("site-nav");
+  if (!nav) return;
+  const current = (window.location.pathname.split("/").pop() || "index.html").replace(/\.html$/, "");
+  const paths = {
+    light: '<path d="M9 18h6M10 22h4M8 14a6 6 0 1 1 8 0c-.8.7-1.2 1.5-1.3 2.5H9.3C9.2 15.5 8.8 14.7 8 14z"></path>',
+    bible: '<path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 0-3 3z"></path><path d="M8 7h7M8 11h6"></path>',
+    moon: '<path d="M20 15.5A7.5 7.5 0 0 1 8.5 4 8 8 0 1 0 20 15.5z"></path>',
+    sun: '<circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4 12H2M22 12h-2M5 5l1.5 1.5M17.5 17.5 19 19M19 5l-1.5 1.5M6.5 17.5 5 19"></path>',
+    book: '<path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v17H6.5A2.5 2.5 0 0 0 4 22z"></path><path d="M4 5.5v16M8 7h8M8 11h6"></path>',
+    play: '<circle cx="12" cy="12" r="9"></circle><path d="m10 8 6 4-6 4z"></path>',
+    card: '<rect x="5" y="4" width="14" height="16" rx="2"></rect><path d="M8 8h8M8 12h5M9 16h6"></path>',
+    heart: '<path d="M20.8 5.6a5 5 0 0 0-7.1 0L12 7.3l-1.7-1.7a5 5 0 1 0-7.1 7.1L12 21l8.8-8.3a5 5 0 0 0 0-7.1z"></path>',
+    mail: '<rect x="3" y="5" width="18" height="14" rx="2"></rect><path d="m4 7 8 6 8-6"></path>'
+  };
+  const navIcon = (name) => `<svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">${paths[name] || paths.light}</svg>`;
+  const items = [
+    { href: "about.html", label: "\uAE30\uB3C4\uC758\uC0D8\uBB3C \uC18C\uAC1C", iconName: "light", keys: ["about"] },
+    { href: "prayers.html", label: "\uB9D0\uC500 \uBD99\uB4E4\uAE30", iconName: "bible", keys: ["prayers"] },
+    { href: "night-prayer.html", label: "\uC800\uB141\uAE30\uB3C4", iconName: "moon", keys: ["night-prayer"] },
+    { href: "morning-prayer.html", label: "\uC544\uCE68\uAE30\uB3C4", iconName: "sun", keys: ["morning-prayer"] },
+    { href: "meditation.html", label: "\uD050\uD2F0(QT)", iconName: "book", keys: ["meditation"] },
+    { href: "videos.html", label: "\uAE30\uB3C4(\uC720\uD29C\uBE0C)", iconName: "play", keys: ["videos"] },
+    { href: "prayer-cards.html", label: "\uC2E0\uC559\uC790\uB8CC", iconName: "card", keys: ["prayer-cards", "prayer-challenge", "premium-pdf"] },
+    { href: "prayer-request.html", label: "\uAE30\uB3C4\uC81C\uBAA9", iconName: "heart", keys: ["prayer-request"] },
+    { href: "contact.html", label: "\uBB38\uC758\uD558\uAE30", iconName: "mail", keys: ["contact"] }
+  ];
+  nav.innerHTML = items.map((item) => {
+    const active = item.keys.includes(current);
+    const className = active ? ' class="active"' : "";
+    const currentAttr = active ? ' aria-current="page"' : "";
+    return `<a${className}${currentAttr} href="${item.href}">${navIcon(item.iconName)}${item.label}</a>`;
+  }).join("");
+}
+
+normalizeSiteNav();
 (() => {
   const dailyWords = Array.isArray(window.DAILY_WORDS) ? window.DAILY_WORDS : [];
   const categories = Array.isArray(window.PRAYER_CATEGORIES) ? window.PRAYER_CATEGORIES : [];
@@ -373,23 +409,27 @@ if (prayerForm) {
   }
 
   function decorateNavIcons() {
-    document.querySelectorAll(".site-nav a").forEach((link) => {
-      if (link.querySelector("svg")) return;
-      const href = link.getAttribute("href") || "";
-      const label = link.textContent.trim();
-      let iconName = "light";
-      if (href.includes("prayers") || href.includes("meditation")) iconName = "bible";
-      if (label.includes("기도(유튜브)")) iconName = "play";
-      if (href.includes("morning")) iconName = "sun";
-      if (href.includes("night")) iconName = "moon";
-      if (href.includes("videos")) iconName = "play";
-      if (href.includes("prayer-cards") || href.includes("challenge") || href.includes("premium")) iconName = "card";
-      if (href.includes("prayer-request")) iconName = "heart";
-      if (href.includes("contact")) iconName = "mail";
-      link.insertAdjacentHTML("afterbegin", icon(iconName, "nav-icon"));
-    });
+    const nav = document.getElementById("site-nav");
+    if (!nav) return;
+    const current = (window.location.pathname.split("/").pop() || "index.html").replace(/\.html$/, "");
+    const items = [
+      { href: "about.html", label: "\uAE30\uB3C4\uC758\uC0D8\uBB3C \uC18C\uAC1C", iconName: "light", keys: ["about"] },
+      { href: "prayers.html", label: "\uB9D0\uC500 \uBD99\uB4E4\uAE30", iconName: "bible", keys: ["prayers"] },
+      { href: "night-prayer.html", label: "\uC800\uB141\uAE30\uB3C4", iconName: "moon", keys: ["night-prayer"] },
+      { href: "morning-prayer.html", label: "\uC544\uCE68\uAE30\uB3C4", iconName: "sun", keys: ["morning-prayer"] },
+      { href: "meditation.html", label: "\uD050\uD2F0(QT)", iconName: "book", keys: ["meditation"] },
+      { href: "videos.html", label: "\uAE30\uB3C4(\uC720\uD29C\uBE0C)", iconName: "play", keys: ["videos"] },
+      { href: "prayer-cards.html", label: "\uC2E0\uC559\uC790\uB8CC", iconName: "card", keys: ["prayer-cards", "prayer-challenge", "premium-pdf"] },
+      { href: "prayer-request.html", label: "\uAE30\uB3C4\uC81C\uBAA9", iconName: "heart", keys: ["prayer-request"] },
+      { href: "contact.html", label: "\uBB38\uC758\uD558\uAE30", iconName: "mail", keys: ["contact"] }
+    ];
+    nav.innerHTML = items.map((item) => {
+      const active = item.keys.includes(current);
+      const className = active ? ' class="active"' : "";
+      const currentAttr = active ? ' aria-current="page"' : "";
+      return `<a${className}${currentAttr} href="${item.href}">${icon(item.iconName, "nav-icon")}${item.label}</a>`;
+    }).join("");
   }
-
   let homeFilter = "all";
   function updateHomeFilter(next = homeFilter) {
     homeFilter = next;
@@ -405,12 +445,12 @@ if (prayerForm) {
     renderArchivePage(archiveInput?.value || "", archiveFilter);
   }
 
+  decorateNavIcons();
   renderToday();
   renderCategoryPreview();
   renderVisualHub();
   updateHomeFilter("all");
   renderHomeSearch();
-  decorateNavIcons();
 
   const homeForm = document.getElementById("homeDailySearchForm");
   const homeInput = document.getElementById("homeDailySearch");
