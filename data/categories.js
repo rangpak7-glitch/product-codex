@@ -46,8 +46,8 @@ window.PRAYER_CATEGORIES = [
   },
   {
     id: "resource",
-    label: "신앙자료",
-    description: "말씀·기도 카드와 30일 기도 여정을 살펴볼 수 있습니다.",
+    label: "신앙과묵상",
+    description: "주제별 기도문PDF, 기도 오디오북, 말씀·기도카드 자료를 살펴볼 수 있습니다.",
     icon: "card",
     imageTheme: "paper-card",
     pageUrl: "prayer-cards.html",
@@ -65,7 +65,7 @@ window.PRAYER_CATEGORIES = [
   {
     id: "contact",
     label: "문의하기",
-    description: "콘텐츠와 신앙자료에 대한 문의를 남길 수 있습니다.",
+    description: "콘텐츠와 신앙과묵상 자료에 대한 문의를 남길 수 있습니다.",
     icon: "mail",
     imageTheme: "letter-desk",
     pageUrl: "contact.html",
