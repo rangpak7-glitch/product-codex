@@ -5,7 +5,7 @@ window.VIDEOS = [
     title: "잠들기 전 마음을 주님께 맡기는 기도",
     theme: "저녁기도",
     scripture: "시편 4편 8절",
-    description: "하루 끝에 남은 걱정과 긴장을 내려놓고 평안으로 들어가도록 돕는 영상묵상입니다.",
+    description: "하루 끝에 남은 걱정과 긴장을 내려놓고 평안으로 들어가도록 돕는 기도(유튜브)입니다.",
     tags: ["잠", "평안", "저녁기도"],
     publishedDate: "2026-07-01"
   },
@@ -23,7 +23,7 @@ window.VIDEOS = [
     id: "wilderness-waiting-01",
     videoId: "hWJsflNXBFo",
     title: "기다림의 시간에 붙드는 말씀",
-    theme: "신앙묵상",
+    theme: "큐티(QT)",
     scripture: "전도서 3장 11절",
     description: "조급한 마음을 내려놓고 하나님의 때를 신뢰하도록 돕는 말씀 묵상입니다.",
     tags: ["기다림", "믿음", "분별"],
@@ -45,7 +45,7 @@ window.VIDEOS = [
     title: "불안할 때 붙드는 하나님의 약속",
     theme: "말씀 붙들기",
     scripture: "이사야 41장 10절",
-    description: "두려움이 커지는 날에도 주님의 동행과 약속을 다시 붙드는 영상묵상입니다.",
+    description: "두려움이 커지는 날에도 주님의 동행과 약속을 다시 붙드는 기도(유튜브)입니다.",
     tags: ["불안", "약속", "동행"],
     publishedDate: "2026-07-05"
   },

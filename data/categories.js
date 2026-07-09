@@ -28,7 +28,7 @@ window.PRAYER_CATEGORIES = [
   },
   {
     id: "editorial",
-    label: "신앙묵상",
+    label: "큐티(QT)",
     description: "성경 이야기와 오늘의 삶을 연결하는 사설형 묵상입니다.",
     icon: "book",
     imageTheme: "editorial-paper",
@@ -37,7 +37,7 @@ window.PRAYER_CATEGORIES = [
   },
   {
     id: "video",
-    label: "영상묵상",
+    label: "기도(유튜브)",
     description: "기도의샘물 유튜브 채널의 말씀과 기도 영상을 연결합니다.",
     icon: "play",
     imageTheme: "soft-screen",
@@ -46,7 +46,7 @@ window.PRAYER_CATEGORIES = [
   },
   {
     id: "resource",
-    label: "신앙과묵상",
+    label: "신앙자료",
     description: "주제별 기도문PDF, 기도 오디오북, 말씀·기도카드 자료를 살펴볼 수 있습니다.",
     icon: "card",
     imageTheme: "paper-card",
@@ -65,7 +65,7 @@ window.PRAYER_CATEGORIES = [
   {
     id: "contact",
     label: "문의하기",
-    description: "콘텐츠와 신앙과묵상 자료에 대한 문의를 남길 수 있습니다.",
+    description: "콘텐츠와 신앙자료에 대한 문의를 남길 수 있습니다.",
     icon: "mail",
     imageTheme: "letter-desk",
     pageUrl: "contact.html",

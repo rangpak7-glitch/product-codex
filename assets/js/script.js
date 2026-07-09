@@ -236,7 +236,7 @@ if (prayerForm) {
   const categoryOrder = ["word", "morning", "night", "video", "resource"];
   const legacyCategoryMap = {
     night: { id: "evening", label: "저녁기도", pageUrl: "night-prayer.html", icon: "moon", description: "하루를 내려놓고 잠들기 전 평안을 구하는 기도입니다.", colorKey: "evening" },
-    video: { id: "video", label: "영상묵상", pageUrl: "videos.html", icon: "play", description: "기도의샘물 유튜브 채널의 말씀과 기도 영상입니다.", colorKey: "video" }
+    video: { id: "video", label: "기도(유튜브)", pageUrl: "videos.html", icon: "play", description: "기도의샘물 유튜브 채널의 말씀과 기도 영상입니다.", colorKey: "video" }
   };
   const iconPaths = {
     bible: '<path d="M5 4.5A2.5 2.5 0 0 1 7.5 2H19v18H7.5A2.5 2.5 0 0 0 5 22z"></path><path d="M5 4.5v17M9 7h6M9 11h5"></path>',
@@ -379,7 +379,7 @@ if (prayerForm) {
       const label = link.textContent.trim();
       let iconName = "light";
       if (href.includes("prayers") || href.includes("meditation")) iconName = "bible";
-      if (label.includes("영상묵상")) iconName = "play";
+      if (label.includes("기도(유튜브)")) iconName = "play";
       if (href.includes("morning")) iconName = "sun";
       if (href.includes("night")) iconName = "moon";
       if (href.includes("videos")) iconName = "play";
@@ -610,7 +610,7 @@ if (prayerForm) {
     if (!root || !filters) return;
     const search = document.getElementById("archiveSearch");
     const categories = ["all", "word", "evening", "morning", "editorial"];
-    const labels = { all: "전체", word: "말씀 붙들기", evening: "저녁기도", morning: "아침기도", editorial: "신앙묵상" };
+    const labels = { all: "전체", word: "말씀 붙들기", evening: "저녁기도", morning: "아침기도", editorial: "큐티(QT)" };
     let active = "all";
 
     function queryItems() {
