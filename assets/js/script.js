@@ -167,10 +167,11 @@ function videoCard(v) {
   </article>`;
 }
 
+const videoData = window.VIDEOS || (typeof VIDEOS !== "undefined" ? VIDEOS : []);
 const videoList = $("#videoList");
-if (videoList) videoList.innerHTML = VIDEOS.map(videoCard).join("");
+if (videoList) videoList.innerHTML = videoData.map(videoCard).join("");
 const homeVideos = $("#homeVideos");
-if (homeVideos) homeVideos.innerHTML = VIDEOS.slice(0, 3).map(videoCard).join("");
+if (homeVideos) homeVideos.innerHTML = videoData.slice(0, 3).map(videoCard).join("");
 
 function pdfProductCard(product) {
   const purchaseHref = product.purchaseUrl || "contact.html";
@@ -233,6 +234,10 @@ if (prayerForm) {
   if (!dailyWords.length) return;
 
   const categoryOrder = ["word", "morning", "night", "video", "resource"];
+  const legacyCategoryMap = {
+    night: { id: "evening", label: "저녁기도", pageUrl: "night-prayer.html", icon: "moon", description: "하루를 내려놓고 잠들기 전 평안을 구하는 기도입니다.", colorKey: "evening" },
+    video: { id: "video", label: "영상묵상", pageUrl: "videos.html", icon: "play", description: "기도의샘물 유튜브 채널의 말씀과 기도 영상입니다.", colorKey: "video" }
+  };
   const iconPaths = {
     bible: '<path d="M5 4.5A2.5 2.5 0 0 1 7.5 2H19v18H7.5A2.5 2.5 0 0 0 5 22z"></path><path d="M5 4.5v17M9 7h6M9 11h5"></path>',
     sun: '<path d="M12 4v3M12 17v3M4 12h3M17 12h3"></path><circle cx="12" cy="12" r="4"></circle><path d="m6.5 6.5 2 2M15.5 15.5l2 2M17.5 6.5l-2 2M8.5 15.5l-2 2"></path>',
@@ -272,7 +277,7 @@ if (prayerForm) {
   }
 
   function categoryMeta(id) {
-    return categories.find((item) => item.id === id) || { id, label: id, pageUrl: "#", icon: "light", description: "" };
+    return categories.find((item) => item.id === id) || legacyCategoryMap[id] || { id, label: id, pageUrl: "#", icon: "light", description: "" };
   }
 
   function tagsHtml(tags = []) {
@@ -417,4 +422,228 @@ if (prayerForm) {
     document.getElementById("archiveSearchForm")?.addEventListener("submit", (event) => { event.preventDefault(); renderArchivePage(archiveInput?.value || "", archiveFilter); });
     archiveInput?.addEventListener("input", () => renderArchivePage(archiveInput.value, archiveFilter));
   }
+})();
+
+(() => {
+  const dailyContents = Array.isArray(window.DAILY_CONTENTS) ? window.DAILY_CONTENTS : [];
+  if (!dailyContents.length) return;
+
+  const iconPaths = {
+    bible: '<path d="M5 4.5A2.5 2.5 0 0 1 7.5 2H19v18H7.5A2.5 2.5 0 0 0 5 22z"></path><path d="M5 4.5v17M9 7h6M9 11h5"></path>',
+    moon: '<path d="M20 15.5A7.5 7.5 0 0 1 8.5 4 8 8 0 1 0 20 15.5z"></path>',
+    sun: '<path d="M12 4v3M12 17v3M4 12h3M17 12h3"></path><circle cx="12" cy="12" r="4"></circle><path d="m6.5 6.5 2 2M15.5 15.5l2 2M17.5 6.5l-2 2M8.5 15.5l-2 2"></path>',
+    book: '<path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v17H6.5A2.5 2.5 0 0 0 4 22z"></path><path d="M4 5.5v16M8 7h8M8 11h6"></path>',
+    calendar: '<path d="M7 3v3M17 3v3M4 9h16M5 5h14a1 1 0 0 1 1 1v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a1 1 0 0 1 1-1z"></path>',
+    tag: '<path d="M20 13 13 20 4 11V4h7l9 9z"></path><circle cx="8.5" cy="8.5" r="1.5"></circle>',
+    archive: '<path d="M4 4h16v5H4z"></path><path d="M6 9v11h12V9M9 13h6"></path>'
+  };
+
+  function svgIcon(name, className = "icon") {
+    return `<svg class="${className}" viewBox="0 0 24 24" aria-hidden="true">${iconPaths[name] || iconPaths.book}</svg>`;
+  }
+
+  function safeText(value = "") {
+    return typeof escapeHtml === "function" ? escapeHtml(value) : String(value);
+  }
+
+  function seoulParts(date = new Date()) {
+    const parts = new Intl.DateTimeFormat("en-US", {
+      timeZone: "Asia/Seoul",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      hour12: false
+    }).formatToParts(date).reduce((acc, part) => {
+      acc[part.type] = part.value;
+      return acc;
+    }, {});
+    return {
+      year: Number(parts.year),
+      month: Number(parts.month),
+      day: Number(parts.day),
+      hour: Number(parts.hour)
+    };
+  }
+
+  function formatDate(date) {
+    const year = date.getUTCFullYear();
+    const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+    const day = String(date.getUTCDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  }
+
+  function displayDateSeoul(date = new Date()) {
+    const parts = seoulParts(date);
+    const base = Date.UTC(parts.year, parts.month - 1, parts.day);
+    return formatDate(new Date(parts.hour < 7 ? base - 86400000 : base));
+  }
+
+  function sortDesc(items) {
+    return [...items].sort((a, b) => String(b.date).localeCompare(String(a.date)));
+  }
+
+  function contentsFor(category) {
+    return sortDesc(dailyContents.filter((item) => item.category === category));
+  }
+
+  function pickContent(category, date = displayDateSeoul()) {
+    const list = contentsFor(category);
+    return list.find((item) => item.date === date) || list.find((item) => item.date < date) || list[0];
+  }
+
+  function tagRow(tags = []) {
+    if (!tags.length) return "";
+    return `<div class="tag-row">${tags.map((tag) => `<span>${svgIcon("tag", "icon-sm")}${safeText(tag)}</span>`).join("")}</div>`;
+  }
+
+  function dailyCard(item) {
+    if (!item) return "";
+    const isEditorial = item.category === "editorial";
+    return `<article class="category-daily-card theme-${safeText(item.category)}">
+      <div class="category-daily-head">
+        <span class="category-icon">${svgIcon(item.icon || "book")}</span>
+        <div>
+          <p class="eyebrow">${safeText(item.categoryLabel)} · ${safeText(item.date)}</p>
+          <h2>${safeText(item.title)}</h2>
+        </div>
+      </div>
+      <blockquote><strong>${safeText(item.scriptureRef)}</strong><br>${safeText(item.scriptureText)}</blockquote>
+      <p class="daily-summary">${safeText(item.summary)}</p>
+      <div class="${isEditorial ? "editorial-body" : "daily-body"}">${safeText(item.body)}</div>
+      ${isEditorial ? `<div class="editorial-note"><strong>오늘의 질문</strong><p>${safeText(item.editorialQuestion)}</p></div>
+      <div class="editorial-note"><strong>신앙적 시사점</strong><p>${safeText(item.editorialInsight)}</p></div>` : ""}
+      <div class="daily-application"><strong>${isEditorial ? "삶의 적용" : "오늘 실천할 한 가지"}</strong><p>${safeText(item.application)}</p></div>
+      ${item.confession ? `<div class="daily-confession">${safeText(item.confession)}</div>` : ""}
+      ${item.prayer ? `<div class="daily-prayer"><strong>${isEditorial ? "마무리 기도" : "오늘의 기도"}</strong><p>${safeText(item.prayer)}</p></div>` : ""}
+      ${tagRow(item.tags)}
+    </article>`;
+  }
+
+  function compactCard(item) {
+    return `<article class="archive-word-card">
+      <div class="archive-card-meta"><span>${safeText(item.date)}</span><span>${safeText(item.categoryLabel)}</span></div>
+      <h3>${safeText(item.title)}</h3>
+      <p class="scripture-ref">${safeText(item.scriptureRef)}</p>
+      <p>${safeText(item.summary)}</p>
+      ${tagRow(item.tags)}
+      <a class="text-link" href="${safeText(item.detailUrl)}">자세히 보기</a>
+    </article>`;
+  }
+
+  function renderRecent(category, count = 7) {
+    const root = document.getElementById("recentCategoryContents");
+    if (!root) return;
+    root.innerHTML = contentsFor(category).slice(0, count).map(compactCard).join("");
+  }
+
+  function renderCalendar(category, selectedDate = displayDateSeoul()) {
+    const root = document.getElementById("categoryCalendar");
+    if (!root) return;
+    const dates = new Set(contentsFor(category).map((item) => item.date));
+    const selectedParts = selectedDate.split("-").map(Number);
+    let year = selectedParts[0];
+    let month = selectedParts[1];
+
+    function draw() {
+      const first = new Date(Date.UTC(year, month - 1, 1));
+      const lastDate = new Date(Date.UTC(year, month, 0)).getUTCDate();
+      const startDay = first.getUTCDay();
+      const cells = [];
+      for (let i = 0; i < startDay; i += 1) cells.push('<span class="calendar-blank"></span>');
+      for (let day = 1; day <= lastDate; day += 1) {
+        const date = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+        const active = dates.has(date);
+        cells.push(`<button type="button" class="calendar-day${date === selectedDate ? " selected" : ""}" ${active ? "" : "disabled"} data-date="${date}" aria-label="${date} 콘텐츠 보기">${day}</button>`);
+      }
+      root.innerHTML = `<div class="calendar-toolbar">
+        <button type="button" class="filter-chip" data-month-prev aria-label="이전 달 보기">‹</button>
+        <strong>${year}년 ${month}월</strong>
+        <button type="button" class="filter-chip" data-month-next aria-label="다음 달 보기">›</button>
+      </div>
+      <div class="calendar-weekdays" aria-hidden="true"><span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span></div>
+      <div class="calendar-grid">${cells.join("")}</div>
+      <div class="calendar-actions">
+        <button type="button" class="button secondary" data-back-today>${svgIcon("calendar", "icon-sm")} 오늘 콘텐츠로 돌아가기</button>
+        <button type="button" class="button secondary" data-recent-count="7">최근 7일</button>
+        <button type="button" class="button secondary" data-recent-count="30">최근 30일</button>
+      </div>`;
+      root.querySelector("[data-month-prev]")?.addEventListener("click", () => {
+        month -= 1;
+        if (month < 1) {
+          month = 12;
+          year -= 1;
+        }
+        draw();
+      });
+      root.querySelector("[data-month-next]")?.addEventListener("click", () => {
+        month += 1;
+        if (month > 12) {
+          month = 1;
+          year += 1;
+        }
+        draw();
+      });
+      root.querySelector("[data-back-today]")?.addEventListener("click", () => renderCategory(category, displayDateSeoul()));
+      root.querySelectorAll("[data-recent-count]").forEach((button) => {
+        button.addEventListener("click", () => renderRecent(category, Number(button.dataset.recentCount || 7)));
+      });
+      root.querySelectorAll(".calendar-day:not(:disabled)").forEach((button) => {
+        button.addEventListener("click", () => renderCategory(category, button.dataset.date || displayDateSeoul()));
+      });
+    }
+    draw();
+  }
+
+  function renderCategory(category, date = displayDateSeoul()) {
+    const root = document.getElementById("dailyContentCard");
+    if (!root) return;
+    const item = pickContent(category, date);
+    root.innerHTML = dailyCard(item);
+    renderCalendar(category, item?.date || date);
+    renderRecent(category, 7);
+  }
+
+  function renderArchiveFromDailyContents() {
+    const root = document.getElementById("archiveResults");
+    const filters = document.getElementById("archiveFilters");
+    if (!root || !filters) return;
+    const search = document.getElementById("archiveSearch");
+    const categories = ["all", "word", "evening", "morning", "editorial"];
+    const labels = { all: "전체", word: "말씀 붙들기", evening: "저녁기도", morning: "아침기도", editorial: "신앙묵상" };
+    let active = "all";
+
+    function queryItems() {
+      const q = (search?.value || "").trim().toLowerCase();
+      const items = sortDesc(dailyContents).filter((item) => {
+        if (active !== "all" && item.category !== active) return false;
+        if (!q) return true;
+        return [item.title, item.scriptureRef, item.scriptureText, item.summary, item.body, ...(item.tags || [])].join(" ").toLowerCase().includes(q);
+      });
+      root.innerHTML = items.length ? items.map(compactCard).join("") : `<div class="soft-empty-state"><h3>가까운 주제를 다시 찾아보세요</h3><p>입력한 단어와 꼭 맞는 콘텐츠는 없지만, 카테고리 필터를 바꾸면 지난 말씀과 기도를 다시 볼 수 있습니다.</p></div>`;
+    }
+
+    function drawFilters() {
+      filters.innerHTML = categories.map((category) => `<button type="button" class="filter-chip${category === active ? " active" : ""}" data-category="${category}">${labels[category]}</button>`).join("");
+      filters.querySelectorAll("[data-category]").forEach((button) => {
+        button.addEventListener("click", () => {
+          active = button.dataset.category || "all";
+          drawFilters();
+          queryItems();
+        });
+      });
+    }
+
+    drawFilters();
+    queryItems();
+    search?.addEventListener("input", queryItems);
+    document.getElementById("archiveSearchForm")?.addEventListener("submit", (event) => {
+      event.preventDefault();
+      queryItems();
+    });
+  }
+
+  const categoryRoot = document.querySelector("[data-daily-category]");
+  if (categoryRoot) renderCategory(categoryRoot.dataset.dailyCategory || "word");
+  renderArchiveFromDailyContents();
 })();

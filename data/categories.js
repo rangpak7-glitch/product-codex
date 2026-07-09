@@ -2,64 +2,73 @@ window.PRAYER_CATEGORIES = [
   {
     id: "word",
     label: "말씀 붙들기",
-    description: "오늘 마음에 붙들 짧은 말씀과 묵상을 읽습니다.",
+    description: "오늘 하루 마음에 붙들 한 구절과 짧은 고백을 전합니다.",
     icon: "bible",
     imageTheme: "open-bible",
-    pageUrl: "meditation.html",
-    colorKey: "gold"
+    pageUrl: "prayers.html",
+    colorKey: "word"
+  },
+  {
+    id: "evening",
+    label: "저녁기도",
+    description: "하루를 내려놓고 잠들기 전 평안으로 들어가는 기도입니다.",
+    icon: "moon",
+    imageTheme: "night-window",
+    pageUrl: "night-prayer.html",
+    colorKey: "evening"
   },
   {
     id: "morning",
     label: "아침기도",
-    description: "새 하루의 말과 생각을 주님께 맡기는 기도입니다.",
+    description: "말과 생각, 일정과 만남을 주님께 맡기며 하루를 시작합니다.",
     icon: "sun",
     imageTheme: "morning-light",
     pageUrl: "morning-prayer.html",
-    colorKey: "sage"
+    colorKey: "morning"
   },
   {
-    id: "night",
-    label: "저녁기도",
-    description: "잠들기 전 마음을 정돈하고 평안을 구합니다.",
-    icon: "moon",
-    imageTheme: "night-window",
-    pageUrl: "night-prayer.html",
-    colorKey: "navy"
+    id: "editorial",
+    label: "신앙묵상",
+    description: "성경 이야기와 오늘의 삶을 연결하는 사설형 묵상입니다.",
+    icon: "book",
+    imageTheme: "editorial-paper",
+    pageUrl: "meditation.html",
+    colorKey: "editorial"
   },
   {
     id: "video",
     label: "영상묵상",
-    description: "유튜브 말씀·기도 영상으로 조용히 묵상합니다.",
+    description: "기도의샘물 유튜브 채널의 말씀과 기도 영상을 연결합니다.",
     icon: "play",
     imageTheme: "soft-screen",
     pageUrl: "videos.html",
-    colorKey: "blue"
+    colorKey: "video"
   },
   {
     id: "resource",
     label: "신앙자료",
-    description: "말씀 카드, 30일 기도 여정, PDF 자료로 이어집니다.",
+    description: "말씀·기도 카드와 30일 기도 여정을 살펴볼 수 있습니다.",
     icon: "card",
     imageTheme: "paper-card",
     pageUrl: "prayer-cards.html",
-    colorKey: "gold"
+    colorKey: "resource"
   },
   {
     id: "request",
     label: "기도제목",
-    description: "마음에 남은 기도 제목을 조용히 남깁니다.",
+    description: "함께 기도하고 싶은 제목을 조용히 남길 수 있습니다.",
     icon: "heart",
     imageTheme: "prayer-note",
     pageUrl: "prayer-request.html",
-    colorKey: "sage"
+    colorKey: "request"
   },
   {
     id: "contact",
     label: "문의하기",
-    description: "자료, 콘텐츠, 협업 관련 문의를 보냅니다.",
+    description: "콘텐츠와 신앙자료에 대한 문의를 남길 수 있습니다.",
     icon: "mail",
     imageTheme: "letter-desk",
     pageUrl: "contact.html",
-    colorKey: "navy"
+    colorKey: "contact"
   }
 ];

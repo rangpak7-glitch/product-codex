@@ -1,62 +1,76 @@
-const VIDEOS = [
+window.VIDEOS = [
   {
     id: "night-worry-01",
     videoId: "GTr3L4h-Rzg",
-    title: "염려가 내려놓아지지 않는 밤",
-    theme: "수면 치유기도",
-    scripture: "베드로전서 5장 7절",
-    description: "내려놓고 싶은데 내려놓아지지 않는 염려를 주님의 능하신 손 아래 맡기는 밤기도입니다."
+    title: "잠들기 전 마음을 주님께 맡기는 기도",
+    theme: "저녁기도",
+    scripture: "시편 4편 8절",
+    description: "하루 끝에 남은 걱정과 긴장을 내려놓고 평안으로 들어가도록 돕는 영상묵상입니다.",
+    tags: ["잠", "평안", "저녁기도"],
+    publishedDate: "2026-07-01"
   },
   {
     id: "father-rest-01",
     videoId: "WgntGuOHd_I",
-    title: "아버지 품의 안식",
-    theme: "은혜와 쉼",
-    scripture: "갈라디아서 4장 6절",
-    description: "종교적 의무감으로 지친 마음이 아바 아버지의 은혜 안에서 쉬도록 돕는 말씀과 기도입니다."
+    title: "지친 마음을 위로하는 말씀과 기도",
+    theme: "위로묵상",
+    scripture: "마태복음 11장 28절",
+    description: "수고하고 무거운 마음을 주님께 가져가며 조용히 회복을 구하는 묵상 영상입니다.",
+    tags: ["위로", "쉼", "회복"],
+    publishedDate: "2026-07-02"
   },
   {
     id: "wilderness-waiting-01",
     videoId: "hWJsflNXBFo",
-    title: "기다림 속에서 나를 빚으시는 하나님",
-    theme: "광야와 기다림",
-    scripture: "이사야 43장",
-    description: "끝나지 않는 광야 같은 현실 속에서 조급함을 내려놓고 하나님의 시간표를 신뢰하는 묵상입니다."
+    title: "기다림의 시간에 붙드는 말씀",
+    theme: "신앙묵상",
+    scripture: "전도서 3장 11절",
+    description: "조급한 마음을 내려놓고 하나님의 때를 신뢰하도록 돕는 말씀 묵상입니다.",
+    tags: ["기다림", "믿음", "분별"],
+    publishedDate: "2026-07-03"
   },
   {
     id: "esther-decision-01",
     videoId: "MwJp82Fqkno",
-    title: "중요한 결단 앞에 잠 못 드는 밤",
-    theme: "결단과 위탁",
-    scripture: "에스더 4장 16절",
-    description: "중요한 선택 앞에서 모든 시나리오를 내려놓고 하나님의 주권 안으로 들어가는 말씀묵상입니다."
+    title: "중요한 선택 앞에서 드리는 기도",
+    theme: "아침기도",
+    scripture: "잠언 3장 6절",
+    description: "하루의 선택과 만남을 주님께 맡기며 지혜를 구하는 기도 영상입니다.",
+    tags: ["선택", "지혜", "아침기도"],
+    publishedDate: "2026-07-04"
   },
   {
     id: "abraham-waiting-01",
     videoId: "zVO-9RfgQio",
-    title: "아브라함의 25년",
-    theme: "막막함과 약속",
-    scripture: "창세기 15장",
-    description: "사방이 막힌 것 같은 시간에도 하나님이 기다림 속에서 우리를 빚고 계심을 묵상합니다."
+    title: "불안할 때 붙드는 하나님의 약속",
+    theme: "말씀 붙들기",
+    scripture: "이사야 41장 10절",
+    description: "두려움이 커지는 날에도 주님의 동행과 약속을 다시 붙드는 영상묵상입니다.",
+    tags: ["불안", "약속", "동행"],
+    publishedDate: "2026-07-05"
   },
   {
     id: "psalm139-rest-01",
     videoId: "TTSAyG4pTAM",
-    title: "인생 후반전, 무거운 생각을 내려놓는 밤기도",
-    theme: "시편 139편 안식기도",
-    scripture: "시편 139편",
-    description: "무거운 생각을 잠시 내려놓고 하나님이 여전히 나를 아시고 붙드신다는 평안을 누리는 밤기도입니다."
+    title: "나를 아시는 하나님 안에서 쉬는 기도",
+    theme: "회복기도",
+    scripture: "시편 139편 1절",
+    description: "나의 마음을 아시는 하나님 앞에서 숨지 않고 쉬도록 돕는 기도 영상입니다.",
+    tags: ["회복", "쉼", "하나님"],
+    publishedDate: "2026-07-06"
   },
   {
     id: "healing-night-01",
     videoId: "PwP1VXO7AxU",
-    title: "몸이 아프고 노화가 두려울 때",
-    theme: "침상 치유 밤기도",
-    scripture: "이사야 53장",
-    description: "육신의 통증과 노화의 두려움 앞에서 주님의 위로와 회복을 구하는 밤기도와 말씀 낭독입니다."
+    title: "상한 마음을 주님께 맡기는 밤기도",
+    theme: "저녁기도",
+    scripture: "시편 147편 3절",
+    description: "상처와 피로를 주님께 맡기며 잠들기 전 마음을 정돈하는 밤기도입니다.",
+    tags: ["상처", "치유", "밤기도"],
+    publishedDate: "2026-07-07"
   }
 ].map((video) => ({
   ...video,
-  url: `https://www.youtube.com/watch?v=${video.videoId}`,
-  thumbnail: `https://i.ytimg.com/vi/${video.videoId}/hqdefault.jpg`
+  url: video.url || `https://www.youtube.com/watch?v=${video.videoId}`,
+  thumbnail: video.thumbnail || `https://i.ytimg.com/vi/${video.videoId}/hqdefault.jpg`
 }));

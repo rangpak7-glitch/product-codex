@@ -49,7 +49,7 @@
 - `videos.html`: 실제 유튜브 영상 카드와 썸네일을 통해 채널로 이동하는 영상묵상 허브다.
 - `night-prayer.html`: 잠들기 직전 보는 밤기도와 수면 전 영상묵상을 연결한다.
 - `morning-prayer.html`: 하루를 여는 아침기도와 아침 말씀 영상을 연결한다.
-- `meditation.html`: 짧은 성경 말씀 묵상과 관련 영상묵상을 연결한다.
+- `meditation.html`: 성경 이야기와 오늘의 삶을 연결하는 신앙묵상 페이지다. 영상묵상 자체는 `videos.html`에서 담당한다.
 - `prayer-cards.html`: 말씀을 이미지 카드로 저장하거나 나누고 싶은 사용자에게 연결한다.
 - `premium-pdf.html`: 광고 없이 조용히 읽고 반복할 수 있는 PDF 자료로 연결한다.
 - `archive.html`: 날짜별·카테고리별 지난 말씀을 다시 찾는 중심 페이지다.
@@ -79,16 +79,43 @@
 
 데이터 중심 파일:
 
+- `data/dailyContents.js`: 말씀 붙들기, 저녁기도, 아침기도, 신앙묵상의 날짜별 일일 콘텐츠
 - `data/prayers.js`: 상황별 기도문
 - `data/meditations.js`: 성경 말씀 묵상
 - `data/videos.js`: 유튜브 영상묵상
 - `data/prayerCards.js`: 말씀·기도 카드
 - `data/prayerChallenge.js`: 30일 기도 여정
 - `data/pdfProducts.js`: 프리미엄 PDF 상품
-- `data/dailyWords.js`: 날짜별 오늘의 말씀과 기도
+- `data/dailyWords.js`: 기존 홈/아카이브용 날짜별 오늘의 말씀과 기도. 신규 카테고리 페이지는 `data/dailyContents.js`를 우선한다.
 - `data/categories.js`: 카테고리 메타데이터
 
 날짜형 콘텐츠는 한국 시간 `Asia/Seoul` 기준으로 생각한다. 오늘 날짜 콘텐츠가 없으면 가장 최근 콘텐츠를 보여주는 fallback을 유지한다.
+
+### 일일 콘텐츠 카테고리 체계
+
+신규 일일 콘텐츠 카테고리는 다음 4개를 기준으로 한다.
+
+- `word` / 말씀 붙들기 / `prayers.html`: 오늘 하루 마음에 붙들 한 구절, 한 문장 묵상, 고백, 짧은 기도
+- `evening` / 저녁기도 / `night-prayer.html`: 하루 정리, 내려놓음, 잠들기 전 평안, 평안 고백문
+- `morning` / 아침기도 / `morning-prayer.html`: 감사, 지혜, 말과 생각, 오늘 실천할 한 가지
+- `editorial` / 신앙묵상 / `meditation.html`: 일반 기도문이 아니라 성경 이야기와 오늘의 삶을 연결하는 사설형 묵상
+
+표시 기준:
+
+- `Asia/Seoul` 기준 오전 7시 이전에는 전날 콘텐츠를 표시한다.
+- 오전 7시 이후에는 오늘 날짜 콘텐츠를 표시한다.
+- 해당 날짜 콘텐츠가 없으면 같은 카테고리의 가장 최근 콘텐츠를 표시한다.
+- 각 카테고리 페이지에는 오늘 콘텐츠, 달력 아카이브, 최근 7일/30일 보기를 우선 제공한다.
+
+`data/dailyContents.js` 표준 필드:
+
+- `id`, `date`, `category`, `categoryLabel`, `title`
+- `scriptureRef`, `scriptureText`, `summary`, `body`
+- `prayer`, `confession`
+- `editorialQuestion`, `editorialInsight`, `application`
+- `tags`, `imageTheme`, `icon`, `detailUrl`
+
+영상묵상은 일일 콘텐츠 4대 카테고리와 분리해 `videos.html`과 `data/videos.js`에서 관리한다. `data/videos.js`에는 실제 `videoId`, 제목, 주제, 관련 말씀, 설명, 태그, 게시일을 넣고, 썸네일은 YouTube 공식 URL 패턴 `https://i.ytimg.com/vi/{videoId}/hqdefault.jpg`를 사용한다.
 
 ## 작성 톤
 
