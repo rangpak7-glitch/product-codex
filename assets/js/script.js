@@ -285,16 +285,16 @@ if (visualPrayerCards) {
   }
 
   function renderHubPublicPreview(resource) {
+    const sampleAudioUrl = resource.sampleAudioUrl || resource.sample_audio_url;
+    if (resource.type === "audio" && sampleAudioUrl) {
+      return `<div class="public-preview public-audio-preview"><span>공개 미리듣기</span><audio controls preload="metadata" src="${escapeHtml(sampleAudioUrl)}">오디오 미리듣기를 지원하지 않는 브라우저입니다.</audio></div>`;
+    }
     const items = renderHubPreviewItems(resource);
     if (!items.length) return "";
     if (resource.type === "card") {
       return `<div class="public-preview public-card-preview" aria-label="${escapeHtml(resource.title)} 공개 미리보기">
         ${items.slice(0, 2).map((item, index) => `<div><span>미리보기 ${index + 1}</span><strong>${escapeHtml(item)}</strong></div>`).join("")}
       </div>`;
-    }
-    const sampleAudioUrl = resource.sampleAudioUrl || resource.sample_audio_url;
-    if (resource.type === "audio" && sampleAudioUrl) {
-      return `<div class="public-preview public-audio-preview"><span>공개 미리듣기</span><audio controls preload="metadata" src="${escapeHtml(sampleAudioUrl)}">오디오 미리듣기를 지원하지 않는 브라우저입니다.</audio></div>`;
     }
     return `<div class="public-preview"><span>${resource.type === "audio" ? "수록 흐름 미리보기" : "자료 구성 미리보기"}</span><ul>${items.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul></div>`;
   }
@@ -463,14 +463,6 @@ if (visualPrayerCards) {
     if (activeTags.has(tag)) activeTags.delete(tag);
     else activeTags.add(tag);
     renderAll();
-  });
-
-  tagRoot.addEventListener("change", (event) => {
-    const input = event.target.closest("input[type='checkbox']");
-    if (!input) return;
-    input.checked ? activeTags.add(input.value) : activeTags.delete(input.value);
-    renderTags();
-    renderList();
   });
 
   typeRoot?.addEventListener("click", (event) => {
