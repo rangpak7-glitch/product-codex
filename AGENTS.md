@@ -102,8 +102,8 @@
 
 표시 기준:
 
-- `Asia/Seoul` 기준 오전 7시 이전에는 전날 콘텐츠를 표시한다.
-- 오전 7시 이후에는 오늘 날짜 콘텐츠를 표시한다.
+- `Asia/Seoul` 기준 오전 6시 이전에는 전날 콘텐츠를 표시한다.
+- 오전 6시 이후에는 오늘 날짜 콘텐츠를 표시한다.
 - 해당 날짜 콘텐츠가 없으면 같은 카테고리의 가장 최근 콘텐츠를 표시한다.
 - 각 카테고리 페이지에는 오늘 콘텐츠, 달력 아카이브, 최근 7일/30일 보기를 우선 제공한다.
 
@@ -114,6 +114,13 @@
 - `prayer`, `confession`
 - `editorialQuestion`, `editorialInsight`, `application`
 - `tags`, `imageTheme`, `icon`, `detailUrl`
+
+### 일일 콘텐츠 자동화
+
+- GitHub Actions는 한국 시간 오전 6시(UTC `21:00`)에 `data/dailyContents.js`의 4개 일일 카테고리를 생성한다.
+- 자동화는 GitHub Secret `OPENAI_API_KEY`와 GitHub Variable `OPENAI_MODEL`만 사용한다. 키 값은 저장소, 로그, 커밋에 넣지 않는다.
+- 같은 날짜와 카테고리의 기존 항목은 보존하며, 4개 항목이 모두 검증될 때만 파일을 갱신한다.
+- 생성 실패 시 기존 콘텐츠를 유지하고 커밋하지 않는다.
 
 기도(유튜브)은 일일 콘텐츠 4대 카테고리와 분리해 `videos.html`과 `data/videos.js`에서 관리한다. `data/videos.js`에는 실제 `videoId`, 제목, 주제, 관련 말씀, 설명, 태그, 게시일을 넣고, 썸네일은 YouTube 공식 URL 패턴 `https://i.ytimg.com/vi/{videoId}/hqdefault.jpg`를 사용한다.
 
