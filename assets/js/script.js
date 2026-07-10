@@ -210,21 +210,25 @@ if (visualPrayerCards) {
 (() => {
   const fallbackResources = Array.isArray(window.FAITH_RESOURCES) ? window.FAITH_RESOURCES : [];
   const client = window.FaithSupabase;
-  const previewRoot = $("#resourcePreview");
   const listRoot = $("#faithResourceList");
   const tagRoot = $("#faithResourceTags");
   const filterStatus = $("#faithResourceFilterStatus");
+  const typeRoot = $("#faithResourceTypes");
+  const searchInput = $("#faithResourceSearch");
+  const resetButton = $("#faithResourceReset");
   const threadPanel = $("#cardThreadDetail");
-  if (!previewRoot || !listRoot || !tagRoot) return;
+  if (!listRoot || !tagRoot) return;
 
   const typeMeta = {
-    pdf: { eyebrow: "Premium PDF", title: "주제별 기도문 PDF", summary: "상황별 기도문을 게시판처럼 둘러보고 키워드로 골라볼 수 있습니다.", action: "PDF 목록 보기" },
-    audio: { eyebrow: "Prayer Audiobook", title: "기도 오디오북", summary: "업로드한 MP3 자료를 주제별로 정리해 같은 방식으로 찾아 들을 수 있습니다.", action: "오디오 목록 보기" },
-    card: { eyebrow: "Prayer Card Thread", title: "말씀·기도카드 이미지", summary: "말씀달력처럼 컬렉션을 열고 전체 카드 이미지를 이어서 확인합니다.", action: "카드 목록 보기" }
+    all: { title: "전체 자료" },
+    pdf: { title: "기도문 PDF" },
+    audio: { title: "기도 오디오" },
+    card: { title: "말씀·기도카드" }
   };
   let resources = [];
   let viewer = null;
-  let activeType = "pdf";
+  let activeType = "all";
+  let searchQuery = "";
   const activeTags = new Set();
 
   const hasSubscriberAccess = () => Boolean(viewer && (viewer.role === "admin" || viewer.subscription_status === "active"));
@@ -249,104 +253,121 @@ if (visualPrayerCards) {
       .eq("published", true)
       .order("created_at", { ascending: false });
     if (error) return null;
-    return (data || []).map((resource) => ({ ...resource, isUploaded: true }));
+    return (data || []).map((resource) => {
+      const localPreview = fallbackResources.find((item) => item.id === resource.id);
+      return {
+        ...resource,
+        previewItems: localPreview?.previewItems || [],
+        sampleAudioUrl: localPreview?.sampleAudioUrl || localPreview?.sample_audio_url || "",
+        isUploaded: true
+      };
+    });
   }
 
   function resourcesByType() {
-    return resources.filter((resource) => resource.type === activeType);
+    return activeType === "all" ? resources : resources.filter((resource) => resource.type === activeType);
   }
 
   function uploadedThreads() {
     return resourcesByType().filter((resource) => resource.isUploaded);
   }
 
-  function filteredResources() {
-    const list = uploadedThreads();
-    if (!activeTags.size) return list;
-    return list.filter((resource) => [...activeTags].every((tag) => resource.tags?.includes(tag)));
+  function renderAll() {
+    renderResourceHub();
   }
 
-  function renderPreview() {
-    const meta = typeMeta[activeType];
-    const items = resourcesByType().slice(0, 3);
-    previewRoot.innerHTML = `<div class="resource-preview-copy">
-      <p class="eyebrow">${escapeHtml(meta.eyebrow)}</p>
-      <h3>${escapeHtml(meta.title)}</h3>
-      <p>${escapeHtml(meta.summary)}</p>
-      <a class="button secondary" href="#faithResourceList">${escapeHtml(meta.action)}</a>
-    </div>
-    <div class="resource-preview-items">
-      ${items.length ? items.map((item) => `<article>
-        <span>${escapeHtml(item.tags?.[0] || meta.title)}</span>
-        <strong>${escapeHtml(item.title)}</strong>
-        <p>${escapeHtml(item.summary)}</p>
-      </article>`).join("") : `<article><strong>등록된 자료가 없습니다.</strong><p>관리자가 새 자료를 발행하면 이곳에 표시됩니다.</p></article>`}
-    </div>`;
+  function renderHubPreviewItems(resource) {
+    if (Array.isArray(resource.previewItems) && resource.previewItems.length) return resource.previewItems.slice(0, 3);
+    const tags = (resource.tags || []).slice(0, 3);
+    if (resource.type === "audio") return tags.map((tag) => `${tag}을 위한 기도 낭독 흐름`);
+    if (resource.type === "card") return tags.map((tag) => `${tag}을 위한 한 장의 기도`);
+    return tags.map((tag) => `${tag} 앞에서 천천히 읽는 기도와 묵상`);
   }
 
-  function renderTags() {
-    const tags = [...new Set(uploadedThreads().flatMap((resource) => resource.tags || []))];
-    tagRoot.innerHTML = [`<button class="${activeTags.size ? "" : "is-active"}" type="button" data-clear-tags>전체</button>`]
-      .concat(tags.map((tag) => `<label class="${activeTags.has(tag) ? "is-active" : ""}"><input type="checkbox" value="${escapeHtml(tag)}" ${activeTags.has(tag) ? "checked" : ""}>${escapeHtml(tag)}</label>`))
-      .join("");
-    if (filterStatus) {
-      filterStatus.textContent = activeTags.size
-        ? `${[...activeTags].join(", ")} 키워드를 모두 포함한 자료를 보여드립니다.`
-        : `${typeMeta[activeType].title}의 전체 스레드형 자료를 보여드립니다.`;
+  function renderHubPublicPreview(resource) {
+    const items = renderHubPreviewItems(resource);
+    if (!items.length) return "";
+    if (resource.type === "card") {
+      return `<div class="public-preview public-card-preview" aria-label="${escapeHtml(resource.title)} 공개 미리보기">
+        ${items.slice(0, 2).map((item, index) => `<div><span>미리보기 ${index + 1}</span><strong>${escapeHtml(item)}</strong></div>`).join("")}
+      </div>`;
     }
+    const sampleAudioUrl = resource.sampleAudioUrl || resource.sample_audio_url;
+    if (resource.type === "audio" && sampleAudioUrl) {
+      return `<div class="public-preview public-audio-preview"><span>공개 미리듣기</span><audio controls preload="metadata" src="${escapeHtml(sampleAudioUrl)}">오디오 미리듣기를 지원하지 않는 브라우저입니다.</audio></div>`;
+    }
+    return `<div class="public-preview"><span>${resource.type === "audio" ? "수록 흐름 미리보기" : "자료 구성 미리보기"}</span><ul>${items.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul></div>`;
   }
 
-  function lockedPanel(resource) {
-    const fileLabel = resource.type === "audio" ? "MP3 파일" : resource.type === "card" ? "카드 이미지 전체" : "PDF 파일";
+  function renderHubAccessPanel(resource) {
+    const fileLabel = resource.type === "audio" ? "MP3 파일" : resource.type === "card" ? "카드 전체 보기" : "PDF 파일";
     if (hasSubscriberAccess()) {
-      return `<div class="download-row"><span>${escapeHtml(fileLabel)}</span><button class="button primary" type="button" data-resource-download="${escapeHtml(resource.id)}">다운로드</button></div>`;
+      const action = resource.type === "card"
+        ? `<button class="button primary" type="button" data-open-thread="${escapeHtml(resource.id)}">${escapeHtml(fileLabel)}</button>`
+        : `<button class="button primary" type="button" data-resource-download="${escapeHtml(resource.id)}">${escapeHtml(fileLabel)} 다운로드</button>`;
+      return `<div class="resource-access-panel"><p>구독회원 전용 전체 자료입니다.</p>${action}</div>`;
     }
-    return `<div class="resource-locked-panel">
-      <div class="locked-blur"><p>구독회원 전용 상세 설명과 파일 구성</p><ul><li>자료 구성 안내</li><li>파일 정보</li><li>전체 내용 보기</li></ul></div>
-      <div class="download-row"><span>${escapeHtml(fileLabel)}</span><button class="button primary" type="button" data-member-action>${viewer ? "구독 권한 확인" : "회원가입 후 이용"}</button></div>
-    </div>`;
+    return `<div class="resource-access-panel"><p>무료 미리보기를 확인한 뒤 다운로드가 필요하면 구독 권한을 확인해 주세요.</p><button class="button primary" type="button" data-member-action>${viewer ? "구독 권한 확인" : "회원가입 후 다운로드"}</button></div>`;
   }
 
-  function previewChips(resource) {
-    if (resource.type !== "card" || !hasSubscriberAccess()) return "";
-    const items = resource.previewItems || [];
-    return `<div class="thread-preview-row" aria-label="${escapeHtml(resource.title)} 미리보기">${items.slice(0, 3).map((item) => `<span>${escapeHtml(item)}</span>`).join("")}</div>`;
-  }
-
-  function resourceCard(resource) {
-    const tags = (resource.tags || []).map((tag) => `<span>${escapeHtml(tag)}</span>`).join("");
-    const fileLabel = resource.type === "audio" ? "오디오 자료" : resource.type === "card" ? "카드 이미지 전체" : "기도문 PDF";
-    return `<article class="faith-resource-card" data-resource-id="${escapeHtml(resource.id)}">
-      <div class="resource-card-head"><p class="eyebrow">${escapeHtml(typeMeta[resource.type]?.title || "신앙자료")}</p><span class="access-pill">구독 자료</span></div>
-      <h3>${escapeHtml(resource.title)}</h3>
-      <p class="resource-summary">${escapeHtml(resource.summary)}</p>
-      <div class="resource-card-tags">${tags}</div>
-      ${previewChips(resource)}
-      ${lockedPanel(resource)}
-      <button class="button secondary" type="button" data-open-thread="${escapeHtml(resource.id)}">${escapeHtml(fileLabel)} 보기</button>
-    </article>`;
-  }
-
-  function renderList() {
-    const list = filteredResources();
-    listRoot.innerHTML = list.length
-      ? list.map(resourceCard).join("")
-      : `<p class="muted">선택한 키워드에 맞는 ${escapeHtml(typeMeta[activeType].title)} 자료를 찾지 못했습니다.</p>`;
-  }
-
-  function paintTabs() {
-    document.querySelectorAll("[data-resource-tab]").forEach((button) => {
-      const selected = button.dataset.resourceTab === activeType;
-      button.classList.toggle("is-active", selected);
-      button.setAttribute("aria-selected", String(selected));
+  function hubFilteredResources() {
+    const normalizedQuery = searchQuery.trim().toLowerCase();
+    return uploadedThreads().filter((resource) => {
+      const matchesTags = !activeTags.size || [...activeTags].some((tag) => resource.tags?.includes(tag));
+      const searchable = [resource.title, resource.summary, ...(resource.tags || [])].join(" ").toLowerCase();
+      return matchesTags && (!normalizedQuery || searchable.includes(normalizedQuery));
     });
   }
 
-  function renderAll() {
-    paintTabs();
-    renderPreview();
-    renderTags();
-    renderList();
+  function renderHubTags() {
+    const tags = [...new Set(uploadedThreads().flatMap((resource) => resource.tags || []))];
+    tagRoot.innerHTML = [`<button class="${activeTags.size ? "" : "is-active"}" type="button" data-clear-tags aria-pressed="${String(!activeTags.size)}">전체 상황</button>`]
+      .concat(tags.map((tag) => `<button class="${activeTags.has(tag) ? "is-active" : ""}" type="button" data-resource-tag="${escapeHtml(tag)}" aria-pressed="${String(activeTags.has(tag))}">${escapeHtml(tag)}</button>`))
+      .join("");
+  }
+
+  function renderHubCard(resource) {
+    const tags = (resource.tags || []).map((tag) => `<span>${escapeHtml(tag)}</span>`).join("");
+    const meta = typeMeta[resource.type] || typeMeta.all;
+    return `<article class="faith-resource-card resource-type-${escapeHtml(resource.type)}" data-resource-id="${escapeHtml(resource.id)}">
+      <div class="resource-card-head"><p class="eyebrow">${escapeHtml(meta.title)}</p><span class="access-pill">무료 미리보기 · 다운로드는 구독회원 전용</span></div>
+      <h3>${escapeHtml(resource.title)}</h3>
+      <p class="resource-summary">${escapeHtml(resource.summary)}</p>
+      <div class="resource-card-tags">${tags}</div>
+      ${renderHubPublicPreview(resource)}
+      ${renderHubAccessPanel(resource)}
+    </article>`;
+  }
+
+  function renderHubList() {
+    const list = hubFilteredResources();
+    if (filterStatus) {
+      const conditions = [];
+      if (activeType !== "all") conditions.push(typeMeta[activeType]?.title || "선택한 형식");
+      if (activeTags.size) conditions.push([...activeTags].join(" · "));
+      if (searchQuery.trim()) conditions.push(`“${searchQuery.trim()}” 검색`);
+      const detail = conditions.length ? ` · ${conditions.join(" · ")}` : "";
+      filterStatus.textContent = list.length ? `조건에 맞는 자료 ${list.length}개${detail}` : `조건에 맞는 자료를 찾지 못했습니다${detail}`;
+    }
+    listRoot.innerHTML = list.length
+      ? list.map(renderHubCard).join("")
+      : `<div class="resource-empty-state"><strong>다른 키워드로 찾아보세요.</strong><p>형식이나 상황 태그를 바꾸면 더 많은 자료를 확인할 수 있습니다.</p><button class="button secondary" type="button" data-reset-resource-search>전체 자료 보기</button></div>`;
+  }
+
+  function renderResourceHub() {
+    document.querySelectorAll("[data-resource-tab]").forEach((button) => {
+      const selected = button.dataset.resourceTab === activeType;
+      button.classList.toggle("is-active", selected);
+      button.setAttribute("aria-pressed", String(selected));
+    });
+    typeRoot?.querySelectorAll("[data-resource-filter-type]").forEach((button) => {
+      const selected = button.dataset.resourceFilterType === activeType;
+      button.classList.toggle("is-active", selected);
+      button.setAttribute("aria-pressed", String(selected));
+    });
+    renderHubTags();
+    renderHubList();
+    if (resetButton) resetButton.hidden = activeType === "all" && !activeTags.size && !searchQuery.trim();
   }
 
   function promptMemberAccess() {
@@ -423,15 +444,25 @@ if (visualPrayerCards) {
     button.addEventListener("click", () => {
       activeType = button.dataset.resourceTab || "pdf";
       activeTags.clear();
+      searchQuery = "";
+      if (searchInput) searchInput.value = "";
       renderAll();
+      document.querySelector("#faithResourceBrowser")?.scrollIntoView({ behavior: "smooth", block: "start" });
     });
   });
 
   tagRoot.addEventListener("click", (event) => {
-    if (!event.target.closest("[data-clear-tags]")) return;
-    activeTags.clear();
-    renderTags();
-    renderList();
+    if (event.target.closest("[data-clear-tags]")) {
+      activeTags.clear();
+      renderAll();
+      return;
+    }
+    const tagButton = event.target.closest("[data-resource-tag]");
+    if (!tagButton) return;
+    const tag = tagButton.dataset.resourceTag;
+    if (activeTags.has(tag)) activeTags.delete(tag);
+    else activeTags.add(tag);
+    renderAll();
   });
 
   tagRoot.addEventListener("change", (event) => {
@@ -442,7 +473,35 @@ if (visualPrayerCards) {
     renderList();
   });
 
+  typeRoot?.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-resource-filter-type]");
+    if (!button) return;
+    activeType = button.dataset.resourceFilterType || "all";
+    renderAll();
+  });
+
+  searchInput?.addEventListener("input", (event) => {
+    searchQuery = event.target.value;
+    renderAll();
+  });
+
+  resetButton?.addEventListener("click", () => {
+    activeType = "all";
+    activeTags.clear();
+    searchQuery = "";
+    if (searchInput) searchInput.value = "";
+    renderAll();
+  });
+
   listRoot.addEventListener("click", (event) => {
+    if (event.target.closest("[data-reset-resource-search]")) {
+      activeType = "all";
+      activeTags.clear();
+      searchQuery = "";
+      if (searchInput) searchInput.value = "";
+      renderAll();
+      return;
+    }
     if (event.target.closest("[data-member-action]")) return promptMemberAccess();
     const downloadButton = event.target.closest("[data-resource-download]");
     if (downloadButton) return downloadResource(downloadButton.dataset.resourceDownload);
@@ -477,7 +536,18 @@ if (visualPrayerCards) {
   const status = form.querySelector("[data-member-auth-status]");
   const loginButton = form.querySelector("[data-member-login]");
   const logoutButton = form.querySelector("[data-member-logout]");
+  const notice = document.querySelector("#memberAuthNotice");
   const setStatus = (message) => { if (status) status.textContent = message; };
+  let noticeTimer;
+
+  function showNotice(message, isError = false) {
+    if (!notice) return;
+    notice.textContent = message;
+    notice.classList.toggle("is-error", isError);
+    notice.hidden = false;
+    window.clearTimeout(noticeTimer);
+    noticeTimer = window.setTimeout(() => { notice.hidden = true; }, 6000);
+  }
 
   async function refreshSession() {
     if (!client) return setStatus("회원 연결을 불러오지 못했습니다.");
@@ -492,8 +562,18 @@ if (visualPrayerCards) {
     event.preventDefault();
     if (!client) return setStatus("회원 연결을 불러오지 못했습니다.");
     if ((password.value || "").length < 8) return setStatus("비밀번호는 8자 이상으로 입력해 주세요.");
-    const { error } = await client.auth.signUp({ email: email.value.trim(), password: password.value });
-    setStatus(error ? error.message : "인증 메일을 보냈습니다. 메일 인증 후 로그인해 주세요.");
+    const { data, error } = await client.auth.signUp({ email: email.value.trim(), password: password.value });
+    if (error) {
+      const message = "인증 메일을 보내지 못했습니다. 이메일 주소를 확인한 뒤 다시 시도해 주세요.";
+      setStatus(message);
+      showNotice(message, true);
+      return;
+    }
+    const message = data.session
+      ? "회원가입이 완료되었습니다. 바로 로그인되어 있습니다."
+      : "인증 메일을 보냈습니다. 받은편지함에서 인증을 완료해 주세요.";
+    setStatus(message);
+    showNotice(message);
   });
 
   loginButton?.addEventListener("click", async () => {
