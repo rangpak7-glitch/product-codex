@@ -9,7 +9,7 @@ GitHub Actions 워크플로는 매일 한국 시간 오전 6시(UTC 21:00)에 `d
 저장소의 **Settings → Secrets and variables → Actions**에서 다음 값을 등록합니다.
 
 - Secret `OPENAI_API_KEY`: OpenAI API 키. 저장소, 코드, 로그에 키를 넣지 않습니다.
-- Variable `OPENAI_MODEL`: `gpt5.6 luna`
+- Variable `OPENAI_MODEL`: `gpt-5.5`
 
 워크플로는 **Actions → Generate daily content → Run workflow**에서 수동 실행할 수 있습니다. 같은 한국 날짜의 4개 항목이 이미 모두 있으면 콘텐츠를 다시 만들거나 커밋하지 않습니다.
 
