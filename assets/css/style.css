@@ -375,6 +375,28 @@ label { font-weight: 900; }
   background-image: url("../images/hero-home.png");
   background-position: center 48%;
 }
+.hero-photo--about {
+  min-height: clamp(320px, 32vw, 420px);
+  background-image: url("../images/hero-home.png");
+  background-position: center 48%;
+}
+.hero-photo--about::before {
+  background:
+    linear-gradient(90deg, rgba(7, 12, 28, .9) 0%, rgba(12, 19, 39, .78) 46%, rgba(12, 19, 39, .34) 100%),
+    radial-gradient(circle at 24% 20%, rgba(255, 253, 248, .18), transparent 28%),
+    var(--paper-texture);
+}
+.hero-photo--prayers {
+  min-height: clamp(320px, 32vw, 420px);
+  background-image: url("../images/hero-prayer-cards.jpeg");
+  background-position: center 72%;
+}
+.hero-photo--prayers::before {
+  background:
+    linear-gradient(90deg, rgba(7, 12, 28, .9) 0%, rgba(12, 19, 39, .76) 48%, rgba(12, 19, 39, .36) 100%),
+    radial-gradient(circle at 24% 20%, rgba(180, 217, 230, .2), transparent 28%),
+    var(--paper-texture);
+}
 .hero-photo--morning {
   background-image: url("../images/hero-morning.png");
   background-position: center 44%;
@@ -1167,6 +1189,17 @@ label { font-weight: 900; }
     radial-gradient(circle at 82% 22%, rgba(180,217,230,.34), transparent 30%),
     radial-gradient(circle at 18% 12%, rgba(255,248,214,.18), transparent 24%),
     linear-gradient(135deg, #111b33, #17213b 62%, #2f4350);
+}
+.sub-hero--video.hero-photo--video {
+  min-height: clamp(320px, 32vw, 420px);
+  background-image: url("../images/hero-night.png");
+  background-position: center 50%;
+}
+.sub-hero--video.hero-photo--video::before {
+  background:
+    linear-gradient(90deg, rgba(7, 12, 28, .92) 0%, rgba(12, 19, 39, .76) 48%, rgba(12, 19, 39, .3) 100%),
+    radial-gradient(circle at 24% 20%, rgba(180, 217, 230, .2), transparent 28%),
+    var(--paper-texture);
 }
 .sub-hero--video h1,
 .sub-hero--video p { color: white; }
