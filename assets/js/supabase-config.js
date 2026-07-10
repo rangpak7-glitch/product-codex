@@ -1,4 +1,7 @@
 (() => {
+  // 공개 Worker 주소만 설정합니다. 비밀키는 Worker Secret으로만 관리합니다.
+  window.FAITH_ORDER_API_URL = window.FAITH_ORDER_API_URL || "";
+
   if (!window.supabase?.createClient) {
     window.FaithSupabase = null;
     return;

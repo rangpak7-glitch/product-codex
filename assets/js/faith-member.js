@@ -1,8 +1,19 @@
 (() => {
   const SUPABASE_SCRIPT = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.1/dist/umd/supabase.js";
   const TOSS_SCRIPT = "https://js.tosspayments.com/v2/standard";
-  const BILLING_API = window.FAITH_BILLING_API_URL || "";
-  const state = { client: null, user: null, profile: null, publicProfile: null, initialized: false };
+  const ORDER_PENDING_KEY = "faithOrderPending";
+  const state = {
+    client: null,
+    user: null,
+    profile: null,
+    publicProfile: null,
+    orders: [],
+    ordersByResource: new Map(),
+    ordersLoaded: false,
+    ordersLoading: null,
+    ordersUserId: null,
+    initialized: false
+  };
 
   const escapeHtml = (value = "") => String(value)
     .replaceAll("&", "&amp;")
@@ -10,6 +21,10 @@
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
+
+  function orderApiUrl() {
+    return window.FAITH_ORDER_API_URL || "";
+  }
 
   function loadScript(src) {
     return new Promise((resolve, reject) => {
@@ -172,12 +187,17 @@
     state.user = user || null;
     state.profile = null;
     state.publicProfile = null;
+    state.orders = [];
+    state.ordersByResource.clear();
+    state.ordersLoaded = false;
+    state.ordersLoading = null;
+    state.ordersUserId = null;
     if (user) {
       const [{ data: profile }, { data: publicProfile }] = await Promise.all([
-        client.from("profiles").select("role, subscription_status, current_period_end, cancel_at_period_end, cancellation_requested_at").eq("id", user.id).maybeSingle(),
+        client.from("profiles").select("role").eq("id", user.id).maybeSingle(),
         client.from("public_profiles").select("nickname").eq("id", user.id).maybeSingle()
       ]);
-      state.profile = profile || { role: "member", subscription_status: "free" };
+      state.profile = profile || { role: "member" };
       state.publicProfile = publicProfile || null;
     }
     renderAccountControl();
@@ -217,56 +237,188 @@
     return session.access_token;
   }
 
-  async function billingRequest(path, body) {
-    if (!BILLING_API) throw new Error("결제 서비스 주소가 아직 설정되지 않았습니다. 문의하기를 이용해 주세요.");
+  async function orderRequest(path, body) {
+    const apiUrl = orderApiUrl();
+    if (!apiUrl) throw new Error("자료 주문 서비스를 아직 연결하지 못했습니다. 문의하기를 이용해 주세요.");
     const token = await withSessionToken();
-    const response = await fetch(`${BILLING_API}${path}`, {
+    const response = await fetch(`${apiUrl}${path}`, {
       method: "POST",
       headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
       body: body === undefined ? undefined : JSON.stringify(body)
     });
     const data = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(data.error || "요청을 처리하지 못했습니다.");
+    if (!response.ok) {
+      const error = new Error(data.error || "요청을 처리하지 못했습니다.");
+      error.status = response.status;
+      error.payload = data;
+      throw error;
+    }
     return data;
   }
 
-  async function startSubscription() {
-    if (!state.user) return open("signup");
-    const pending = await billingRequest("/billing/start");
-    sessionStorage.setItem("faithBillingPending", JSON.stringify({ orderId: pending.orderId, customerKey: pending.customerKey }));
+  function purchaseInquiryUrl(productId) {
+    const url = new URL("contact.html", window.location.href);
+    if (productId) url.searchParams.set("product", productId);
+    return url.href;
+  }
+
+  function openPurchaseInquiry(productId) {
+    const inquiryUrl = purchaseInquiryUrl(productId);
+    window.location.assign(inquiryUrl);
+    return { inquiry: true, productId, inquiryUrl };
+  }
+
+  function trackOrderEvent(name, params = {}) {
+    if (typeof window.trackFaithEvent === "function") {
+      window.trackFaithEvent(name, params);
+      return;
+    }
+    if (typeof window.gtag === "function") window.gtag("event", name, { ...params, page_path: window.location.pathname });
+  }
+
+  function isInquiryOnlyError(error) {
+    return error?.payload?.code === "inquiry_only" || error?.payload?.saleStatus === "inquiry" || error?.payload?.sale_status === "inquiry" || error?.payload?.purchasable === false;
+  }
+
+  function paymentCustomerKey() {
+    if (window.crypto?.randomUUID) return `customer_${window.crypto.randomUUID()}`;
+    const bytes = window.crypto?.getRandomValues?.(new Uint8Array(16));
+    if (bytes) return `customer_${Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("")}`;
+    throw new Error("안전한 결제 요청을 시작하지 못했습니다. 문의하기를 이용해 주세요.");
+  }
+
+  async function requestPurchase(productId) {
+    const normalizedProductId = String(productId || "").trim();
+    if (!normalizedProductId) throw new Error("구매할 자료 정보를 찾지 못했습니다.");
+    if (!state.user) {
+      open("signup");
+      return { requiresLogin: true, productId: normalizedProductId };
+    }
+    if (!orderApiUrl()) return openPurchaseInquiry(normalizedProductId);
+
+    let pending;
+    try {
+      pending = await orderRequest("/orders/start", { productId: normalizedProductId });
+    } catch (error) {
+      if (error?.payload?.code === "already_purchased") {
+        trackOrderEvent("repurchase_attempt", { product_id: normalizedProductId });
+        return { alreadyPurchased: true, productId: normalizedProductId, resourceId: error.payload.resourceId || null };
+      }
+      if (isInquiryOnlyError(error)) return openPurchaseInquiry(normalizedProductId);
+      throw error;
+    }
+    if (!pending?.orderId || !pending?.clientKey || !Number.isFinite(Number(pending.amount)) || Number(pending.amount) <= 0) {
+      return openPurchaseInquiry(normalizedProductId);
+    }
+
+    sessionStorage.setItem(ORDER_PENDING_KEY, JSON.stringify({ orderId: pending.orderId, productId: pending.productId || normalizedProductId }));
     if (!window.TossPayments) await loadScript(TOSS_SCRIPT);
     if (!window.TossPayments) throw new Error("결제 화면을 불러오지 못했습니다.");
-    const payment = window.TossPayments(pending.clientKey).payment({ customerKey: pending.customerKey });
-    await payment.requestBillingAuth({
+    const payment = window.TossPayments(pending.clientKey).payment({ customerKey: paymentCustomerKey() });
+    await payment.requestPayment({
       method: "CARD",
+      amount: { currency: pending.currency || "KRW", value: Number(pending.amount) },
+      orderId: pending.orderId,
+      orderName: pending.orderName || "기도의샘물 신앙자료",
       successUrl: pending.successUrl,
       failUrl: pending.failUrl,
       customerEmail: state.user.email,
       customerName: state.publicProfile?.nickname || "기도의샘물 회원"
     });
+    return pending;
   }
 
-  async function completeBillingAuthorization() {
+  async function completeOrderPayment() {
     const params = new URLSearchParams(window.location.search);
-    const authKey = params.get("authKey");
-    if (!authKey) return;
-    const pending = JSON.parse(sessionStorage.getItem("faithBillingPending") || "null");
-    if (!pending?.orderId || !pending?.customerKey) return;
-    const status = document.querySelector("[data-billing-status]");
+    const paymentKey = params.get("paymentKey");
+    const orderId = params.get("orderId");
+    const failureMessage = params.get("message");
+    const failureCode = params.get("code");
+    const status = document.querySelector("[data-order-status]");
+    let pending = null;
+    try { pending = JSON.parse(sessionStorage.getItem(ORDER_PENDING_KEY) || "null"); } catch { /* ignore malformed stale browser storage */ }
+
+    if (!orderId) {
+      if (failureMessage && status) status.textContent = `결제를 완료하지 못했습니다. ${failureMessage}`;
+      return;
+    }
+    if (pending?.orderId && pending.orderId !== orderId) {
+      if (status) status.textContent = "결제 요청 정보가 일치하지 않습니다. 문의하기를 이용해 주세요.";
+      return;
+    }
+    if (!paymentKey) {
+      if (status) status.textContent = `결제를 완료하지 못했습니다.${failureMessage ? ` ${failureMessage}` : ""}`;
+      try {
+        const failed = await orderRequest("/orders/fail", { orderId });
+        sessionStorage.removeItem(ORDER_PENDING_KEY);
+        window.history.replaceState({}, "", "account.html");
+        await refreshSession();
+        if (failed?.order?.status === "paid") {
+          trackOrderEvent("purchase_success", { product_id: pending?.productId || null, order_id: orderId, recovered: true });
+          if (status) status.textContent = "결제가 완료되었습니다. 내 구매 자료에서 다시 열거나 다운로드할 수 있습니다.";
+        } else {
+          trackOrderEvent("purchase_failure", { product_id: pending?.productId || null, order_id: orderId, code: failureCode || "checkout_failed" });
+          if (status) status.textContent = `결제가 취소되었거나 완료되지 않았습니다.${failureMessage ? ` ${failureMessage}` : ""}`;
+        }
+      } catch (error) {
+        trackOrderEvent("purchase_failure", { product_id: pending?.productId || null, order_id: orderId, code: failureCode || "checkout_failed" });
+        if (status) status.textContent = `결제를 완료하지 못했습니다. ${error.message || failureMessage || "잠시 후 결제 내역을 확인해 주세요."}`;
+      }
+      return;
+    }
     if (status) status.textContent = "결제를 확인하고 있습니다.";
     try {
-      await billingRequest("/billing/authorize", { authKey, orderId: pending.orderId, customerKey: pending.customerKey });
-      sessionStorage.removeItem("faithBillingPending");
+      const approved = await orderRequest("/orders/approve", { paymentKey, orderId });
+      if (approved?.ok !== true) {
+        if (approved?.pending && status) status.textContent = "결제 승인 확인 중입니다. 잠시 후 이 페이지를 새로고침해 결제 내역을 확인해 주세요.";
+        else if (status) status.textContent = "결제 상태를 아직 확인하지 못했습니다. 잠시 후 다시 확인해 주세요.";
+        return;
+      }
+      sessionStorage.removeItem(ORDER_PENDING_KEY);
       window.history.replaceState({}, "", "account.html");
       await refreshSession();
-      if (status) status.textContent = "구독이 시작되었습니다.";
+      trackOrderEvent("purchase_success", { product_id: pending?.productId || null, order_id: orderId });
+      if (status) status.textContent = "결제가 완료되었습니다. 내 구매 자료에서 다시 열거나 다운로드할 수 있습니다.";
     } catch (error) {
+      if (["order_expired", "order_policy_changed"].includes(error?.payload?.code)) {
+        sessionStorage.removeItem(ORDER_PENDING_KEY);
+        window.history.replaceState({}, "", "account.html");
+        await refreshSession();
+      }
+      trackOrderEvent("purchase_failure", { product_id: pending?.productId || null, order_id: orderId });
       if (status) status.textContent = error.message;
     }
   }
 
   async function requestProtectedDownload(resourceId) {
-    return billingRequest(`/resources/${encodeURIComponent(resourceId)}/download`);
+    const normalizedResourceId = String(resourceId || "").trim();
+    if (!normalizedResourceId) throw new Error("다운로드할 자료 정보를 찾지 못했습니다.");
+    if (!state.user) {
+      open("login");
+      throw new Error("로그인 후 구매한 자료를 다운로드할 수 있습니다.");
+    }
+    return orderRequest(`/resources/${encodeURIComponent(normalizedResourceId)}/download`);
+  }
+
+  function downloadEntries(download) {
+    const files = Array.isArray(download?.downloads) ? download.downloads : [download];
+    return files.filter((file) => file?.url);
+  }
+
+  function startProtectedDownloads(download) {
+    const files = downloadEntries(download);
+    if (!files.length) throw new Error("다운로드 링크를 찾지 못했습니다.");
+    files.forEach((file) => {
+      const link = document.createElement("a");
+      link.href = file.url;
+      link.download = file.fileName || "";
+      link.rel = "noopener";
+      link.style.display = "none";
+      document.body.append(link);
+      link.click();
+      link.remove();
+    });
+    return files.length;
   }
 
   function friendlyDate(value) {
@@ -274,9 +426,72 @@
     return new Intl.DateTimeFormat("ko-KR", { year: "numeric", month: "long", day: "numeric" }).format(new Date(value));
   }
 
-  function subscriptionText(profile) {
-    const map = { active: "구독 이용 중", canceling: "해지 예정", past_due: "결제 확인 필요", refunded: "환불 완료", free: "일반 회원" };
-    return map[profile?.subscription_status] || "일반 회원";
+  function orderStatusText(order) {
+    const status = typeof order === "string" ? order : order?.status;
+    if (status === "ready" && order?.expires_at && Date.parse(order.expires_at) <= Date.now()) return "결제 요청 만료";
+    const map = { ready: "결제 확인 중", paid: "결제 완료", failed: "결제 실패", canceled: "결제 취소", refunded: "환불 완료" };
+    return map[status] || "주문 상태 확인 중";
+  }
+
+  function isPaidOrder(order) {
+    return order?.status === "paid";
+  }
+
+  function orderResourceKeys(order) {
+    return [order?.product_id, order?.resource_id].filter(Boolean);
+  }
+
+  async function loadMyOrders(client) {
+    const orderClient = client || await getClient();
+    const userId = state.user?.id;
+    if (!userId || !orderClient) return [];
+    if (state.ordersLoaded && state.ordersUserId === userId) return state.orders;
+    if (state.ordersLoading) return state.ordersLoading;
+
+    const request = (async () => {
+      const { data, error } = await orderClient
+        .from("faith_orders")
+        .select("id,order_id,product_id,resource_id,amount,currency,status,expires_at,paid_at,created_at,product:faith_products(id,title,type)")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false })
+        .limit(50);
+      if (error) throw new Error("구매 내역을 불러오지 못했습니다.");
+      if (state.user?.id !== userId) return [];
+      const orders = data || [];
+      state.orders = orders;
+      state.ordersByResource.clear();
+      orders.filter(isPaidOrder).forEach((order) => {
+        orderResourceKeys(order).forEach((key) => state.ordersByResource.set(key, order));
+      });
+      state.ordersLoaded = true;
+      state.ordersUserId = userId;
+      return orders;
+    })();
+    state.ordersLoading = request;
+    try {
+      return await request;
+    } finally {
+      if (state.ordersLoading === request) state.ordersLoading = null;
+    }
+  }
+
+  async function getOrderForResource(resourceId) {
+    const normalizedResourceId = String(resourceId || "").trim();
+    if (!state.user || !normalizedResourceId) return null;
+    if (!state.ordersLoaded) {
+      try {
+        await loadMyOrders();
+      } catch {
+        return null;
+      }
+    }
+    return state.ordersByResource.get(normalizedResourceId) || null;
+  }
+
+  async function hasPurchasedResource(resourceId) {
+    if (!state.user) return false;
+    if (state.profile?.role === "admin") return true;
+    return Boolean(await getOrderForResource(resourceId));
   }
 
   async function initAccountPage() {
@@ -284,19 +499,19 @@
     if (!root) return;
     const client = await getClient();
     if (!state.user) {
-      root.innerHTML = '<section class="section account-access-panel"><p class="eyebrow">My Account</p><h1>내 프로필</h1><p>로그인하면 내 게시글과 구독 상태를 확인할 수 있습니다.</p><button class="button primary" type="button" data-account-login>로그인</button></section>';
+      root.innerHTML = '<section class="section account-access-panel"><p class="eyebrow">My Account</p><h1>내 프로필</h1><p>로그인하면 내 구매 자료와 작성한 글을 확인할 수 있습니다.</p><button class="button primary" type="button" data-account-login>로그인</button></section>';
       root.querySelector("[data-account-login]")?.addEventListener("click", () => open("login"));
       return;
     }
-    const profile = state.profile || { subscription_status: "free" };
     root.innerHTML = `
       <section class="page-hero sub-hero account-hero"><p class="eyebrow">My Account</p><h1>내 프로필</h1><p>공개 게시글에는 닉네임만 표시되며, 이메일과 결제수단은 공개하지 않습니다.</p></section>
       <section class="section account-grid">
         <article class="account-card"><p class="eyebrow">Profile</p><h2>기본 정보</h2><form data-profile-form class="faith-auth-form"><label>닉네임<input name="nickname" maxlength="16" minlength="2" required value="${escapeHtml(state.publicProfile?.nickname || "")}"></label><label>가입 이메일<input value="${escapeHtml(state.user.email || "")}" disabled></label><button class="button primary" type="submit">닉네임 저장</button><p class="form-message" data-profile-status></p></form></article>
         <article class="account-card"><p class="eyebrow">Security</p><h2>비밀번호 변경</h2><form data-password-form class="faith-auth-form"><label>현재 비밀번호<input name="currentPassword" type="password" autocomplete="current-password" required></label><label>새 비밀번호<input name="newPassword" type="password" minlength="8" autocomplete="new-password" required></label><button class="button secondary" type="submit">비밀번호 변경</button><button class="text-button" type="button" data-account-reset>재설정 메일 받기</button><p class="form-message" data-password-status></p></form></article>
-        <article class="account-card account-subscription"><p class="eyebrow">Subscription</p><h2>${subscriptionText(profile)}</h2><p>${profile.current_period_end ? `다음 이용 기준일: ${friendlyDate(profile.current_period_end)}` : "월 9,900원 구독으로 신앙자료를 이용할 수 있습니다."}</p><p class="form-message" data-billing-status></p><div class="account-actions">${["active", "canceling"].includes(profile.subscription_status) ? `<button class="button secondary" type="button" data-subscription-cancel>${profile.cancel_at_period_end ? "해지 예정 상태" : "구독 해지"}</button>` : '<button class="button primary" type="button" data-subscription-start>월 9,900원 구독 시작</button>'}${profile.subscription_status === "active" ? '<button class="text-button" type="button" data-subscription-refund>7일 이내 자동 환불 요청</button>' : ""}</div></article>
+        <article class="account-card account-purchase-summary"><p class="eyebrow">My Resources</p><h2>내 구매 자료</h2><p>결제 완료한 신앙자료는 언제든 이곳에서 다시 확인하고 다운로드할 수 있습니다.</p><a class="button primary" href="prayer-cards.html">신앙자료 둘러보기</a><p class="form-message" data-order-status></p><p class="muted">구매와 환불 관련 문의는 문의하기에서 도와드립니다.</p></article>
       </section>
-      <section class="section account-content-section"><div class="section-heading-row"><div><p class="eyebrow">My Community</p><h2>내가 작성한 글과 답글</h2></div><a class="button secondary" href="community.html">소통게시판 보기</a></div><div class="account-history-grid"><div><h3>내 게시글</h3><div data-my-posts class="account-list"></div></div><div><h3>내 답글</h3><div data-my-replies class="account-list"></div></div><div><h3>결제 내역</h3><div data-my-invoices class="account-list"></div></div></div></section>`;
+      <section class="section account-content-section"><div class="section-heading-row"><div><p class="eyebrow">My Orders</p><h2>내 구매 자료와 결제 내역</h2></div><a class="button secondary" href="prayer-cards.html">신앙자료 보기</a></div><div class="account-history-grid"><div><h3>내 구매 자료</h3><div data-my-purchases class="account-list"></div></div><div><h3>결제 내역</h3><div data-my-orders class="account-list"></div></div></div></section>
+      <section class="section account-content-section"><div class="section-heading-row"><div><p class="eyebrow">My Community</p><h2>내가 작성한 글과 답글</h2></div><a class="button secondary" href="community.html">소통게시판 보기</a></div><div class="account-history-grid"><div><h3>내 게시글</h3><div data-my-posts class="account-list"></div></div><div><h3>내 답글</h3><div data-my-replies class="account-list"></div></div></div></section>`;
 
     root.querySelector("[data-profile-form]")?.addEventListener("submit", async (event) => {
       event.preventDefault();
@@ -327,38 +542,69 @@
       const { error } = await client.auth.resetPasswordForEmail(state.user.email, { redirectTo: new URL("reset-password.html", window.location.href).href });
       status.textContent = error ? "재설정 메일을 보내지 못했습니다." : "비밀번호 재설정 메일을 보냈습니다.";
     });
-    root.querySelector("[data-subscription-start]")?.addEventListener("click", async () => {
-      const status = root.querySelector("[data-billing-status]");
-      status.textContent = "결제 창을 열고 있습니다.";
-      try { await startSubscription(); } catch (error) { status.textContent = error.message; }
-    });
-    root.querySelector("[data-subscription-cancel]")?.addEventListener("click", async () => {
-      const status = root.querySelector("[data-billing-status]");
-      if (!window.confirm("현재 이용 기간이 끝나는 날에 구독을 해지할까요?")) return;
-      try { await billingRequest("/billing/cancel"); await refreshSession(); await initAccountPage(); } catch (error) { status.textContent = error.message; }
-    });
-    root.querySelector("[data-subscription-refund]")?.addEventListener("click", async () => {
-      const status = root.querySelector("[data-billing-status]");
-      if (!window.confirm("다운로드 이력이 없을 때만 전액 환불되며, 즉시 이용 권한이 종료됩니다. 계속할까요?")) return;
-      try { await billingRequest("/billing/refund"); await refreshSession(); await initAccountPage(); } catch (error) { status.textContent = error.message; }
-    });
-    await completeBillingAuthorization();
+    await completeOrderPayment();
     await renderAccountHistory(client, root);
   }
 
   async function renderAccountHistory(client, root) {
-    const [posts, replies, invoices] = await Promise.all([
+    const [posts, replies, orderResult] = await Promise.all([
       client.from("community_posts").select("id,title,category,created_at,status").eq("author_id", state.user.id).order("created_at", { ascending: false }).limit(10),
       client.from("community_replies").select("id,body,created_at,status,post:community_posts(title)").eq("author_id", state.user.id).order("created_at", { ascending: false }).limit(10),
-      client.from("subscription_invoices").select("id,amount,status,paid_at,created_at,billing_cycle_end").order("created_at", { ascending: false }).limit(10)
+      loadMyOrders(client).then((data) => ({ data })).catch((error) => ({ error }))
     ]);
     const renderList = (target, rows, renderer, empty) => {
       const element = root.querySelector(target);
-      if (element) element.innerHTML = rows?.data?.length ? rows.data.map(renderer).join("") : `<p class="muted">${empty}</p>`;
+      if (element) element.innerHTML = rows?.length ? rows.map(renderer).join("") : `<p class="muted">${empty}</p>`;
     };
-    renderList("[data-my-posts]", posts, (post) => `<article><span>${friendlyDate(post.created_at)} · ${escapeHtml(post.status)}</span><strong>${escapeHtml(post.title)}</strong><a href="community.html?post=${encodeURIComponent(post.id)}">게시글 보기</a></article>`, "작성한 게시글이 없습니다.");
-    renderList("[data-my-replies]", replies, (reply) => `<article><span>${friendlyDate(reply.created_at)} · ${escapeHtml(reply.status)}</span><strong>${escapeHtml(reply.post?.title || "소통게시판 답글")}</strong><p>${escapeHtml(reply.body)}</p></article>`, "작성한 답글이 없습니다.");
-    renderList("[data-my-invoices]", invoices, (invoice) => `<article><span>${friendlyDate(invoice.paid_at || invoice.created_at)}</span><strong>${Number(invoice.amount || 0).toLocaleString("ko-KR")}원 · ${escapeHtml(invoice.status)}</strong><p>${invoice.billing_cycle_end ? `이용 기준일 ${friendlyDate(invoice.billing_cycle_end)}` : ""}</p></article>`, "결제 내역이 없습니다.");
+    renderList("[data-my-posts]", posts.data, (post) => `<article><span>${friendlyDate(post.created_at)} · ${escapeHtml(post.status)}</span><strong>${escapeHtml(post.title)}</strong><a href="community.html?post=${encodeURIComponent(post.id)}">게시글 보기</a></article>`, "작성한 게시글이 없습니다.");
+    renderList("[data-my-replies]", replies.data, (reply) => `<article><span>${friendlyDate(reply.created_at)} · ${escapeHtml(reply.status)}</span><strong>${escapeHtml(reply.post?.title || "소통게시판 답글")}</strong><p>${escapeHtml(reply.body)}</p></article>`, "작성한 답글이 없습니다.");
+
+    if (orderResult.error) {
+      const message = '<p class="muted">구매 내역을 불러오지 못했습니다. 잠시 후 다시 확인해 주세요.</p>';
+      ["[data-my-purchases]", "[data-my-orders]"].forEach((target) => {
+        const element = root.querySelector(target);
+        if (element) element.innerHTML = message;
+      });
+      return;
+    }
+
+    const orders = orderResult.data || [];
+    const typeLabel = { pdf: "PDF", audio: "오디오", card: "말씀·기도카드", challenge: "기도 여정", journey: "기도 여정" };
+    const productFor = (order) => Array.isArray(order.product) ? order.product[0] : order.product;
+    const orderTitle = (order) => productFor(order)?.title || "기도의샘물 신앙자료";
+    const orderType = (order) => typeLabel[productFor(order)?.type] || "신앙자료";
+    const orderAmount = (order) => `${Number(order.amount || 0).toLocaleString("ko-KR")}원`;
+    const paidOrders = orders.filter(isPaidOrder);
+
+    renderList("[data-my-purchases]", paidOrders, (order) => {
+      const product = productFor(order);
+      const access = order.resource_id
+        ? `<button class="text-button" type="button" data-owned-resource-download="${escapeHtml(order.resource_id)}">다시 다운로드</button>`
+        : product?.type === "journey"
+          ? `<a class="text-button" href="prayer-challenge.html?product=${encodeURIComponent(order.product_id)}">여정 열기</a>`
+          : '<p class="muted">이 자료의 이용 방법은 자료 상세에서 확인해 주세요.</p>';
+      return `<article><span>${friendlyDate(order.paid_at || order.created_at)} · ${escapeHtml(orderType(order))}</span><strong>${escapeHtml(orderTitle(order))}</strong><p>결제 완료</p>${access}</article>`;
+    }, "아직 구매한 신앙자료가 없습니다.");
+    renderList("[data-my-orders]", orders, (order) => `<article><span>${friendlyDate(order.paid_at || order.created_at)}</span><strong>${escapeHtml(orderTitle(order))}</strong><p>${orderAmount(order)} · ${escapeHtml(orderStatusText(order))}</p></article>`, "결제 내역이 없습니다.");
+
+    root.querySelector("[data-my-purchases]")?.addEventListener("click", async (event) => {
+      const button = event.target.closest("[data-owned-resource-download]");
+      if (!button) return;
+      const status = root.querySelector("[data-order-status]");
+      button.disabled = true;
+      if (status) status.textContent = "다운로드 링크를 준비하고 있습니다.";
+      try {
+        const download = await requestProtectedDownload(button.dataset.ownedResourceDownload);
+        if (download?.requiresLogin) return;
+        const count = startProtectedDownloads(download);
+        trackOrderEvent("resource_download", { resource_id: button.dataset.ownedResourceDownload });
+        if (status) status.textContent = count > 1 ? `${count}개 파일의 다운로드를 시작했습니다.` : "다운로드를 시작했습니다.";
+      } catch (error) {
+        if (status) status.textContent = error.message;
+      } finally {
+        button.disabled = false;
+      }
+    });
   }
 
   const communityLabel = { prayer: "기도제목", gratitude: "감사 나눔" };
@@ -468,18 +714,19 @@
 
   async function initAdminModeration() {
     const root = document.querySelector("[data-community-moderation]");
-    if (!root || !BILLING_API || !state.user) return;
+    const apiUrl = orderApiUrl();
+    if (!root || !apiUrl || !state.user) return;
     const status = root.querySelector("[data-moderation-status]");
     try {
       const token = await withSessionToken();
-      const response = await fetch(`${BILLING_API}/admin/community/reports`, { headers: { Authorization: `Bearer ${token}` } });
+      const response = await fetch(`${apiUrl}/admin/community/reports`, { headers: { Authorization: `Bearer ${token}` } });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "신고 목록을 불러오지 못했습니다.");
       root.hidden = false;
       root.querySelector("[data-moderation-list]").innerHTML = data.reports?.length ? data.reports.map((report) => `<article><strong>${escapeHtml(report.target_type)} 신고</strong><p>${escapeHtml(report.reason)}</p><button class="text-button" type="button" data-moderate="hide" data-target-type="${escapeHtml(report.target_type)}" data-target-id="${escapeHtml(report.target_id)}">대상 숨김</button><button class="text-button" type="button" data-moderate="restore" data-target-type="${escapeHtml(report.target_type)}" data-target-id="${escapeHtml(report.target_id)}">대상 복구</button><button class="text-button" type="button" data-moderate="resolve_report" data-report-id="${escapeHtml(report.id)}">처리 완료</button><button class="text-button" type="button" data-moderate="dismiss_report" data-report-id="${escapeHtml(report.id)}">반려</button></article>`).join("") : '<p class="muted">확인할 신고가 없습니다.</p>';
       root.querySelectorAll("[data-moderate]").forEach((button) => button.addEventListener("click", async () => {
         const isReportAction = /report$/.test(button.dataset.moderate);
-        try { await billingRequest("/admin/community/moderate", { targetType: isReportAction ? "report" : button.dataset.targetType, targetId: isReportAction ? button.dataset.reportId : button.dataset.targetId, action: button.dataset.moderate }); await initAdminModeration(); } catch (error) { status.textContent = error.message; }
+        try { await orderRequest("/admin/community/moderate", { targetType: isReportAction ? "report" : button.dataset.targetType, targetId: isReportAction ? button.dataset.reportId : button.dataset.targetId, action: button.dataset.moderate }); await initAdminModeration(); } catch (error) { status.textContent = error.message; }
       }));
     } catch (error) {
       status.textContent = error.message;
@@ -500,7 +747,7 @@
     window.dispatchEvent(new Event("faith-auth-ready"));
   }
 
-  window.FaithAuth = { open, close, getClient, refreshSession, requestProtectedDownload, startSubscription };
+  window.FaithAuth = { open, close, getClient, refreshSession, getOrderForResource, hasPurchasedResource, requestPurchase, requestProtectedDownload, startProtectedDownloads };
   document.addEventListener("keydown", (event) => { if (event.key === "Escape") close(); });
   init().catch((error) => console.error("faith-member-init", error));
 })();

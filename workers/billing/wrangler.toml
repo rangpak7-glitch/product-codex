@@ -3,13 +3,15 @@ main = "src/index.js"
 compatibility_date = "2026-07-10"
 workers_dev = true
 
-[triggers]
-crons = ["10 0 * * *"]
-
 [vars]
 SITE_ORIGIN = "https://product-codex-90j.pages.dev"
+# Only this Cloudflare Pages project's preview subdomains may use checkout return URLs.
+PAGES_PREVIEW_HOST_SUFFIX = "product-codex-90j.pages.dev"
+# Add comma-separated exact staging origins here if needed; do not use a broad wildcard.
+ALLOWED_ORIGINS = ""
+# A ready order expires after 30 minutes. The Worker bounds this between 1 and 120 minutes.
+ORDER_TTL_SECONDS = "1800"
 
 # Set these with `wrangler secret put`; never commit their values:
 # SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY
-# TOSS_CLIENT_KEY, TOSS_SECRET_KEY, BILLING_KEY_ENCRYPTION_KEY
-# TOSS_WEBHOOK_SECRET (when the Toss webhook contract is configured)
+# TOSS_CLIENT_KEY, TOSS_SECRET_KEY

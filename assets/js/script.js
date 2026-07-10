@@ -28,6 +28,98 @@ function escapeHtml(value = "") {
     .replaceAll("'", "&#039;");
 }
 
+function faithProducts() {
+  const remote = Array.isArray(window.FAITH_PRODUCT_CATALOG) ? window.FAITH_PRODUCT_CATALOG : [];
+  const fallback = Array.isArray(window.FAITH_PRODUCTS) ? window.FAITH_PRODUCTS : [];
+  return [...remote, ...fallback].map(normalizeFaithProduct);
+}
+
+function normalizeFaithProduct(product = {}) {
+  return {
+    ...product,
+    resourceId: product.resourceId ?? product.resource_id ?? null,
+    previewItems: product.previewItems ?? product.preview_items ?? [],
+    salesStatus: product.salesStatus ?? product.saleStatus ?? product.sale_status ?? "inquiry",
+    priceKrw: product.priceKrw ?? product.priceAmount ?? product.price_amount ?? null,
+    contactUrl: product.contactUrl ?? product.contact_url ?? "contact.html"
+  };
+}
+
+function findFaithProduct(productId) {
+  return faithProducts().find((product) => product.id === productId) || null;
+}
+
+function isPurchasable(product) {
+  const normalized = normalizeFaithProduct(product);
+  return Boolean(normalized && ["on_sale", "available"].includes(normalized.salesStatus) && normalized.purchasable !== false && Number(normalized.priceKrw) > 0);
+}
+
+function productInquiryLink(product) {
+  return normalizeFaithProduct(product).contactUrl || "contact.html";
+}
+
+function productInquiryHref(product) {
+  const normalized = normalizeFaithProduct(product);
+  const link = productInquiryLink(normalized);
+  if (!normalized.id) return link;
+  return `${link}${link.includes("?") ? "&" : "?"}product=${encodeURIComponent(normalized.id)}`;
+}
+
+function formatKrw(value) {
+  return `${Number(value).toLocaleString("ko-KR")}원`;
+}
+
+async function requestProductPurchase(productId) {
+  if (window.FaithAuth?.requestPurchase) {
+    return window.FaithAuth.requestPurchase(productId);
+  }
+  return new Promise((resolve, reject) => {
+    const timer = window.setTimeout(() => reject(new Error("회원 서비스를 불러오지 못했습니다. 자료 문의하기를 이용해 주세요.")), 5000);
+    window.addEventListener("faith-auth-ready", async () => {
+      window.clearTimeout(timer);
+      try {
+        if (!window.FaithAuth?.requestPurchase) throw new Error("회원 서비스를 불러오지 못했습니다. 자료 문의하기를 이용해 주세요.");
+        resolve(await window.FaithAuth.requestPurchase(productId));
+      } catch (error) {
+        reject(error);
+      }
+    }, { once: true });
+  });
+}
+
+async function startProductPurchase(productId) {
+  const result = await requestProductPurchase(productId);
+  if (!result?.alreadyPurchased) return result;
+  if (!result.resourceId || !window.FaithAuth?.requestProtectedDownload) {
+    window.location.assign("account.html");
+    return result;
+  }
+  const download = await window.FaithAuth.requestProtectedDownload(result.resourceId);
+  trackFaithEvent("resource_download", { resource_id: result.resourceId, product_id: productId, repeat: true });
+  openProtectedDownloads(download);
+  return result;
+}
+
+function openProtectedDownloads(download) {
+  if (window.FaithAuth?.startProtectedDownloads) return window.FaithAuth.startProtectedDownloads(download);
+  if (!download?.url) throw new Error("다운로드 링크를 찾지 못했습니다.");
+  window.location.assign(download.url);
+  return 1;
+}
+
+function trackFaithEvent(name, params = {}) {
+  const payload = { ...params, page_path: window.location.pathname };
+  if (typeof window.gtag === "function") window.gtag("event", name, payload);
+  window.dispatchEvent(new CustomEvent("faith-conversion", { detail: { name, ...payload } }));
+}
+
+document.addEventListener("click", (event) => {
+  const preview = event.target.closest("[data-resource-preview]");
+  if (preview) trackFaithEvent("resource_preview", { product_id: preview.dataset.productId || "" });
+  const inquiry = event.target.closest("[data-resource-inquiry]");
+  if (inquiry) trackFaithEvent("resource_inquiry", { product_id: inquiry.dataset.productId || "" });
+});
+
 function prayerCard(item) {
   return `<article class="stack-card prayer-stack-card">
     <p class="eyebrow">${escapeHtml(item.category || "Prayer")}</p>
@@ -185,8 +277,14 @@ const homeVideos = $("#homeVideos");
 if (homeVideos) homeVideos.innerHTML = videoData.slice(0, 3).map(videoCard).join("");
 
 function pdfProductCard(product) {
-  const purchaseHref = product.purchaseUrl || "contact.html";
-  const purchaseLabel = product.purchaseUrl ? "자료 신청하기" : "자료 문의하기";
+  const productId = product.productId || product.id;
+  const canPurchase = isPurchasable(product);
+  const previewAction = product.resourceId
+    ? `<a class="button secondary" href="prayer-cards.html?resource=${encodeURIComponent(product.resourceId)}" data-resource-preview data-product-id="${escapeHtml(productId)}">공개 미리보기</a>`
+    : "";
+  const action = canPurchase
+    ? `<button class="button primary" type="button" data-product-purchase="${escapeHtml(productId)}">구매하기 · ${escapeHtml(formatKrw(product.priceKrw))}</button>`
+    : `<a class="button primary" href="${escapeHtml(productInquiryHref(product))}" data-resource-inquiry data-product-id="${escapeHtml(productId)}">자료 문의하기</a>`;
   const badge = product.isFeatured ? '<span class="product-badge">대표 상품</span>' : "";
   return `<article class="pdf-product-card${product.isFeatured ? " featured" : ""}">
     <div class="product-card-top">
@@ -197,16 +295,162 @@ function pdfProductCard(product) {
     <p class="product-audience">${escapeHtml(product.audience)}</p>
     <ul class="compact-list">${product.composition.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
     <div class="product-actions">
-      <a class="button secondary" href="${product.sampleUrl}">미리보기 문의</a>
-      <a class="button primary" href="${purchaseHref}">${purchaseLabel}</a>
+      ${previewAction}
+      ${action}
     </div>
   </article>`;
 }
 
-const pdfProductGrid = $("#pdfProductGrid");
-if (pdfProductGrid && typeof PDF_PRODUCTS !== "undefined") {
-  pdfProductGrid.innerHTML = PDF_PRODUCTS.map(pdfProductCard).join("");
+function resolvedPdfProduct(product) {
+  const direct = findFaithProduct(product.productId || product.id);
+  const linked = product.resourceId ? faithProducts().find((item) => item.resourceId === product.resourceId) : null;
+  const live = direct || linked;
+  if (!live) return product;
+  return {
+    ...product,
+    ...live,
+    id: live.id || product.id,
+    productId: live.id || product.productId || product.id,
+    resourceId: live.resourceId ?? product.resourceId
+  };
 }
+
+const pdfProductGrid = $("#pdfProductGrid");
+function renderPdfProductGrid() {
+  if (!pdfProductGrid || typeof PDF_PRODUCTS === "undefined") return;
+  pdfProductGrid.innerHTML = PDF_PRODUCTS.map((product) => pdfProductCard(resolvedPdfProduct(product))).join("");
+}
+if (pdfProductGrid && typeof PDF_PRODUCTS !== "undefined") {
+  renderPdfProductGrid();
+  pdfProductGrid.addEventListener("click", async (event) => {
+    const purchaseButton = event.target.closest("[data-product-purchase]");
+    if (purchaseButton) {
+      event.preventDefault();
+      const productId = purchaseButton.dataset.productPurchase;
+      trackFaithEvent("purchase_start", { product_id: productId });
+      try {
+        await startProductPurchase(productId);
+      } catch (error) {
+        window.alert(error.message || "결제 흐름을 열지 못했습니다. 자료 문의하기로 연락해 주세요.");
+      }
+      return;
+    }
+  });
+}
+
+const homeFaithResources = $("#homeFaithResources");
+function renderHomeFaithResources() {
+  if (!homeFaithResources || !Array.isArray(window.FAITH_RESOURCES)) return;
+  homeFaithResources.innerHTML = window.FAITH_RESOURCES.slice(0, 3).map((resource) => {
+    const product = findFaithProduct(resource.productId || resource.id);
+    const formatLabel = resource.type === "audio" ? "기도 오디오" : resource.type === "card" ? "말씀·기도카드" : "기도문 PDF";
+    const action = isPurchasable(product)
+      ? `<button class="button primary" type="button" data-product-purchase="${escapeHtml(product.id)}">구매하기 · ${escapeHtml(formatKrw(product.priceKrw))}</button>`
+      : `<a class="button secondary" href="${escapeHtml(productInquiryHref(product))}" data-resource-inquiry data-product-id="${escapeHtml(product?.id || resource.id)}">자료 문의하기</a>`;
+    return `<article class="home-resource-preview resource-type-${escapeHtml(resource.type)}">
+      <p class="eyebrow">${escapeHtml(formatLabel)}</p>
+      <h3>${escapeHtml(resource.title)}</h3>
+      <p>${escapeHtml(resource.summary)}</p>
+      <div class="home-resource-preview-actions">
+        <a class="text-link" href="prayer-cards.html?resource=${encodeURIComponent(resource.id)}" data-resource-preview data-product-id="${escapeHtml(product?.id || resource.id)}">공개 미리보기</a>
+        ${action}
+      </div>
+    </article>`;
+  }).join("");
+}
+if (homeFaithResources && Array.isArray(window.FAITH_RESOURCES)) {
+  renderHomeFaithResources();
+  homeFaithResources.addEventListener("click", async (event) => {
+    const purchaseButton = event.target.closest("[data-product-purchase]");
+    if (purchaseButton) {
+      event.preventDefault();
+      const productId = purchaseButton.dataset.productPurchase;
+      trackFaithEvent("purchase_start", { product_id: productId });
+      try {
+        await startProductPurchase(productId);
+      } catch (error) {
+        window.alert(error.message || "결제 흐름을 열지 못했습니다. 자료 문의하기로 연락해 주세요.");
+      }
+      return;
+    }
+  });
+}
+
+async function refreshCommerceProductCatalog() {
+  if (!pdfProductGrid && !homeFaithResources) return;
+  const client = window.FaithAuth?.getClient ? await window.FaithAuth.getClient() : window.FaithSupabase;
+  if (!client) return;
+  const { data, error } = await client
+    .from("faith_products")
+    .select("id, resource_id, type, title, summary, preview_items, sale_status, price_amount, currency, purchasable, published")
+    .eq("published", true);
+  if (error) return;
+  window.FAITH_PRODUCT_CATALOG = (data || []).map(normalizeFaithProduct);
+  renderPdfProductGrid();
+  renderHomeFaithResources();
+}
+
+if (pdfProductGrid || homeFaithResources) {
+  refreshCommerceProductCatalog().catch(() => {});
+  window.addEventListener("faith-auth-ready", () => { refreshCommerceProductCatalog().catch(() => {}); }, { once: true });
+}
+
+function productActionMarkup(product, productId) {
+  const normalized = normalizeFaithProduct(product || { id: productId, salesStatus: "inquiry", contactUrl: "contact.html" });
+  if (isPurchasable(normalized)) {
+    return `<button class="button primary" type="button" data-product-purchase="${escapeHtml(normalized.id)}">구매하기 · ${escapeHtml(formatKrw(normalized.priceKrw))}</button>`;
+  }
+  return `<a class="button primary" href="${escapeHtml(productInquiryHref(normalized))}" data-resource-inquiry data-product-id="${escapeHtml(normalized.id || productId)}">자료 문의하기</a>`;
+}
+
+(() => {
+  const targets = [...document.querySelectorAll("[data-product-action]")];
+  if (!targets.length) return;
+  const status = document.querySelector("[data-product-action-status]");
+  const setStatus = (message = "") => { if (status) status.textContent = message; };
+
+  async function hydrateProductActions() {
+    const ids = [...new Set(targets.map((target) => String(target.dataset.productAction || "").trim()).filter(Boolean))];
+    const client = window.FaithSupabase;
+    if (client && ids.length) {
+      const { data, error } = await client
+        .from("faith_products")
+        .select("id, resource_id, type, title, summary, preview_items, sale_status, price_amount, currency, purchasable, published")
+        .in("id", ids)
+        .eq("published", true);
+      if (!error && data?.length) window.FAITH_PRODUCT_CATALOG = (data || []).map(normalizeFaithProduct);
+    }
+    targets.forEach((target) => {
+      const productId = String(target.dataset.productAction || "").trim();
+      target.innerHTML = productActionMarkup(findFaithProduct(productId), productId);
+      if (target.dataset.productActionBound) return;
+      target.dataset.productActionBound = "true";
+      target.addEventListener("click", async (event) => {
+        const purchaseButton = event.target.closest("[data-product-purchase]");
+        if (!purchaseButton) return;
+        event.preventDefault();
+        const id = purchaseButton.dataset.productPurchase;
+        purchaseButton.disabled = true;
+        setStatus("결제 화면을 준비하고 있습니다.");
+        trackFaithEvent("purchase_start", { product_id: id });
+        try {
+          await startProductPurchase(id);
+        } catch (error) {
+          setStatus(error.message || "결제 흐름을 열지 못했습니다. 자료 문의하기로 연락해 주세요.");
+        } finally {
+          purchaseButton.disabled = false;
+        }
+      });
+    });
+  }
+
+  hydrateProductActions().catch(() => {
+    // 원격 상품 목록을 읽지 못해도 HTML에 둔 문의 CTA는 계속 사용할 수 있습니다.
+  });
+  window.addEventListener("faith-auth-ready", () => {
+    hydrateProductActions().catch(() => {});
+  }, { once: true });
+})();
 
 const prayerCardList = $("#prayerCardList");
 if (prayerCardList) {
@@ -224,6 +468,7 @@ if (visualPrayerCards) {
   const listRoot = $("#faithResourceList");
   const tagRoot = $("#faithResourceTags");
   const filterStatus = $("#faithResourceFilterStatus");
+  const actionStatus = $("#faithResourceActionStatus");
   const typeRoot = $("#faithResourceTypes");
   const searchInput = $("#faithResourceSearch");
   const resetButton = $("#faithResourceReset");
@@ -238,11 +483,33 @@ if (visualPrayerCards) {
   };
   let resources = [];
   let viewer = null;
+  let entitledResourceIds = new Set();
   let activeType = "all";
-  let searchQuery = "";
+  let searchQuery = new URLSearchParams(window.location.search).get("search") || "";
   const activeTags = new Set();
 
-  const hasSubscriberAccess = () => Boolean(viewer && (viewer.role === "admin" || viewer.subscription_status === "active"));
+  const isAdmin = () => Boolean(viewer?.role === "admin");
+  const hasPurchasedResource = (resource) => isAdmin() || entitledResourceIds.has(resource.id);
+
+  function setResourceActionStatus(message = "") {
+    if (!actionStatus) return;
+    actionStatus.textContent = message;
+    actionStatus.hidden = !message;
+  }
+
+  function productForResource(resource) {
+    const productId = resource.productId || resource.product_id || resource.id;
+    const localProduct = findFaithProduct(productId) || faithProducts().find((product) => product.resourceId === resource.id);
+    if (localProduct) return localProduct;
+    return normalizeFaithProduct({
+      id: productId,
+      resourceId: resource.id,
+      type: resource.type,
+      salesStatus: resource.access_level === "free" ? "free" : "inquiry",
+      priceKrw: null,
+      contactUrl: "contact.html"
+    });
+  }
 
   async function loadViewer() {
     if (!client) return null;
@@ -250,13 +517,28 @@ if (visualPrayerCards) {
     if (!user) return null;
     const { data: profile } = await client
       .from("profiles")
-      .select("role, subscription_status")
+      .select("role")
       .eq("id", user.id)
       .maybeSingle();
-    return profile ? { ...profile, user } : { role: "member", subscription_status: "free", user };
+    return profile ? { ...profile, user } : { role: "member", user };
   }
 
-  async function loadResources() {
+  async function refreshEntitlements() {
+    entitledResourceIds = new Set();
+    if (!viewer || isAdmin() || !window.FaithAuth?.hasPurchasedResource) return;
+    const checks = await Promise.all(resources.map(async (resource) => {
+      try {
+        const product = productForResource(resource);
+        const owned = await window.FaithAuth.hasPurchasedResource(product.resourceId || resource.id);
+        return owned ? resource.id : null;
+      } catch {
+        return null;
+      }
+    }));
+    entitledResourceIds = new Set(checks.filter(Boolean));
+  }
+
+  async function loadResources(catalog = []) {
     if (!client) return null;
     const { data, error } = await client
       .from("faith_resources")
@@ -266,13 +548,25 @@ if (visualPrayerCards) {
     if (error) return null;
     return (data || []).map((resource) => {
       const localPreview = fallbackResources.find((item) => item.id === resource.id);
+      const product = catalog.find((item) => item.resourceId === resource.id);
       return {
         ...resource,
-        previewItems: localPreview?.previewItems || [],
+        productId: product?.id || localPreview?.productId || resource.productId || resource.id,
+        previewItems: product?.previewItems || product?.preview_items || localPreview?.previewItems || [],
         sampleAudioUrl: localPreview?.sampleAudioUrl || localPreview?.sample_audio_url || "",
         isUploaded: true
       };
     });
+  }
+
+  async function loadProductCatalog() {
+    if (!client) return [];
+    const { data, error } = await client
+      .from("faith_products")
+      .select("id, resource_id, type, title, summary, preview_items, sale_status, price_amount, currency, purchasable, published")
+      .eq("published", true);
+    if (error) return [];
+    return (data || []).map(normalizeFaithProduct);
   }
 
   function resourcesByType() {
@@ -312,13 +606,21 @@ if (visualPrayerCards) {
 
   function renderHubAccessPanel(resource) {
     const fileLabel = resource.type === "audio" ? "MP3 파일" : resource.type === "card" ? "카드 전체 보기" : "PDF 파일";
-    if (hasSubscriberAccess()) {
-      const action = resource.type === "card"
-        ? `<button class="button primary" type="button" data-open-thread="${escapeHtml(resource.id)}">${escapeHtml(fileLabel)}</button>`
-        : `<button class="button primary" type="button" data-resource-download="${escapeHtml(resource.id)}">${escapeHtml(fileLabel)} 다운로드</button>`;
-      return `<div class="resource-access-panel"><p>구독회원 전용 전체 자료입니다.</p>${action}</div>`;
+    const product = productForResource(resource);
+    if (hasPurchasedResource(resource)) {
+      return `<div class="resource-access-panel"><p>구매한 자료입니다. 내 자료실에서도 다시 열 수 있습니다.</p><button class="button primary" type="button" data-resource-download="${escapeHtml(resource.id)}">${escapeHtml(fileLabel)} 열기</button></div>`;
     }
-    return `<div class="resource-access-panel"><p>무료 미리보기를 확인한 뒤 다운로드가 필요하면 구독 권한을 확인해 주세요.</p><button class="button primary" type="button" data-member-action>${viewer ? "구독 권한 확인" : "회원가입 후 다운로드"}</button></div>`;
+    if (product.salesStatus === "free") {
+      const publicUrl = resource.downloadUrl || resource.download_url || resource.publicDownloadUrl || "";
+      const action = publicUrl
+        ? `<a class="button primary" href="${escapeHtml(publicUrl)}">${escapeHtml(fileLabel)} 열기</a>`
+        : `<button class="button secondary" type="button" data-resource-detail="${escapeHtml(resource.id)}">자료 구성 보기</button>`;
+      return `<div class="resource-access-panel"><p>공개 자료입니다. 필요한 때에 다시 꺼내 읽을 수 있습니다.</p>${action}</div>`;
+    }
+    if (isPurchasable(product)) {
+      return `<div class="resource-access-panel"><p>개별 구매 후 바로 내 자료실에서 열 수 있습니다.</p><button class="button primary" type="button" data-product-purchase="${escapeHtml(product.id)}">구매하기 · ${escapeHtml(formatKrw(product.priceKrw))}</button></div>`;
+    }
+    return `<div class="resource-access-panel"><p>공개 미리보기와 자료 구성을 확인한 뒤, 이용 방법을 안내받을 수 있습니다.</p><a class="button primary" href="${escapeHtml(productInquiryHref(product))}" data-resource-inquiry data-product-id="${escapeHtml(product.id)}">자료 문의하기</a></div>`;
   }
 
   function hubFilteredResources() {
@@ -340,12 +642,15 @@ if (visualPrayerCards) {
   function renderHubCard(resource) {
     const tags = (resource.tags || []).map((tag) => `<span>${escapeHtml(tag)}</span>`).join("");
     const meta = typeMeta[resource.type] || typeMeta.all;
+    const product = productForResource(resource);
+    const availability = product.salesStatus === "free" ? "무료 자료" : isPurchasable(product) ? "개별 구매 자료" : "공개 미리보기 · 이용 방법 문의";
     return `<article class="faith-resource-card resource-type-${escapeHtml(resource.type)}" data-resource-id="${escapeHtml(resource.id)}">
-      <div class="resource-card-head"><p class="eyebrow">${escapeHtml(meta.title)}</p><span class="access-pill">무료 미리보기 · 다운로드는 구독회원 전용</span></div>
+      <div class="resource-card-head"><p class="eyebrow">${escapeHtml(meta.title)}</p><span class="access-pill">${escapeHtml(availability)}</span></div>
       <h3>${escapeHtml(resource.title)}</h3>
       <p class="resource-summary">${escapeHtml(resource.summary)}</p>
       <div class="resource-card-tags">${tags}</div>
       ${renderHubPublicPreview(resource)}
+      <button class="text-button resource-detail-link" type="button" data-resource-detail="${escapeHtml(resource.id)}">자료 구성 자세히 보기</button>
       ${renderHubAccessPanel(resource)}
     </article>`;
   }
@@ -382,8 +687,7 @@ if (visualPrayerCards) {
   }
 
   function promptMemberAccess() {
-    const status = document.querySelector("[data-member-auth-status]");
-    if (status) status.textContent = viewer ? "현재 계정은 구독 권한이 필요합니다." : "회원가입 또는 로그인 후 구독 권한을 확인할 수 있습니다.";
+    setResourceActionStatus(viewer ? "구매한 자료는 내 자료실에서 다시 열 수 있습니다." : "자료를 구매하거나 내 자료실을 이용하려면 로그인해 주세요.");
     if (window.FaithAuth?.open) {
       window.FaithAuth.open(viewer ? "login" : "signup");
       return;
@@ -391,67 +695,48 @@ if (visualPrayerCards) {
     window.addEventListener("faith-auth-ready", () => window.FaithAuth?.open(viewer ? "login" : "signup"), { once: true });
   }
 
-  async function getPrivateResource(resourceId) {
-    const [{ data: details, error: detailError }, { data: files, error: fileError }] = await Promise.all([
-      client.from("faith_resource_private_details").select("description, preview_items, gallery_items").eq("resource_id", resourceId).maybeSingle(),
-      client.from("resource_files").select("id, object_path, file_name, mime_type, sort_order").eq("resource_id", resourceId).order("sort_order")
-    ]);
-    if (detailError || fileError) throw new Error("구독 권한이 필요합니다.");
-    return { details: details || {}, files: files || [] };
-  }
-
-  async function createDownloadUrl(file) {
-    const { data, error } = await client.storage
-      .from("faith-resources")
-      .createSignedUrl(file.object_path, 300, { download: file.file_name });
-    if (error) throw error;
-    return data.signedUrl;
-  }
-
-  async function openThread(resource) {
-    if (!hasSubscriberAccess()) {
-      promptMemberAccess();
-      return;
-    }
+  function openResourceDetail(resource) {
     const title = $("#cardThreadTitle");
     const description = $("#cardThreadDescription");
     const gallery = $("#cardThreadGallery");
-    if (!threadPanel || !client) return;
-    try {
-      const { details, files } = await getPrivateResource(resource.id);
-      const signedFiles = await Promise.all(files.map(async (file) => ({ ...file, signedUrl: await createDownloadUrl(file) })));
-      if (title) title.textContent = resource.title;
-      if (description) description.textContent = details.description || resource.summary;
-      if (gallery) {
-        gallery.innerHTML = signedFiles.length ? signedFiles.map((file, index) => {
-          if (resource.type === "card" && file.mime_type.startsWith("image/")) {
-            return `<article class="thread-gallery-card"><img src="${escapeHtml(file.signedUrl)}" alt="${escapeHtml(resource.title)} ${index + 1}"><strong>${escapeHtml(file.file_name)}</strong></article>`;
-          }
-          if (resource.type === "audio") {
-            return `<article class="thread-gallery-card"><span>${index + 1}</span><strong>${escapeHtml(file.file_name)}</strong><audio controls preload="metadata" src="${escapeHtml(file.signedUrl)}"></audio></article>`;
-          }
-          return `<article class="thread-gallery-card"><span>${index + 1}</span><strong>${escapeHtml(file.file_name)}</strong><a class="button secondary" href="${escapeHtml(file.signedUrl)}">파일 다운로드</a></article>`;
-        }).join("") : '<p class="muted">연결된 파일이 없습니다.</p>';
-      }
-      threadPanel.hidden = false;
-      threadPanel.scrollIntoView({ behavior: "smooth", block: "start" });
-    } catch (error) {
-      promptMemberAccess();
+    if (!threadPanel) return;
+    const items = renderHubPreviewItems(resource);
+    if (title) title.textContent = resource.title;
+    if (description) description.textContent = resource.description || resource.summary;
+    if (gallery) {
+      gallery.innerHTML = `<div class="resource-detail-content">
+        <p class="eyebrow">${escapeHtml((typeMeta[resource.type] || typeMeta.all).title)}</p>
+        <h3>자료 구성</h3>
+        <ul class="compact-list">${items.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
+        ${renderHubAccessPanel(resource)}
+      </div>`;
     }
+    threadPanel.hidden = false;
+    const url = new URL(window.location.href);
+    url.searchParams.set("resource", resource.id);
+    window.history.replaceState({}, "", url);
+    trackFaithEvent("resource_detail_view", { resource_id: resource.id, product_id: productForResource(resource).id });
+    threadPanel.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   async function downloadResource(resourceId) {
-    if (!hasSubscriberAccess() || !client) {
-      promptMemberAccess();
+    const resource = resources.find((item) => item.id === resourceId);
+    if (!resource) return;
+    const product = productForResource(resource);
+    const publicUrl = resource.downloadUrl || resource.download_url || resource.publicDownloadUrl || "";
+    if (product.salesStatus === "free" && publicUrl) {
+      trackFaithEvent("resource_download", { resource_id: resourceId, product_id: product.id });
+      window.location.assign(publicUrl);
       return;
     }
     try {
-      if (!window.FaithAuth?.requestProtectedDownload) throw new Error("회원 서비스를 연결하고 있습니다. 잠시 후 다시 시도해 주세요.");
+      if (!window.FaithAuth?.requestProtectedDownload) throw new Error("회원 서비스를 불러오는 중입니다. 잠시 후 다시 시도해 주세요.");
       const download = await window.FaithAuth.requestProtectedDownload(resourceId);
-      window.location.assign(download.url);
+      trackFaithEvent("resource_download", { resource_id: resourceId, product_id: product.id });
+      const count = openProtectedDownloads(download);
+      setResourceActionStatus(count > 1 ? `${count}개 파일의 다운로드를 시작했습니다.` : "다운로드를 시작했습니다.");
     } catch (error) {
-      const status = document.querySelector("[data-member-auth-status]");
-      if (status) status.textContent = error.message || "파일을 열 수 없습니다.";
+      setResourceActionStatus(error.message || "파일을 열 수 없습니다.");
     }
   }
 
@@ -509,28 +794,69 @@ if (visualPrayerCards) {
       renderAll();
       return;
     }
-    if (event.target.closest("[data-member-action]")) return promptMemberAccess();
+    const detailButton = event.target.closest("[data-resource-detail]");
+    if (detailButton) {
+      const resource = resources.find((item) => item.id === detailButton.dataset.resourceDetail);
+      if (resource) openResourceDetail(resource);
+      return;
+    }
+    const purchaseButton = event.target.closest("[data-product-purchase]");
+    if (purchaseButton) {
+      const productId = purchaseButton.dataset.productPurchase;
+      trackFaithEvent("purchase_start", { product_id: productId });
+      startProductPurchase(productId).catch((error) => {
+        setResourceActionStatus(error.message || "결제 흐름을 열지 못했습니다. 자료 문의하기로 연락해 주세요.");
+      });
+      return;
+    }
+    if (event.target.closest("[data-resource-inquiry]")) return;
     const downloadButton = event.target.closest("[data-resource-download]");
     if (downloadButton) return downloadResource(downloadButton.dataset.resourceDownload);
-    const openButton = event.target.closest("[data-open-thread]");
-    const resource = resources.find((item) => item.id === openButton?.dataset.openThread);
-    if (resource) openThread(resource);
   });
 
   document.querySelector("[data-close-thread]")?.addEventListener("click", () => {
     if (threadPanel) threadPanel.hidden = true;
+    const url = new URL(window.location.href);
+    url.searchParams.delete("resource");
+    window.history.replaceState({}, "", url);
+  });
+
+  threadPanel?.addEventListener("click", (event) => {
+    const purchaseButton = event.target.closest("[data-product-purchase]");
+    if (purchaseButton) {
+      const productId = purchaseButton.dataset.productPurchase;
+      trackFaithEvent("purchase_start", { product_id: productId });
+      startProductPurchase(productId).catch((error) => {
+        setResourceActionStatus(error.message || "결제 흐름을 열지 못했습니다. 자료 문의하기로 연락해 주세요.");
+      });
+      return;
+    }
+    const downloadButton = event.target.closest("[data-resource-download]");
+    if (downloadButton) downloadResource(downloadButton.dataset.resourceDownload);
   });
 
   window.addEventListener("faith-auth-changed", async () => {
     viewer = await loadViewer();
+    await refreshEntitlements();
+    renderAll();
+  });
+
+  window.addEventListener("faith-auth-ready", async () => {
+    await refreshEntitlements();
     renderAll();
   });
 
   (async () => {
     viewer = await loadViewer();
-    const remoteResources = await loadResources();
-    resources = remoteResources ?? fallbackResources;
+    window.FAITH_PRODUCT_CATALOG = await loadProductCatalog();
+    const remoteResources = await loadResources(window.FAITH_PRODUCT_CATALOG);
+    resources = remoteResources?.length ? remoteResources : fallbackResources;
+    if (searchInput) searchInput.value = searchQuery;
+    await refreshEntitlements();
     renderAll();
+    const requestedResource = new URLSearchParams(window.location.search).get("resource");
+    const resource = resources.find((item) => item.id === requestedResource);
+    if (resource) openResourceDetail(resource);
   })();
 })();
 
@@ -560,9 +886,9 @@ if (visualPrayerCards) {
     if (!client) return setStatus("회원 연결을 불러오지 못했습니다.");
     const { data: { user } } = await client.auth.getUser();
     if (!user) return;
-    const { data: profile } = await client.from("profiles").select("role, subscription_status").eq("id", user.id).maybeSingle();
+    const { data: profile } = await client.from("profiles").select("role").eq("id", user.id).maybeSingle();
     logoutButton.hidden = false;
-    setStatus(profile?.subscription_status === "active" || profile?.role === "admin" ? "구독회원으로 로그인되어 있습니다." : "로그인되어 있습니다. 구독 권한은 결제 완료 후 활성화됩니다.");
+    setStatus(profile?.role === "admin" ? "관리자 계정으로 로그인되어 있습니다." : "로그인되어 있습니다. 구매한 자료는 내 자료실에서 확인할 수 있습니다.");
   }
 
   form.addEventListener("submit", async (event) => {
@@ -612,6 +938,11 @@ if (visualPrayerCards) {
   const uploadStatus = document.querySelector("[data-admin-upload-status]");
   const dropzone = document.querySelector("[data-upload-dropzone]");
   const fileInput = uploadForm?.querySelector("[name='files']");
+  const typeInput = uploadForm?.querySelector("[name='type']");
+  const fileField = uploadForm?.querySelector("[data-admin-file-field]");
+  const journeyNote = uploadForm?.querySelector("[data-admin-journey-note]");
+  const saleStatusInput = uploadForm?.querySelector("[name='saleStatus']");
+  const priceAmountInput = uploadForm?.querySelector("[name='priceAmount']");
   const fileSummary = document.querySelector("[data-upload-file-summary]");
   const resetPasswordButton = document.querySelector("[data-admin-reset-password]");
   let adminUser = null;
@@ -650,10 +981,31 @@ if (visualPrayerCards) {
   }
 
   function filesMatchType(type, files) {
+    if (type === "journey") return files.length === 0;
     if (!files.length) return false;
     if (type === "pdf") return files.length === 1 && (files[0].type === "application/pdf" || /\.pdf$/i.test(files[0].name));
     if (type === "audio") return files.length === 1 && (/^audio\//.test(files[0].type) || /\.mp3$/i.test(files[0].name));
     return files.every((file) => /^image\//.test(file.type) || /\.(jpe?g|png|webp)$/i.test(file.name));
+  }
+
+  function syncProductSaleFields() {
+    if (!saleStatusInput || !priceAmountInput) return;
+    const purchasable = saleStatusInput.value === "available";
+    priceAmountInput.disabled = !purchasable;
+    priceAmountInput.required = purchasable;
+    if (!purchasable) priceAmountInput.value = "";
+  }
+
+  function syncResourceTypeFields() {
+    if (!typeInput || !fileInput) return;
+    const isJourney = typeInput.value === "journey";
+    fileInput.required = !isJourney;
+    fileInput.disabled = isJourney;
+    if (isJourney) fileInput.value = "";
+    if (fileField) fileField.hidden = isJourney;
+    if (dropzone) dropzone.hidden = isJourney;
+    if (journeyNote) journeyNote.hidden = !isJourney;
+    updateFileSummary();
   }
 
   loginForm?.addEventListener("submit", async (event) => {
@@ -680,9 +1032,13 @@ if (visualPrayerCards) {
   });
 
   fileInput?.addEventListener("change", updateFileSummary);
-  dropzone?.addEventListener("click", () => fileInput?.click());
+  saleStatusInput?.addEventListener("change", syncProductSaleFields);
+  typeInput?.addEventListener("change", syncResourceTypeFields);
+  syncProductSaleFields();
+  syncResourceTypeFields();
+  dropzone?.addEventListener("click", () => { if (!fileInput?.disabled) fileInput?.click(); });
   dropzone?.addEventListener("keydown", (event) => {
-    if (event.key === "Enter" || event.key === " ") fileInput?.click();
+    if ((event.key === "Enter" || event.key === " ") && !fileInput?.disabled) fileInput?.click();
   });
   ["dragenter", "dragover"].forEach((eventName) => dropzone?.addEventListener(eventName, (event) => {
     event.preventDefault();
@@ -693,7 +1049,7 @@ if (visualPrayerCards) {
     dropzone.classList.remove("is-dragging");
   }));
   dropzone?.addEventListener("drop", (event) => {
-    if (!fileInput || !event.dataTransfer?.files.length) return;
+    if (!fileInput || fileInput.disabled || !event.dataTransfer?.files.length) return;
     fileInput.files = event.dataTransfer.files;
     updateFileSummary();
   });
@@ -704,14 +1060,50 @@ if (visualPrayerCards) {
     const formData = new FormData(uploadForm);
     const type = String(formData.get("type"));
     const files = [...fileInput.files];
+    if (!["pdf", "audio", "card", "journey"].includes(type)) return setUploadStatus("자료 유형을 확인해 주세요.");
     if (!filesMatchType(type, files)) return setUploadStatus(type === "card" ? "카드 자료에는 이미지 파일을 선택해 주세요." : "선택한 자료 유형에 맞는 파일 한 개를 선택해 주세요.");
     const tags = String(formData.get("tags") || "").split(",").map((tag) => tag.trim()).filter(Boolean);
     if (!tags.length) return setUploadStatus("키워드를 하나 이상 입력해 주세요.");
+    const productId = String(formData.get("productId") || "").trim();
+    if (!/^[A-Za-z0-9_-]{2,120}$/.test(productId)) return setUploadStatus("상품 ID는 영문, 숫자, 밑줄, 하이픈으로 2~120자 입력해 주세요.");
+    const saleStatus = String(formData.get("saleStatus") || "inquiry");
+    if (!["inquiry", "unavailable", "available"].includes(saleStatus)) return setUploadStatus("판매 상태를 확인해 주세요.");
+    const priceInput = String(formData.get("priceAmount") || "").trim();
+    const priceAmount = priceInput ? Number(priceInput) : null;
+    if (saleStatus === "available" && (!Number.isInteger(priceAmount) || priceAmount <= 0)) return setUploadStatus("온라인 구매 가능 자료에는 올바른 판매 가격을 입력해 주세요.");
+    if (saleStatus !== "available" && priceInput) return setUploadStatus("문의 안내 또는 판매 비노출 자료에는 가격을 입력하지 않아야 합니다.");
+    const previewItems = String(formData.get("previewItems") || "").split(/\r?\n/).map((item) => item.trim()).filter(Boolean).slice(0, 6);
+    if (!previewItems.length) return setUploadStatus("공개 미리보기 구성을 한 항목 이상 입력해 주세요.");
+    const title = String(formData.get("title")).trim();
+    const summary = String(formData.get("summary")).trim();
+    const productPayload = {
+      id: productId,
+      resource_id: null,
+      type,
+      title,
+      summary,
+      preview_items: previewItems,
+      sale_status: saleStatus,
+      price_amount: saleStatus === "available" ? priceAmount : null,
+      currency: "KRW",
+      purchasable: saleStatus === "available",
+      published: true
+    };
+    if (type === "journey") {
+      setUploadStatus("기도 여정 상품을 등록하고 있습니다.");
+      const { error: journeyError } = await client.from("faith_products").insert(productPayload);
+      if (journeyError) return setUploadStatus(`기도 여정 상품을 등록하지 못했습니다. ${journeyError.message}`);
+      uploadForm.reset();
+      syncProductSaleFields();
+      syncResourceTypeFields();
+      setUploadStatus("기도 여정 상품 계약을 등록하고 발행했습니다.");
+      return;
+    }
     setUploadStatus("자료와 파일을 저장하고 있습니다.");
     const { data: resource, error: resourceError } = await client.from("faith_resources").insert({
       type,
-      title: String(formData.get("title")).trim(),
-      summary: String(formData.get("summary")).trim(),
+      title,
+      summary,
       tags,
       created_by: adminUser.id
     }).select("id").single();
@@ -719,7 +1111,7 @@ if (visualPrayerCards) {
     const { error: detailError } = await client.from("faith_resource_private_details").insert({
       resource_id: resource.id,
       description: String(formData.get("description")).trim(),
-      preview_items: files.slice(0, 3).map((file) => file.name),
+      preview_items: previewItems,
       gallery_items: files.map((file) => file.name)
     });
     if (detailError) return setUploadStatus(detailError.message);
@@ -732,11 +1124,21 @@ if (visualPrayerCards) {
     }
     const { error: fileError } = await client.from("resource_files").insert(fileRows);
     if (fileError) return setUploadStatus(fileError.message);
+    const { error: productError } = await client.from("faith_products").insert({
+      ...productPayload,
+      resource_id: resource.id,
+      published: false
+    });
+    if (productError) return setUploadStatus(`상품 계약을 저장하지 못했습니다. ${productError.message}`);
     const { error: publishError } = await client.from("faith_resources").update({ published: true, updated_at: new Date().toISOString() }).eq("id", resource.id);
     if (publishError) return setUploadStatus(publishError.message);
+    const { error: productPublishError } = await client.from("faith_products").update({ published: true }).eq("id", productId);
+    if (productPublishError) return setUploadStatus(`자료는 등록되었지만 상품 발행을 완료하지 못했습니다. ${productPublishError.message}`);
     uploadForm.reset();
+    syncProductSaleFields();
+    syncResourceTypeFields();
     updateFileSummary();
-    setUploadStatus("자료를 등록하고 발행했습니다.");
+    setUploadStatus("자료와 상품 계약을 등록하고 발행했습니다.");
   });
 
   window.addEventListener("faith-auth-changed", refreshAdminAccess);
@@ -763,6 +1165,12 @@ if (prayerForm) {
   });
 }
 
+(() => {
+  const productInput = document.querySelector("[data-contact-product-id]");
+  const productId = new URLSearchParams(window.location.search).get("product");
+  if (productInput && productId && /^[A-Za-z0-9_-]{2,120}$/.test(productId)) productInput.value = productId;
+})();
+
 function normalizeSiteNav() {
   const nav = document.getElementById("site-nav");
   if (!nav) return;
@@ -780,27 +1188,65 @@ function normalizeSiteNav() {
     community: '<path d="M5 19.5A8.5 8.5 0 1 1 20 14H9l-4 4z"></path><path d="M8 11h.01M12 11h.01M16 11h.01"></path>'
   };
   const navIcon = (name) => `<svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">${paths[name] || paths.light}</svg>`;
-  const items = [
-    { href: "community.html", label: "\uC18C\uD1B5\uAC8C\uC2DC\uD310", iconName: "community", keys: ["community"] },
-    { href: "prayers.html", label: "\uB9D0\uC500 \uBD99\uB4E4\uAE30", iconName: "bible", keys: ["prayers"] },
-    { href: "night-prayer.html", label: "\uC800\uB141\uAE30\uB3C4", iconName: "moon", keys: ["night-prayer"] },
-    { href: "morning-prayer.html", label: "\uC544\uCE68\uAE30\uB3C4", iconName: "sun", keys: ["morning-prayer"] },
-    { href: "meditation.html", label: "\uD050\uD2F0(QT)", iconName: "book", keys: ["meditation"] },
-    { href: "videos.html", label: "\uAE30\uB3C4(\uC720\uD29C\uBE0C)", iconName: "play", keys: ["videos"] },
-    { href: "prayer-cards.html", label: "\uC2E0\uC559\uC790\uB8CC", iconName: "card", keys: ["prayer-cards", "prayer-challenge", "premium-pdf"] },
-    { href: "prayer-request.html", label: "\uAE30\uB3C4\uC81C\uBAA9", iconName: "heart", keys: ["prayer-request"] },
-    { href: "contact.html", label: "\uBB38\uC758\uD558\uAE30", iconName: "mail", keys: ["contact"] },
-    { href: "about.html", label: "\uAE30\uB3C4\uC758\uC0D8\uBB3C \uC18C\uAC1C", iconName: "light", keys: ["about"] }
+  const primaryItems = [
+    { href: "index.html", label: "오늘의 기도", iconName: "light", keys: ["index", "morning-prayer", "night-prayer", "meditation", "videos", "prayer-detail"] },
+    { href: "prayers.html", label: "상황별 찾기", iconName: "bible", keys: ["prayers", "archive"] },
+    { href: "prayer-challenge.html", label: "기도 여정", iconName: "book", keys: ["prayer-challenge"] },
+    { href: "prayer-cards.html", label: "신앙자료", iconName: "card", keys: ["prayer-cards", "premium-pdf"] }
   ];
-  nav.innerHTML = items.map((item) => {
+  const togetherItems = [
+    { href: "prayer-request.html", label: "기도제목", iconName: "heart", keys: ["prayer-request"] },
+    { href: "community.html", label: "소통게시판", iconName: "community", keys: ["community"] }
+  ];
+  const navLink = (item) => {
     const active = item.keys.includes(current);
     const className = active ? ' class="active"' : "";
     const currentAttr = active ? ' aria-current="page"' : "";
     return `<a${className}${currentAttr} href="${item.href}">${navIcon(item.iconName)}${item.label}</a>`;
-  }).join("");
+  };
+  const togetherActive = togetherItems.some((item) => item.keys.includes(current));
+  nav.innerHTML = `${primaryItems.map(navLink).join("")}
+    <details class="site-nav-more"${togetherActive ? " open" : ""}>
+      <summary class="${togetherActive ? "active" : ""}">${navIcon("heart")}함께하기<span aria-hidden="true">⌄</span></summary>
+      <div class="site-nav-more-panel">${togetherItems.map(navLink).join("")}</div>
+    </details>`;
 }
 
 normalizeSiteNav();
+(() => {
+  const root = document.getElementById("homeCommunityPreview");
+  if (!root) return;
+
+  const dateText = (value) => value ? new Intl.DateTimeFormat("ko-KR", { month: "long", day: "numeric" }).format(new Date(value)) : "";
+  const render = (posts = [], message = "") => {
+    root.setAttribute("aria-busy", "false");
+    if (posts.length) {
+      root.innerHTML = posts.map((post) => `<article><span>${escapeHtml(post.category === "gratitude" ? "감사 나눔" : "기도제목")} · ${escapeHtml(dateText(post.created_at))}</span><strong>${escapeHtml(post.title)}</strong><p>${escapeHtml(post.body).slice(0, 72)}${post.body.length > 72 ? "…" : ""}</p><a class="text-link" href="community.html?post=${encodeURIComponent(post.id)}">이야기 보기</a></article>`).join("");
+      return;
+    }
+    root.innerHTML = `<p>${escapeHtml(message || "최근 나눔은 소통게시판에서 확인할 수 있습니다.")}</p>`;
+  };
+
+  async function loadCommunityPreview() {
+    try {
+      const client = window.FaithAuth?.getClient ? await window.FaithAuth.getClient() : window.FaithSupabase;
+      if (!client) return render([], "최근 나눔은 소통게시판에서 확인할 수 있습니다.");
+      const { data, error } = await client
+        .from("community_posts")
+        .select("id,category,title,body,created_at")
+        .eq("status", "published")
+        .order("created_at", { ascending: false })
+        .limit(3);
+      if (error) return render([], "최근 나눔은 소통게시판에서 확인할 수 있습니다.");
+      render(data || []);
+    } catch {
+      render([], "최근 나눔은 소통게시판에서 확인할 수 있습니다.");
+    }
+  }
+
+  if (window.FaithAuth?.getClient || window.FaithSupabase) loadCommunityPreview();
+  else window.addEventListener("faith-auth-ready", loadCommunityPreview, { once: true });
+})();
 (() => {
   const dailyWords = Array.isArray(window.DAILY_WORDS) ? window.DAILY_WORDS : [];
   const categories = Array.isArray(window.PRAYER_CATEGORIES) ? window.PRAYER_CATEGORIES : [];
@@ -932,11 +1378,25 @@ normalizeSiteNav();
     return `<div class="soft-empty-state"><h3>가까운 주제를 다시 골라보세요</h3><p>입력한 단어와 꼭 맞는 묵상은 없지만, 아래 주제에서 오늘 마음에 필요한 말씀을 찾아볼 수 있습니다.</p><div class="filter-row">${recommended.map((item) => `<a class="filter-chip" href="${text(item.pageUrl)}">${icon(item.icon, "icon-sm")}${text(item.label)}</a>`).join("")}</div></div>`;
   }
 
+  function resourceSearchCard(resource) {
+    const typeLabel = resource.type === "audio" ? "기도 오디오" : resource.type === "card" ? "말씀·기도카드" : "기도문 PDF";
+    return `<article class="archive-word-card home-resource-search-card"><div class="archive-card-meta"><span>신앙자료</span><span>${text(typeLabel)}</span></div><h3>${text(resource.title)}</h3><p>${text(resource.summary)}</p>${tagsHtml(resource.tags || [])}<a class="text-link" href="prayer-cards.html?resource=${encodeURIComponent(resource.id)}">자료 구성 보기</a></article>`;
+  }
+
+  function searchFaithResources(query) {
+    const normalized = query.trim().toLowerCase();
+    if (!normalized) return [];
+    const resources = Array.isArray(window.FAITH_RESOURCES) ? window.FAITH_RESOURCES : [];
+    return resources.filter((resource) => [resource.title, resource.summary, ...(resource.tags || [])].join(" ").toLowerCase().includes(normalized));
+  }
+
   function renderHomeSearch(query = "") {
     const root = document.getElementById("homeSearchResults");
     if (!root) return;
-    const items = query ? searchItems(query).slice(0, 8) : sorted(dailyWords).slice(0, 4);
-    root.innerHTML = items.length ? items.map(archiveCard).join("") : emptySearchMessage();
+    const words = query ? searchItems(query).slice(0, 6) : sorted(dailyWords).slice(0, 4);
+    const resources = query ? searchFaithResources(query).slice(0, 4) : [];
+    const cards = [...words.map(archiveCard), ...resources.map(resourceSearchCard)];
+    root.innerHTML = cards.length ? cards.join("") : emptySearchMessage();
   }
 
   function renderArchivePage(query = "", category = "all") {
@@ -947,27 +1407,7 @@ normalizeSiteNav();
   }
 
   function decorateNavIcons() {
-    const nav = document.getElementById("site-nav");
-    if (!nav) return;
-    const current = (window.location.pathname.split("/").pop() || "index.html").replace(/\.html$/, "");
-    const items = [
-      { href: "community.html", label: "\uC18C\uD1B5\uAC8C\uC2DC\uD310", iconName: "community", keys: ["community"] },
-      { href: "prayers.html", label: "\uB9D0\uC500 \uBD99\uB4E4\uAE30", iconName: "bible", keys: ["prayers"] },
-      { href: "night-prayer.html", label: "\uC800\uB141\uAE30\uB3C4", iconName: "moon", keys: ["night-prayer"] },
-      { href: "morning-prayer.html", label: "\uC544\uCE68\uAE30\uB3C4", iconName: "sun", keys: ["morning-prayer"] },
-      { href: "meditation.html", label: "\uD050\uD2F0(QT)", iconName: "book", keys: ["meditation"] },
-      { href: "videos.html", label: "\uAE30\uB3C4(\uC720\uD29C\uBE0C)", iconName: "play", keys: ["videos"] },
-      { href: "prayer-cards.html", label: "\uC2E0\uC559\uC790\uB8CC", iconName: "card", keys: ["prayer-cards", "prayer-challenge", "premium-pdf"] },
-      { href: "prayer-request.html", label: "\uAE30\uB3C4\uC81C\uBAA9", iconName: "heart", keys: ["prayer-request"] },
-      { href: "contact.html", label: "\uBB38\uC758\uD558\uAE30", iconName: "mail", keys: ["contact"] },
-      { href: "about.html", label: "\uAE30\uB3C4\uC758\uC0D8\uBB3C \uC18C\uAC1C", iconName: "light", keys: ["about"] }
-    ];
-    nav.innerHTML = items.map((item) => {
-      const active = item.keys.includes(current);
-      const className = active ? ' class="active"' : "";
-      const currentAttr = active ? ' aria-current="page"' : "";
-      return `<a${className}${currentAttr} href="${item.href}">${icon(item.iconName, "nav-icon")}${item.label}</a>`;
-    }).join("");
+    normalizeSiteNav();
   }
   let homeFilter = "all";
   function updateHomeFilter(next = homeFilter) {
