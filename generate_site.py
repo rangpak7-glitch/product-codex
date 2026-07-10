@@ -1,7 +1,7 @@
 from pathlib import Path
 
 ROOT = Path(__file__).parent
-SITE = "https://rangpak7-glitch.github.io/product-codex"
+SITE = "https://product-codex-90j.pages.dev"
 ADS_META = '<meta name="google-adsense-account" content="ca-pub-9363769983329867">'
 ADS_SCRIPT = '<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9363769983329867" crossorigin="anonymous"></script>'
 
@@ -133,7 +133,7 @@ page("prayer-detail.html", "기도문 상세 | 기도의 샘물", "기도문을 
 page("adsense-checklist.html", "애드센스 사전 점검표 | 기도의 샘물", "기도의 샘물 사이트의 애드센스 정책 친화성, 콘텐츠 품질, 링크, 광고 배치를 점검하는 페이지입니다.", "", '<section class="page-hero"><p class="eyebrow">AdSense Review</p><h1>애드센스 사전 점검표</h1><p>정책 친화적인 콘텐츠 사이트 운영을 위한 자체 점검 항목입니다.</p></section><section class="article"><ul class="check-list"><li>모든 주요 메뉴가 정상 작동한다.</li><li>비어 있는 페이지와 미완성 표현을 화면에 노출하지 않는다.</li><li>기도문, 묵상, 영상 소개, 신앙 자료 페이지에 충분한 본문이 있다.</li><li>개인정보처리방침, 이용약관, 문의하기, 소개 페이지가 있다.</li><li>광고 위치가 콘텐츠 읽기를 방해하지 않는다.</li><li>광고 클릭을 유도하는 문구가 없다.</li><li>모바일에서 글자와 버튼이 읽기 쉽다.</li><li>sitemap.xml, robots.txt, 404.html, ads.txt가 있다.</li></ul></section>')
 page("404.html", "페이지를 찾을 수 없습니다 | 기도의 샘물", "기도의 샘물 404 안내 페이지입니다.", "", '<section class="page-hero"><p class="eyebrow">404</p><h1>페이지를 찾을 수 없습니다</h1><p>주소가 변경되었거나 존재하지 않는 페이지입니다.</p><div class="hero-actions"><a class="button primary" href="index.html">홈으로 이동</a><a class="button secondary" href="prayers.html">기도문 보기</a></div></section>')
 
-urls = ["", "about.html", "prayers.html", "prayer-detail.html", "night-prayer.html", "morning-prayer.html", "meditation.html", "videos.html", "prayer-cards.html", "prayer-challenge.html", "prayer-request.html", "premium-pdf.html", "contact.html", "privacy.html", "terms.html", "disclaimer.html", "adsense-checklist.html"]
+urls = ["", "about", "community", "prayers", "prayer-detail", "night-prayer", "morning-prayer", "meditation", "videos", "prayer-cards", "prayer-challenge", "prayer-request", "premium-pdf", "archive", "contact", "privacy", "terms", "disclaimer", "adsense-checklist"]
 w("sitemap.xml", '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' + "\n".join(f"  <url><loc>{SITE + '/' + u if u else SITE + '/'}</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>" for u in urls) + "\n</urlset>")
 w("robots.txt", f"User-agent: *\nAllow: /\nSitemap: {SITE}/sitemap.xml")
 w("ads.txt", "google.com, pub-9363769983329867, DIRECT, f08c47fec0942fa0")
