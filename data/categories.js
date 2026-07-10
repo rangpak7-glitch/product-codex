@@ -1,5 +1,14 @@
 window.PRAYER_CATEGORIES = [
   {
+    id: "community",
+    label: "\uC18C\uD1B5\uAC8C\uC2DC\uD310",
+    description: "\uAE30\uB3C4\uC81C\uBAA9\uACFC \uAC10\uC0AC, \uC18C\uBAA8\uC784\uC758 \uB9C8\uC74C\uC744 \uB2C9\uB124\uC784\uC73C\uB85C \uB098\uB204\uACE0 \uC11C\uB85C \uC704\uB85C\uD558\uB294 \uC790\uB9AC\uC785\uB2C8\uB2E4.",
+    icon: "community",
+    imageTheme: "community-circle",
+    pageUrl: "community.html",
+    colorKey: "editorial"
+  },
+  {
     id: "word",
     label: "말씀 붙들기",
     description: "오늘 하루 마음에 붙들 한 구절과 짧은 고백을 전합니다.",

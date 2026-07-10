@@ -1,0 +1,15 @@
+name = "prayer-spring-billing"
+main = "src/index.js"
+compatibility_date = "2026-07-10"
+workers_dev = true
+
+[triggers]
+crons = ["10 0 * * *"]
+
+[vars]
+SITE_ORIGIN = "https://product-codex-90j.pages.dev"
+
+# Set these with `wrangler secret put`; never commit their values:
+# SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY
+# TOSS_CLIENT_KEY, TOSS_SECRET_KEY, BILLING_KEY_ENCRYPTION_KEY
+# TOSS_WEBHOOK_SECRET (when the Toss webhook contract is configured)

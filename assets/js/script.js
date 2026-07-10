@@ -1,5 +1,15 @@
 const $ = (selector) => document.querySelector(selector);
 
+// 공개 페이지 어디에서나 동일한 로그인/회원가입 UI를 사용할 수 있도록 한 번만 로드합니다.
+(() => {
+  if (window.__faithMemberScriptLoaded) return;
+  window.__faithMemberScriptLoaded = true;
+  const script = document.createElement("script");
+  script.src = new URL("assets/js/faith-member.js", window.location.href).href;
+  script.async = true;
+  document.head.append(script);
+})();
+
 const toggle = $(".menu-toggle");
 const nav = $("#site-nav");
 if (toggle && nav) {
@@ -109,7 +119,7 @@ function initCarousel(root) {
   paint();
 }
 
-function renderPrayers(list = PRAYERS) {
+function renderPrayers(list = window.PRAYERS || []) {
   const root = $("#prayerResults");
   if (!root) return;
   renderCarousel(root, list, prayerCard, "기도문");
@@ -120,8 +130,8 @@ function searchPrayers() {
   if (!input) return;
   const q = input.value.trim().toLowerCase();
   const list = q
-    ? PRAYERS.filter((p) => [p.title, p.category, p.scripture, ...(p.tags || [])].join(" ").toLowerCase().includes(q))
-    : PRAYERS;
+    ? (window.PRAYERS || []).filter((p) => [p.title, p.category, p.scripture, ...(p.tags || [])].join(" ").toLowerCase().includes(q))
+    : (window.PRAYERS || []);
   renderPrayers(list);
   const help = $("#searchHelp");
   if (help) help.textContent = list.length ? `${list.length}개의 기도문을 찾았습니다. 좌우 버튼으로 넘겨 읽어보세요.` : "가까운 주제의 기도문을 다시 검색해 주세요.";
@@ -146,11 +156,12 @@ function renderList(id, list) {
   if (root) renderCarousel(root, list, prayerCard, "기도문");
 }
 
-renderList("nightList", PRAYERS.filter((p) => p.tags?.includes("밤") || p.tags?.includes("수면") || p.category === "수면").concat(PRAYERS.slice(0, 3)));
-renderList("morningList", PRAYERS.filter((p) => p.category === "아침").concat(PRAYERS.slice(0, 3)));
+const sitePrayers = window.PRAYERS || [];
+renderList("nightList", sitePrayers.filter((p) => p.tags?.includes("밤") || p.tags?.includes("수면") || p.category === "수면").concat(sitePrayers.slice(0, 3)));
+renderList("morningList", sitePrayers.filter((p) => p.category === "아침").concat(sitePrayers.slice(0, 3)));
 
 if ($("#meditationList")) {
-  renderCarousel($("#meditationList"), MEDITATIONS, meditationCard, "말씀 묵상");
+  renderCarousel($("#meditationList"), window.MEDITATIONS || [], meditationCard, "말씀 묵상");
 }
 
 function videoCard(v) {
@@ -199,12 +210,12 @@ if (pdfProductGrid && typeof PDF_PRODUCTS !== "undefined") {
 
 const prayerCardList = $("#prayerCardList");
 if (prayerCardList) {
-  renderCarousel(prayerCardList, PRAYER_CARDS, prayerImageCard, "말씀 카드");
+  renderCarousel(prayerCardList, window.PRAYER_CARDS || [], prayerImageCard, "말씀 카드");
 }
 
 const visualPrayerCards = $("#visualPrayerCards");
 if (visualPrayerCards) {
-  renderCarousel(visualPrayerCards, PRAYER_CARDS.slice(0, 6), prayerImageCard, "카드 미리보기");
+  renderCarousel(visualPrayerCards, (window.PRAYER_CARDS || []).slice(0, 6), prayerImageCard, "카드 미리보기");
 }
 
 (() => {
@@ -373,7 +384,11 @@ if (visualPrayerCards) {
   function promptMemberAccess() {
     const status = document.querySelector("[data-member-auth-status]");
     if (status) status.textContent = viewer ? "현재 계정은 구독 권한이 필요합니다." : "회원가입 또는 로그인 후 구독 권한을 확인할 수 있습니다.";
-    document.querySelector("#memberSignup")?.scrollIntoView({ behavior: "smooth", block: "center" });
+    if (window.FaithAuth?.open) {
+      window.FaithAuth.open(viewer ? "login" : "signup");
+      return;
+    }
+    window.addEventListener("faith-auth-ready", () => window.FaithAuth?.open(viewer ? "login" : "signup"), { once: true });
   }
 
   async function getPrivateResource(resourceId) {
@@ -431,9 +446,9 @@ if (visualPrayerCards) {
       return;
     }
     try {
-      const { files } = await getPrivateResource(resourceId);
-      if (!files.length) throw new Error("연결된 파일이 없습니다.");
-      window.location.assign(await createDownloadUrl(files[0]));
+      if (!window.FaithAuth?.requestProtectedDownload) throw new Error("회원 서비스를 연결하고 있습니다. 잠시 후 다시 시도해 주세요.");
+      const download = await window.FaithAuth.requestProtectedDownload(resourceId);
+      window.location.assign(download.url);
     } catch (error) {
       const status = document.querySelector("[data-member-auth-status]");
       if (status) status.textContent = error.message || "파일을 열 수 없습니다.";
@@ -761,11 +776,12 @@ function normalizeSiteNav() {
     play: '<circle cx="12" cy="12" r="9"></circle><path d="m10 8 6 4-6 4z"></path>',
     card: '<rect x="5" y="4" width="14" height="16" rx="2"></rect><path d="M8 8h8M8 12h5M9 16h6"></path>',
     heart: '<path d="M20.8 5.6a5 5 0 0 0-7.1 0L12 7.3l-1.7-1.7a5 5 0 1 0-7.1 7.1L12 21l8.8-8.3a5 5 0 0 0 0-7.1z"></path>',
-    mail: '<rect x="3" y="5" width="18" height="14" rx="2"></rect><path d="m4 7 8 6 8-6"></path>'
+    mail: '<rect x="3" y="5" width="18" height="14" rx="2"></rect><path d="m4 7 8 6 8-6"></path>',
+    community: '<path d="M5 19.5A8.5 8.5 0 1 1 20 14H9l-4 4z"></path><path d="M8 11h.01M12 11h.01M16 11h.01"></path>'
   };
   const navIcon = (name) => `<svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">${paths[name] || paths.light}</svg>`;
   const items = [
-    { href: "about.html", label: "\uAE30\uB3C4\uC758\uC0D8\uBB3C \uC18C\uAC1C", iconName: "light", keys: ["about"] },
+    { href: "community.html", label: "\uC18C\uD1B5\uAC8C\uC2DC\uD310", iconName: "community", keys: ["community"] },
     { href: "prayers.html", label: "\uB9D0\uC500 \uBD99\uB4E4\uAE30", iconName: "bible", keys: ["prayers"] },
     { href: "night-prayer.html", label: "\uC800\uB141\uAE30\uB3C4", iconName: "moon", keys: ["night-prayer"] },
     { href: "morning-prayer.html", label: "\uC544\uCE68\uAE30\uB3C4", iconName: "sun", keys: ["morning-prayer"] },
@@ -773,7 +789,8 @@ function normalizeSiteNav() {
     { href: "videos.html", label: "\uAE30\uB3C4(\uC720\uD29C\uBE0C)", iconName: "play", keys: ["videos"] },
     { href: "prayer-cards.html", label: "\uC2E0\uC559\uC790\uB8CC", iconName: "card", keys: ["prayer-cards", "prayer-challenge", "premium-pdf"] },
     { href: "prayer-request.html", label: "\uAE30\uB3C4\uC81C\uBAA9", iconName: "heart", keys: ["prayer-request"] },
-    { href: "contact.html", label: "\uBB38\uC758\uD558\uAE30", iconName: "mail", keys: ["contact"] }
+    { href: "contact.html", label: "\uBB38\uC758\uD558\uAE30", iconName: "mail", keys: ["contact"] },
+    { href: "about.html", label: "\uAE30\uB3C4\uC758\uC0D8\uBB3C \uC18C\uAC1C", iconName: "light", keys: ["about"] }
   ];
   nav.innerHTML = items.map((item) => {
     const active = item.keys.includes(current);
@@ -804,7 +821,8 @@ normalizeSiteNav();
     mail: '<rect x="3" y="5" width="18" height="14" rx="2"></rect><path d="m4 7 8 6 8-6"></path>',
     archive: '<path d="M7 3v3M17 3v3M4 9h16M5 5h14a1 1 0 0 1 1 1v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a1 1 0 0 1 1-1z"></path>',
     tag: '<path d="M20 13 13 20 4 11V4h7l9 9z"></path><circle cx="8.5" cy="8.5" r="1.5"></circle>',
-    light: '<path d="M9 18h6M10 22h4M8 14a6 6 0 1 1 8 0c-.8.7-1.2 1.5-1.3 2.5H9.3C9.2 15.5 8.8 14.7 8 14z"></path>'
+    light: '<path d="M9 18h6M10 22h4M8 14a6 6 0 1 1 8 0c-.8.7-1.2 1.5-1.3 2.5H9.3C9.2 15.5 8.8 14.7 8 14z"></path>',
+    community: '<path d="M5 19.5A8.5 8.5 0 1 1 20 14H9l-4 4z"></path><path d="M8 11h.01M12 11h.01M16 11h.01"></path>'
   };
 
   function icon(name, className = "icon") {
@@ -933,7 +951,7 @@ normalizeSiteNav();
     if (!nav) return;
     const current = (window.location.pathname.split("/").pop() || "index.html").replace(/\.html$/, "");
     const items = [
-      { href: "about.html", label: "\uAE30\uB3C4\uC758\uC0D8\uBB3C \uC18C\uAC1C", iconName: "light", keys: ["about"] },
+      { href: "community.html", label: "\uC18C\uD1B5\uAC8C\uC2DC\uD310", iconName: "community", keys: ["community"] },
       { href: "prayers.html", label: "\uB9D0\uC500 \uBD99\uB4E4\uAE30", iconName: "bible", keys: ["prayers"] },
       { href: "night-prayer.html", label: "\uC800\uB141\uAE30\uB3C4", iconName: "moon", keys: ["night-prayer"] },
       { href: "morning-prayer.html", label: "\uC544\uCE68\uAE30\uB3C4", iconName: "sun", keys: ["morning-prayer"] },
@@ -941,7 +959,8 @@ normalizeSiteNav();
       { href: "videos.html", label: "\uAE30\uB3C4(\uC720\uD29C\uBE0C)", iconName: "play", keys: ["videos"] },
       { href: "prayer-cards.html", label: "\uC2E0\uC559\uC790\uB8CC", iconName: "card", keys: ["prayer-cards", "prayer-challenge", "premium-pdf"] },
       { href: "prayer-request.html", label: "\uAE30\uB3C4\uC81C\uBAA9", iconName: "heart", keys: ["prayer-request"] },
-      { href: "contact.html", label: "\uBB38\uC758\uD558\uAE30", iconName: "mail", keys: ["contact"] }
+      { href: "contact.html", label: "\uBB38\uC758\uD558\uAE30", iconName: "mail", keys: ["contact"] },
+      { href: "about.html", label: "\uAE30\uB3C4\uC758\uC0D8\uBB3C \uC18C\uAC1C", iconName: "light", keys: ["about"] }
     ];
     nav.innerHTML = items.map((item) => {
       const active = item.keys.includes(current);
