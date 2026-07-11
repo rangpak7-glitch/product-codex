@@ -1,0 +1,38 @@
+name: Sync YouTube videos
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "20 20 * * *"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: youtube-video-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Sync channel uploads
+        env:
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+          YOUTUBE_CHANNEL_ID: UCFrsilNKJ8xcmn0RUrFz6XQ
+        run: node tools/sync_youtube_videos.mjs
+      - name: Commit updated videos
+        run: |
+          if git diff --quiet -- data/videos.js; then
+            echo "No video changes"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/videos.js
+          git commit -m "Update YouTube video archive"
+          git push

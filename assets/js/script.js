@@ -5,7 +5,7 @@ const $ = (selector) => document.querySelector(selector);
   if (window.__faithMemberScriptLoaded) return;
   window.__faithMemberScriptLoaded = true;
   const script = document.createElement("script");
-  script.src = new URL("assets/js/faith-member.js", window.location.href).href;
+  script.src = new URL("assets/js/faith-member.js?v=20260711-account", window.location.href).href;
   script.async = true;
   document.head.append(script);
 })();
@@ -13,9 +13,28 @@ const $ = (selector) => document.querySelector(selector);
 const toggle = $(".menu-toggle");
 const nav = $("#site-nav");
 if (toggle && nav) {
+  const closeMenu = ({ restoreFocus = false } = {}) => {
+    nav.classList.remove("open");
+    document.body.classList.remove("menu-open");
+    toggle.setAttribute("aria-expanded", "false");
+    toggle.querySelector(".sr-only").textContent = "전체 메뉴 열기";
+    if (restoreFocus) toggle.focus();
+  };
   toggle.addEventListener("click", () => {
     const open = nav.classList.toggle("open");
     toggle.setAttribute("aria-expanded", String(open));
+    document.body.classList.toggle("menu-open", open);
+    toggle.querySelector(".sr-only").textContent = open ? "전체 메뉴 닫기" : "전체 메뉴 열기";
+  });
+  nav.addEventListener("click", (event) => {
+    if (event.target.closest("a") && window.matchMedia("(max-width: 860px)").matches) closeMenu();
+  });
+  document.addEventListener("click", (event) => {
+    if (!nav.classList.contains("open") || event.target.closest(".site-header")) return;
+    closeMenu();
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && nav.classList.contains("open")) closeMenu({ restoreFocus: true });
   });
 }
 
@@ -152,6 +171,13 @@ function prayerImageCard(item) {
 
 function renderCarousel(root, items, renderer, label) {
   if (!root) return;
+  if (window.matchMedia("(max-width: 860px)").matches) {
+    root.className = "card-carousel mobile-content-list";
+    root.setAttribute("aria-label", `${label} 목록`);
+    root.innerHTML = `<div class="card-stack">${items.map(renderer).join("")}</div>`;
+    root.querySelectorAll(".stack-card").forEach((card) => card.removeAttribute("aria-hidden"));
+    return;
+  }
   root.className = "card-carousel";
   root.setAttribute("data-carousel", "");
   root.setAttribute("tabindex", "0");
@@ -214,19 +240,23 @@ function initCarousel(root) {
 function renderPrayers(list = window.PRAYERS || []) {
   const root = $("#prayerResults");
   if (!root) return;
-  renderCarousel(root, list, prayerCard, "기도문");
+  renderCompactContentList(root, list, "기도문");
 }
 
 function searchPrayers() {
   const input = $("#prayerSearch");
   if (!input) return;
   const q = input.value.trim().toLowerCase();
-  const list = q
-    ? (window.PRAYERS || []).filter((p) => [p.title, p.category, p.scripture, ...(p.tags || [])].join(" ").toLowerCase().includes(q))
+  const requestedCategory = new URLSearchParams(location.search).get("category") || "";
+  const categoryList = requestedCategory
+    ? (window.PRAYERS || []).filter((p) => p.category === requestedCategory || p.tags?.includes(requestedCategory))
     : (window.PRAYERS || []);
+  const list = q
+    ? categoryList.filter((p) => [p.title, p.category, p.scripture, ...(p.tags || [])].join(" ").toLowerCase().includes(q))
+    : categoryList;
   renderPrayers(list);
   const help = $("#searchHelp");
-  if (help) help.textContent = list.length ? `${list.length}개의 기도문을 찾았습니다. 좌우 버튼으로 넘겨 읽어보세요.` : "가까운 주제의 기도문을 다시 검색해 주세요.";
+  if (help) help.textContent = list.length ? `${requestedCategory ? `${requestedCategory} 주제의 ` : ""}${list.length}개 기도문을 찾았습니다.` : "가까운 주제의 기도문을 다시 검색해 주세요.";
 }
 
 if ($("#prayerResults")) {
@@ -245,7 +275,7 @@ $("[data-search-go]")?.addEventListener("click", () => {
 
 function renderList(id, list) {
   const root = document.getElementById(id);
-  if (root) renderCarousel(root, list, prayerCard, "기도문");
+  if (root) renderCompactContentList(root, list, "기도문");
 }
 
 const sitePrayers = window.PRAYERS || [];
@@ -253,15 +283,15 @@ renderList("nightList", sitePrayers.filter((p) => p.tags?.includes("밤") || p.t
 renderList("morningList", sitePrayers.filter((p) => p.category === "아침").concat(sitePrayers.slice(0, 3)));
 
 if ($("#meditationList")) {
-  renderCarousel($("#meditationList"), window.MEDITATIONS || [], meditationCard, "말씀 묵상");
+  renderCompactContentList($("#meditationList"), window.MEDITATIONS || [], "말씀 묵상");
 }
 
-function videoCard(v) {
+function videoCard(v, { inline = false } = {}) {
+  const thumb = inline
+    ? `<button class="video-thumb" type="button" data-play-video="${escapeHtml(v.videoId)}" aria-label="${escapeHtml(v.title)} 이 페이지에서 재생"><img src="${v.thumbnail}" alt="${escapeHtml(v.title)} 썸네일" loading="lazy"><span class="play-mark" aria-hidden="true">▶</span></button>`
+    : `<a class="video-thumb" href="${v.url}" target="_blank" rel="noopener" aria-label="${escapeHtml(v.title)} 영상 보기"><img src="${v.thumbnail}" alt="${escapeHtml(v.title)} 썸네일" loading="lazy"><span class="play-mark" aria-hidden="true">▶</span></a>`;
   return `<article class="video-card">
-    <a class="video-thumb" href="${v.url}" target="_blank" rel="noopener" aria-label="${escapeHtml(v.title)} 영상 보기">
-      <img src="${v.thumbnail}" alt="${escapeHtml(v.title)} 썸네일" loading="lazy">
-      <span class="play-mark" aria-hidden="true">▶</span>
-    </a>
+    ${thumb}
     <p class="eyebrow">${escapeHtml(v.theme)}</p>
     <h3>${escapeHtml(v.title)}</h3>
     <p><strong>관련 말씀:</strong> ${escapeHtml(v.scripture)}</p>
@@ -272,9 +302,111 @@ function videoCard(v) {
 
 const videoData = window.VIDEOS || (typeof VIDEOS !== "undefined" ? VIDEOS : []);
 const videoList = $("#videoList");
-if (videoList) videoList.innerHTML = videoData.map(videoCard).join("");
+if (videoList) videoList.innerHTML = videoData.map((video) => videoCard(video, { inline: true })).join("");
 const homeVideos = $("#homeVideos");
 if (homeVideos) homeVideos.innerHTML = videoData.slice(0, 3).map(videoCard).join("");
+
+(() => {
+  const qtRoot = document.getElementById("homeQtPreview");
+  const prayerRoot = document.getElementById("homePrayerPreview");
+  if (!qtRoot || !prayerRoot) return;
+  const items = Array.isArray(window.DAILY_CONTENTS) ? window.DAILY_CONTENTS : [];
+  const seoulNow = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Seoul" }));
+  const targetDate = new Date(seoulNow);
+  if (seoulNow.getHours() < 6) targetDate.setDate(targetDate.getDate() - 1);
+  const date = `${targetDate.getFullYear()}-${String(targetDate.getMonth() + 1).padStart(2, "0")}-${String(targetDate.getDate()).padStart(2, "0")}`;
+  const latest = (category) => [...items].filter((item) => item.category === category).sort((a, b) => String(b.date).localeCompare(String(a.date)))[0];
+  const pick = (category) => items.find((item) => item.category === category && item.date === date) || latest(category);
+  const qt = pick("editorial");
+  const prayerCategory = seoulNow.getHours() < 12 ? "morning" : "evening";
+  const prayer = pick(prayerCategory);
+  if (qt) qtRoot.innerHTML = `<p class="eyebrow">오늘의 큐티(QT)</p><h3>${escapeHtml(qt.title)}</h3><blockquote>${escapeHtml(qt.scriptureRef)} · ${escapeHtml(qt.scriptureText)}</blockquote><p>${escapeHtml(qt.summary || qt.editorialInsight || "")}</p><a class="text-link" href="meditation.html">묵상 전문 읽기</a>`;
+  if (prayer) prayerRoot.innerHTML = `<p class="eyebrow">${prayerCategory === "morning" ? "오늘의 아침기도" : "오늘의 저녁기도"}</p><h3>${escapeHtml(prayer.title)}</h3><blockquote>${escapeHtml(prayer.scriptureRef)} · ${escapeHtml(prayer.scriptureText)}</blockquote><p>${escapeHtml(prayer.prayer || prayer.summary || "")}</p><a class="text-link" href="${prayerCategory === "morning" ? "morning-prayer.html" : "night-prayer.html"}">기도 전문 읽기</a>`;
+})();
+
+function inlineVideoMarkup(video) {
+  return `<div class="inline-video-shell"><iframe src="https://www.youtube-nocookie.com/embed/${encodeURIComponent(video.videoId)}?autoplay=1" title="${escapeHtml(video.title)}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div>`;
+}
+
+function renderFeaturedVideo(video) {
+  const root = document.getElementById("featuredVideo");
+  if (!root || !video) return;
+  root.innerHTML = `<div data-featured-video-media><button class="video-thumb" type="button" data-play-video="${escapeHtml(video.videoId)}" aria-label="${escapeHtml(video.title)} 이 페이지에서 재생"><img src="${video.thumbnail}" alt="${escapeHtml(video.title)} 썸네일"><span class="play-mark" aria-hidden="true">▶</span></button></div><div><p class="eyebrow">${escapeHtml(video.theme)} · ${escapeHtml(video.publishedDate || "")}</p><h2>${escapeHtml(video.title)}</h2><p><strong>${escapeHtml(video.scripture)}</strong></p><p>${escapeHtml(video.description)}</p><div class="hero-actions"><button class="button primary" type="button" data-play-video="${escapeHtml(video.videoId)}">이 페이지에서 재생</button><a class="button secondary" href="${video.url}" target="_blank" rel="noopener">유튜브에서 보기</a></div></div>`;
+}
+
+function replaceWithInlinePlayer(button) {
+  const video = videoData.find((item) => item.videoId === button.dataset.playVideo);
+  if (!video) return;
+  const featured = button.closest("#featuredVideo");
+  const media = featured?.querySelector("[data-featured-video-media]") || button.closest(".video-card")?.querySelector(".video-thumb");
+  if (!media) return;
+  if (media.matches(".video-thumb")) media.outerHTML = inlineVideoMarkup(video);
+  else media.innerHTML = inlineVideoMarkup(video);
+}
+
+document.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-play-video]");
+  if (button) replaceWithInlinePlayer(button);
+});
+
+(() => {
+  if (!videoList) return;
+  const sectionTab = new URLSearchParams(location.search).get("tab") === "posts" ? "posts" : "videos";
+  document.querySelectorAll("[data-media-section-tab]").forEach((link) => link.classList.toggle("active", link.dataset.mediaSectionTab === sectionTab));
+  renderFeaturedVideo(videoData[0]);
+  const filters = [...document.querySelectorAll("[data-video-filter]")];
+  const draw = (filter = "all") => {
+    const list = filter === "all" ? videoData : videoData.filter((video) => {
+      const source = [video.theme, ...(video.tags || [])].join(" ");
+      if (filter === "morning") return /아침/.test(source);
+      if (filter === "evening") return /저녁|밤|수면/.test(source);
+      if (filter === "meditation") return /큐티|묵상|말씀/.test(source);
+      if (filter === "prayer") return /기도|회복|위로/.test(source);
+      if (filter === "shorts") return video.isShort === true;
+      return true;
+    });
+    videoList.innerHTML = list.length ? list.map((video) => videoCard(video, { inline: true })).join("") : '<div class="soft-empty-state"><h3>해당 분류의 영상은 아직 없습니다.</h3><p>전체 영상에서 다른 기도와 묵상을 살펴보세요.</p></div>';
+  };
+  filters.forEach((button) => button.addEventListener("click", () => {
+    filters.forEach((item) => item.classList.toggle("is-active", item === button));
+    draw(button.dataset.videoFilter || "all");
+  }));
+})();
+
+function channelPostCard(post) {
+  const related = videoData.find((video) => video.videoId === (post.relatedVideoId || post.related_video_id));
+  return `<article class="channel-post-card"><p class="eyebrow">채널 소식 · ${escapeHtml(post.publishedDate || "")}</p><h3>${escapeHtml(post.title)}</h3><p>${escapeHtml(post.body)}</p><div class="hero-actions">${related ? `<a class="text-link" href="${related.url}" target="_blank" rel="noopener">관련 영상 보기</a>` : ""}${post.youtubePostUrl ? `<a class="text-link" href="${escapeHtml(post.youtubePostUrl)}" target="_blank" rel="noopener">유튜브 게시물 보기</a>` : ""}</div></article>`;
+}
+
+(() => {
+  let posts = (window.CHANNEL_POSTS || []).filter((post) => post.status === "published");
+  const postRoot = document.getElementById("channelPostList");
+  const homeRoot = document.getElementById("homeMediaList");
+  const tabs = [...document.querySelectorAll("[data-home-media-tab]")];
+  let activeTab = new URLSearchParams(location.search).get("tab") === "posts" ? "posts" : "videos";
+  const draw = (tab = "videos") => {
+    activeTab = tab;
+    if (postRoot) postRoot.innerHTML = posts.length ? posts.map(channelPostCard).join("") : '<p class="soft-empty-state">채널 소식은 새 글이 등록되면 이곳에 표시됩니다.</p>';
+    if (!homeRoot) return;
+    homeRoot.className = tab === "posts" ? "channel-post-grid" : "home-media-grid";
+    homeRoot.innerHTML = tab === "posts" ? posts.slice(0, 2).map(channelPostCard).join("") : videoData.slice(0, 3).map(videoCard).join("");
+  };
+  tabs.forEach((button) => button.addEventListener("click", () => {
+    tabs.forEach((item) => item.classList.toggle("is-active", item === button));
+    draw(button.dataset.homeMediaTab || "videos");
+  }));
+  async function loadRemotePosts() {
+    const client = window.FaithAuth?.getClient ? await window.FaithAuth.getClient() : window.FaithSupabase;
+    if (!client) return;
+    const { data, error } = await client.from("channel_posts").select("id,title,body,related_video_id,youtube_post_url,published_at,status").eq("status", "published").order("published_at", { ascending: false }).limit(20);
+    if (error || !data?.length) return;
+    posts = data.map((post) => ({ ...post, publishedDate: post.published_at?.slice(0, 10) || "", youtubePostUrl: post.youtube_post_url || "" }));
+    draw(activeTab);
+  }
+  draw(activeTab);
+  if (window.FaithAuth?.getClient || window.FaithSupabase) loadRemotePosts().catch(() => {});
+  else window.addEventListener("faith-auth-ready", () => loadRemotePosts().catch(() => {}), { once: true });
+})();
 
 function pdfProductCard(product) {
   const productId = product.productId || product.id;
@@ -299,6 +431,33 @@ function pdfProductCard(product) {
       ${action}
     </div>
   </article>`;
+}
+
+function compactContentItem(item, label = "콘텐츠") {
+  const category = item.category || label;
+  const scripture = item.scripture || item.scriptureRef || "";
+  const summary = item.summary || "";
+  const body = item.body || "";
+  return `<details class="compact-content-item">
+    <summary>
+      <span class="compact-content-category">${escapeHtml(category)}</span>
+      <strong>${escapeHtml(item.title)}</strong>
+      ${scripture ? `<span class="compact-content-scripture">${escapeHtml(scripture)}</span>` : ""}
+    </summary>
+    <div class="compact-content-expanded">
+      ${summary ? `<p>${escapeHtml(summary)}</p>` : ""}
+      ${body ? `<p>${escapeHtml(body)}</p>` : ""}
+    </div>
+  </details>`;
+}
+
+function renderCompactContentList(root, items, label) {
+  if (!root) return;
+  root.className = "compact-content-list";
+  root.setAttribute("aria-label", `${label} 간략 목록`);
+  root.innerHTML = items.length
+    ? items.map((item) => compactContentItem(item, label)).join("")
+    : `<div class="soft-empty-state"><strong>표시할 자료가 없습니다.</strong></div>`;
 }
 
 function resolvedPdfProduct(product) {
@@ -342,18 +501,14 @@ const homeFaithResources = $("#homeFaithResources");
 function renderHomeFaithResources() {
   if (!homeFaithResources || !Array.isArray(window.FAITH_RESOURCES)) return;
   homeFaithResources.innerHTML = window.FAITH_RESOURCES.slice(0, 3).map((resource) => {
-    const product = findFaithProduct(resource.productId || resource.id);
-    const formatLabel = resource.type === "audio" ? "기도 오디오" : resource.type === "card" ? "말씀·기도카드" : "기도문 PDF";
-    const action = isPurchasable(product)
-      ? `<button class="button primary" type="button" data-product-purchase="${escapeHtml(product.id)}">구매하기 · ${escapeHtml(formatKrw(product.priceKrw))}</button>`
-      : `<a class="button secondary" href="${escapeHtml(productInquiryHref(product))}" data-resource-inquiry data-product-id="${escapeHtml(product?.id || resource.id)}">자료 문의하기</a>`;
+    const formatLabel = resource.type === "audio" ? "기도 오디오북" : resource.type === "card" ? "기도카드" : "기도문 PDF";
     return `<article class="home-resource-preview resource-type-${escapeHtml(resource.type)}">
       <p class="eyebrow">${escapeHtml(formatLabel)}</p>
       <h3>${escapeHtml(resource.title)}</h3>
       <p>${escapeHtml(resource.summary)}</p>
       <div class="home-resource-preview-actions">
-        <a class="text-link" href="prayer-cards.html?resource=${encodeURIComponent(resource.id)}" data-resource-preview data-product-id="${escapeHtml(product?.id || resource.id)}">공개 미리보기</a>
-        ${action}
+        <span class="resource-price-inline">가격 준비중</span>
+        <a class="text-link" href="prayer-cards.html?type=${encodeURIComponent(resource.type)}">${escapeHtml(formatLabel)} 보기</a>
       </div>
     </article>`;
   }).join("");
@@ -463,7 +618,14 @@ if (visualPrayerCards) {
 }
 
 (() => {
-  const fallbackResources = Array.isArray(window.FAITH_RESOURCES) ? window.FAITH_RESOURCES : [];
+  const embeddedFallback = document.getElementById("faithResourceFallback");
+  let parsedEmbeddedFallback = [];
+  try {
+    parsedEmbeddedFallback = embeddedFallback ? JSON.parse(embeddedFallback.textContent || "[]") : [];
+  } catch {
+    parsedEmbeddedFallback = [];
+  }
+  const fallbackResources = Array.isArray(window.FAITH_RESOURCES) ? window.FAITH_RESOURCES : parsedEmbeddedFallback;
   const client = window.FaithSupabase;
   const listRoot = $("#faithResourceList");
   const tagRoot = $("#faithResourceTags");
@@ -476,15 +638,36 @@ if (visualPrayerCards) {
   if (!listRoot || !tagRoot) return;
 
   const typeMeta = {
-    all: { title: "전체 자료" },
-    pdf: { title: "기도문 PDF" },
-    audio: { title: "기도 오디오" },
-    card: { title: "말씀·기도카드" }
+    pdf: {
+      title: "기도문 PDF",
+      eyebrow: "신앙자료 · 읽는 자료",
+      hero: "기도문 PDF",
+      description: "삶의 여러 상황에서 천천히 읽고 보관할 수 있는 유료 기도문 자료를 모았습니다.",
+      empty: "등록된 기도문 PDF가 아직 없습니다. 자료를 준비하고 있습니다.",
+      placeholder: "예: 자녀, 가정, 위로"
+    },
+    audio: {
+      title: "기도 오디오북",
+      eyebrow: "신앙자료 · 듣는 자료",
+      hero: "기도 오디오북",
+      description: "이동 중이나 잠들기 전에 차분히 들을 수 있는 유료 기도 낭독 자료입니다.",
+      empty: "등록된 기도 오디오북이 아직 없습니다. 자료를 준비하고 있습니다.",
+      placeholder: "예: 잠들기 전, 평안, 회복"
+    },
+    card: {
+      title: "기도카드",
+      eyebrow: "신앙자료 · 저장하는 자료",
+      hero: "기도카드",
+      description: "말씀과 기도를 한 장씩 저장하고 나눌 수 있도록 만든 유료 카드 자료입니다.",
+      empty: "등록된 기도카드가 아직 없습니다. 자료를 준비하고 있습니다.",
+      placeholder: "예: 자녀, 위로, 결정"
+    }
   };
   let resources = [];
   let viewer = null;
   let entitledResourceIds = new Set();
-  let activeType = "all";
+  const requestedType = new URLSearchParams(window.location.search).get("type") || "pdf";
+  let activeType = Object.hasOwn(typeMeta, requestedType) ? requestedType : "pdf";
   let searchQuery = new URLSearchParams(window.location.search).get("search") || "";
   const activeTags = new Set();
 
@@ -540,13 +723,15 @@ if (visualPrayerCards) {
 
   async function loadResources(catalog = []) {
     if (!client) return null;
+    // 현재 공개 카탈로그에서 제외한 이전 자료입니다. Supabase 원본과 파일은 삭제하지 않습니다.
+    const unlistedResourceIds = new Set(["9ac7451f-0ea2-48df-afed-8bcf6187faad"]);
     const { data, error } = await client
       .from("faith_resources")
       .select("id, type, title, summary, tags, access_level, created_at")
       .eq("published", true)
       .order("created_at", { ascending: false });
     if (error) return null;
-    return (data || []).map((resource) => {
+    return (data || []).filter((resource) => !unlistedResourceIds.has(resource.id)).map((resource) => {
       const localPreview = fallbackResources.find((item) => item.id === resource.id);
       const product = catalog.find((item) => item.resourceId === resource.id);
       return {
@@ -570,7 +755,7 @@ if (visualPrayerCards) {
   }
 
   function resourcesByType() {
-    return activeType === "all" ? resources : resources.filter((resource) => resource.type === activeType);
+    return resources.filter((resource) => resource.type === activeType);
   }
 
   function uploadedThreads() {
@@ -633,8 +818,8 @@ if (visualPrayerCards) {
   }
 
   function renderHubTags() {
-    const tags = [...new Set(uploadedThreads().flatMap((resource) => resource.tags || []))];
-    tagRoot.innerHTML = [`<button class="${activeTags.size ? "" : "is-active"}" type="button" data-clear-tags aria-pressed="${String(!activeTags.size)}">전체 상황</button>`]
+    const tags = [...new Set(uploadedThreads().flatMap((resource) => resource.tags || []))].sort((a, b) => String(a).localeCompare(String(b), "ko"));
+    tagRoot.innerHTML = [`<button class="${activeTags.size ? "" : "is-active"}" type="button" data-clear-tags aria-pressed="${String(!activeTags.size)}">전체 키워드</button>`]
       .concat(tags.map((tag) => `<button class="${activeTags.has(tag) ? "is-active" : ""}" type="button" data-resource-tag="${escapeHtml(tag)}" aria-pressed="${String(activeTags.has(tag))}">${escapeHtml(tag)}</button>`))
       .join("");
   }
@@ -643,15 +828,18 @@ if (visualPrayerCards) {
     const tags = (resource.tags || []).map((tag) => `<span>${escapeHtml(tag)}</span>`).join("");
     const meta = typeMeta[resource.type] || typeMeta.all;
     const product = productForResource(resource);
-    const availability = product.salesStatus === "free" ? "무료 자료" : isPurchasable(product) ? "개별 구매 자료" : "공개 미리보기 · 이용 방법 문의";
     return `<article class="faith-resource-card resource-type-${escapeHtml(resource.type)}" data-resource-id="${escapeHtml(resource.id)}">
-      <div class="resource-card-head"><p class="eyebrow">${escapeHtml(meta.title)}</p><span class="access-pill">${escapeHtml(availability)}</span></div>
-      <h3>${escapeHtml(resource.title)}</h3>
-      <p class="resource-summary">${escapeHtml(resource.summary)}</p>
-      <div class="resource-card-tags">${tags}</div>
-      ${renderHubPublicPreview(resource)}
-      <button class="text-button resource-detail-link" type="button" data-resource-detail="${escapeHtml(resource.id)}">자료 구성 자세히 보기</button>
-      ${renderHubAccessPanel(resource)}
+      <div class="resource-card-copy">
+        <p class="eyebrow">${escapeHtml(meta?.title || "신앙자료")}</p>
+        <h3>${escapeHtml(resource.title)}</h3>
+        <p class="resource-summary">${escapeHtml(resource.summary)}</p>
+        <div class="resource-card-tags" aria-label="자료 키워드">${tags}</div>
+      </div>
+      <div class="resource-card-commerce">
+        <span class="resource-price-label">가격</span>
+        <strong>준비중</strong>
+        <a class="text-link" href="${escapeHtml(productInquiryHref(product))}" data-resource-inquiry data-product-id="${escapeHtml(product.id)}">자료 문의하기</a>
+      </div>
     </article>`;
   }
 
@@ -659,31 +847,45 @@ if (visualPrayerCards) {
     const list = hubFilteredResources();
     if (filterStatus) {
       const conditions = [];
-      if (activeType !== "all") conditions.push(typeMeta[activeType]?.title || "선택한 형식");
       if (activeTags.size) conditions.push([...activeTags].join(" · "));
       if (searchQuery.trim()) conditions.push(`“${searchQuery.trim()}” 검색`);
       const detail = conditions.length ? ` · ${conditions.join(" · ")}` : "";
-      filterStatus.textContent = list.length ? `조건에 맞는 자료 ${list.length}개${detail}` : `조건에 맞는 자료를 찾지 못했습니다${detail}`;
+      filterStatus.textContent = list.length
+        ? `${typeMeta[activeType].title} ${list.length}건${detail}`
+        : activeTags.size || searchQuery.trim()
+          ? `${typeMeta[activeType].title}에서 조건에 맞는 자료를 찾지 못했습니다${detail}`
+          : `${typeMeta[activeType].title} 0건 · 준비중`;
     }
     listRoot.innerHTML = list.length
       ? list.map(renderHubCard).join("")
-      : `<div class="resource-empty-state"><strong>다른 키워드로 찾아보세요.</strong><p>형식이나 상황 태그를 바꾸면 더 많은 자료를 확인할 수 있습니다.</p><button class="button secondary" type="button" data-reset-resource-search>전체 자료 보기</button></div>`;
+      : activeTags.size || searchQuery.trim()
+        ? `<div class="resource-empty-state"><strong>선택한 조건에 맞는 자료가 없습니다.</strong><p>키워드 선택을 줄이거나 검색어를 바꿔보세요.</p><button class="button secondary" type="button" data-reset-resource-search>필터 초기화</button></div>`
+        : `<div class="resource-empty-state resource-coming-soon"><strong>준비중</strong><p>${escapeHtml(typeMeta[activeType].empty)}</p></div>`;
   }
 
   function renderResourceHub() {
-    document.querySelectorAll("[data-resource-tab]").forEach((button) => {
-      const selected = button.dataset.resourceTab === activeType;
-      button.classList.toggle("is-active", selected);
-      button.setAttribute("aria-pressed", String(selected));
+    const meta = typeMeta[activeType];
+    document.body.dataset.resourceType = activeType;
+    document.querySelectorAll("[data-resource-page-link]").forEach((link) => {
+      const selected = link.dataset.resourcePageLink === activeType;
+      link.classList.toggle("is-active", selected);
+      if (selected) link.setAttribute("aria-current", "page");
+      else link.removeAttribute("aria-current");
     });
-    typeRoot?.querySelectorAll("[data-resource-filter-type]").forEach((button) => {
-      const selected = button.dataset.resourceFilterType === activeType;
-      button.classList.toggle("is-active", selected);
-      button.setAttribute("aria-pressed", String(selected));
-    });
+    const heroEyebrow = document.getElementById("resourceHeroEyebrow");
+    const heroTitle = document.getElementById("resourceHeroTitle");
+    const heroDescription = document.getElementById("resourceHeroDescription");
+    const listEyebrow = document.getElementById("resourceListEyebrow");
+    const listTitle = document.getElementById("resourceListTitle");
+    if (heroEyebrow) heroEyebrow.textContent = meta.eyebrow;
+    if (heroTitle) heroTitle.textContent = meta.hero;
+    if (heroDescription) heroDescription.textContent = meta.description;
+    if (listEyebrow) listEyebrow.textContent = meta.title;
+    if (listTitle) listTitle.textContent = `등록된 ${meta.title}`;
+    if (searchInput) searchInput.placeholder = meta.placeholder;
     renderHubTags();
     renderHubList();
-    if (resetButton) resetButton.hidden = activeType === "all" && !activeTags.size && !searchQuery.trim();
+    if (resetButton) resetButton.hidden = !activeTags.size && !searchQuery.trim();
   }
 
   function promptMemberAccess() {
@@ -778,7 +980,6 @@ if (visualPrayerCards) {
   });
 
   resetButton?.addEventListener("click", () => {
-    activeType = "all";
     activeTags.clear();
     searchQuery = "";
     if (searchInput) searchInput.value = "";
@@ -787,7 +988,6 @@ if (visualPrayerCards) {
 
   listRoot.addEventListener("click", (event) => {
     if (event.target.closest("[data-reset-resource-search]")) {
-      activeType = "all";
       activeTags.clear();
       searchQuery = "";
       if (searchInput) searchInput.value = "";
@@ -847,6 +1047,11 @@ if (visualPrayerCards) {
   });
 
   (async () => {
+    if (!new URLSearchParams(window.location.search).has("type")) {
+      const url = new URL(window.location.href);
+      url.searchParams.set("type", activeType);
+      window.history.replaceState({}, "", url);
+    }
     viewer = await loadViewer();
     window.FAITH_PRODUCT_CATALOG = await loadProductCatalog();
     const remoteResources = await loadResources(window.FAITH_PRODUCT_CATALOG);
@@ -930,6 +1135,7 @@ if (visualPrayerCards) {
 (() => {
   const gate = document.querySelector("[data-admin-gate]");
   const panel = document.querySelector("[data-admin-panel]");
+  const channelPanel = document.querySelector("[data-admin-channel-panel]");
   const client = window.FaithSupabase;
   if (!gate || !panel) return;
   const loginForm = document.querySelector("[data-admin-login-form]");
@@ -945,6 +1151,9 @@ if (visualPrayerCards) {
   const priceAmountInput = uploadForm?.querySelector("[name='priceAmount']");
   const fileSummary = document.querySelector("[data-upload-file-summary]");
   const resetPasswordButton = document.querySelector("[data-admin-reset-password]");
+  const channelForm = document.querySelector("[data-admin-channel-form]");
+  const channelStatus = document.querySelector("[data-admin-channel-status]");
+  const channelList = document.querySelector("[data-admin-channel-list]");
   let adminUser = null;
   const setLoginStatus = (message) => { if (loginStatus) loginStatus.textContent = message; };
   const setUploadStatus = (message) => { if (uploadStatus) uploadStatus.textContent = message; };
@@ -962,6 +1171,7 @@ if (visualPrayerCards) {
       adminUser = null;
       gate.hidden = false;
       panel.hidden = true;
+      if (channelPanel) channelPanel.hidden = true;
       return;
     }
     const { data: profile } = await client.from("profiles").select("role").eq("id", user.id).maybeSingle();
@@ -969,11 +1179,24 @@ if (visualPrayerCards) {
       adminUser = null;
       gate.hidden = false;
       panel.hidden = true;
+      if (channelPanel) channelPanel.hidden = true;
       return setLoginStatus("이 계정에는 관리자 권한이 없습니다.");
     }
     adminUser = user;
     gate.hidden = true;
     panel.hidden = false;
+    if (channelPanel) channelPanel.hidden = false;
+    await refreshChannelPosts();
+  }
+
+  async function refreshChannelPosts() {
+    if (!client || !channelList || !adminUser) return;
+    const { data, error } = await client.from("channel_posts").select("id,title,status,published_at,youtube_post_url").order("created_at", { ascending: false }).limit(30);
+    if (error) {
+      channelList.innerHTML = '<p class="muted">채널 소식 목록을 불러오지 못했습니다. 마이그레이션 적용 여부를 확인해 주세요.</p>';
+      return;
+    }
+    channelList.innerHTML = data?.length ? data.map((post) => `<article><strong>${escapeHtml(post.title)}</strong><span>${escapeHtml(post.status)}${post.published_at ? ` · ${escapeHtml(post.published_at.slice(0, 10))}` : ""}</span>${post.youtube_post_url ? `<a href="${escapeHtml(post.youtube_post_url)}" target="_blank" rel="noopener">유튜브 게시물 보기</a>` : ""}</article>`).join("") : '<p class="muted">등록한 채널 소식이 없습니다.</p>';
   }
 
   function safeFileName(name) {
@@ -1029,6 +1252,25 @@ if (visualPrayerCards) {
   document.querySelector("[data-admin-logout]")?.addEventListener("click", async () => {
     await client?.auth.signOut();
     await refreshAdminAccess();
+  });
+
+  channelForm?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (!client || !adminUser) return;
+    const data = new FormData(channelForm);
+    const status = String(data.get("status") || "draft");
+    const payload = {
+      title: String(data.get("title") || "").trim(),
+      body: String(data.get("body") || "").trim(),
+      related_video_id: String(data.get("relatedVideoId") || "").trim() || null,
+      youtube_post_url: String(data.get("youtubePostUrl") || "").trim() || null,
+      status,
+      published_at: status === "published" ? new Date().toISOString() : null,
+      created_by: adminUser.id
+    };
+    const { error } = await client.from("channel_posts").insert(payload);
+    if (channelStatus) channelStatus.textContent = error ? "채널 소식을 저장하지 못했습니다." : "채널 소식을 저장했습니다.";
+    if (!error) { channelForm.reset(); await refreshChannelPosts(); }
   });
 
   fileInput?.addEventListener("change", updateFileSummary);
@@ -1156,15 +1398,6 @@ if (challengeList) {
   </article>`).join("");
 }
 
-const prayerForm = $("#prayerRequestForm");
-if (prayerForm) {
-  prayerForm.addEventListener("submit", (event) => {
-    event.preventDefault();
-    prayerForm.querySelector(".form-message").textContent = "기도 제목을 확인했습니다. 함께 기도하는 마음으로 소중히 받겠습니다.";
-    prayerForm.reset();
-  });
-}
-
 (() => {
   const productInput = document.querySelector("[data-contact-product-id]");
   const productId = new URLSearchParams(window.location.search).get("product");
@@ -1174,42 +1407,12 @@ if (prayerForm) {
 function normalizeSiteNav() {
   const nav = document.getElementById("site-nav");
   if (!nav) return;
-  const current = (window.location.pathname.split("/").pop() || "index.html").replace(/\.html$/, "");
-  const paths = {
-    light: '<path d="M9 18h6M10 22h4M8 14a6 6 0 1 1 8 0c-.8.7-1.2 1.5-1.3 2.5H9.3C9.2 15.5 8.8 14.7 8 14z"></path>',
-    bible: '<path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 0-3 3z"></path><path d="M8 7h7M8 11h6"></path>',
-    moon: '<path d="M20 15.5A7.5 7.5 0 0 1 8.5 4 8 8 0 1 0 20 15.5z"></path>',
-    sun: '<circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4 12H2M22 12h-2M5 5l1.5 1.5M17.5 17.5 19 19M19 5l-1.5 1.5M6.5 17.5 5 19"></path>',
-    book: '<path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v17H6.5A2.5 2.5 0 0 0 4 22z"></path><path d="M4 5.5v16M8 7h8M8 11h6"></path>',
-    play: '<circle cx="12" cy="12" r="9"></circle><path d="m10 8 6 4-6 4z"></path>',
-    card: '<rect x="5" y="4" width="14" height="16" rx="2"></rect><path d="M8 8h8M8 12h5M9 16h6"></path>',
-    heart: '<path d="M20.8 5.6a5 5 0 0 0-7.1 0L12 7.3l-1.7-1.7a5 5 0 1 0-7.1 7.1L12 21l8.8-8.3a5 5 0 0 0 0-7.1z"></path>',
-    mail: '<rect x="3" y="5" width="18" height="14" rx="2"></rect><path d="m4 7 8 6 8-6"></path>',
-    community: '<path d="M5 19.5A8.5 8.5 0 1 1 20 14H9l-4 4z"></path><path d="M8 11h.01M12 11h.01M16 11h.01"></path>'
-  };
-  const navIcon = (name) => `<svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">${paths[name] || paths.light}</svg>`;
-  const primaryItems = [
-    { href: "index.html", label: "오늘의 기도", iconName: "light", keys: ["index", "morning-prayer", "night-prayer", "meditation", "videos", "prayer-detail"] },
-    { href: "prayers.html", label: "상황별 찾기", iconName: "bible", keys: ["prayers", "archive"] },
-    { href: "prayer-challenge.html", label: "기도 여정", iconName: "book", keys: ["prayer-challenge"] },
-    { href: "prayer-cards.html", label: "신앙자료", iconName: "card", keys: ["prayer-cards", "premium-pdf"] }
-  ];
-  const togetherItems = [
-    { href: "prayer-request.html", label: "기도제목", iconName: "heart", keys: ["prayer-request"] },
-    { href: "community.html", label: "소통게시판", iconName: "community", keys: ["community"] }
-  ];
-  const navLink = (item) => {
-    const active = item.keys.includes(current);
-    const className = active ? ' class="active"' : "";
-    const currentAttr = active ? ' aria-current="page"' : "";
-    return `<a${className}${currentAttr} href="${item.href}">${navIcon(item.iconName)}${item.label}</a>`;
-  };
-  const togetherActive = togetherItems.some((item) => item.keys.includes(current));
-  nav.innerHTML = `${primaryItems.map(navLink).join("")}
-    <details class="site-nav-more"${togetherActive ? " open" : ""}>
-      <summary class="${togetherActive ? "active" : ""}">${navIcon("heart")}함께하기<span aria-hidden="true">⌄</span></summary>
-      <div class="site-nav-more-panel">${togetherItems.map(navLink).join("")}</div>
-    </details>`;
+  const params = new URLSearchParams(window.location.search);
+  if (params.get("category") === "감사") nav.querySelector('[data-nav-section="prayer"] .site-nav-summary')?.classList.add("active");
+  nav.querySelectorAll("details").forEach((details) => details.addEventListener("toggle", () => {
+    if (!details.open) return;
+    nav.querySelectorAll("details").forEach((other) => { if (other !== details) other.open = false; });
+  }));
 }
 
 normalizeSiteNav();
@@ -1221,7 +1424,8 @@ normalizeSiteNav();
   const render = (posts = [], message = "") => {
     root.setAttribute("aria-busy", "false");
     if (posts.length) {
-      root.innerHTML = posts.map((post) => `<article><span>${escapeHtml(post.category === "gratitude" ? "감사 나눔" : "기도제목")} · ${escapeHtml(dateText(post.created_at))}</span><strong>${escapeHtml(post.title)}</strong><p>${escapeHtml(post.body).slice(0, 72)}${post.body.length > 72 ? "…" : ""}</p><a class="text-link" href="community.html?post=${encodeURIComponent(post.id)}">이야기 보기</a></article>`).join("");
+      const labels = { prayer: "기도제목", gratitude: "감사 나눔", pain: "아픔나눔" };
+      root.innerHTML = posts.map((post) => `<article><span>${escapeHtml(labels[post.category] || "나눔")} · ${escapeHtml(dateText(post.created_at))}</span><strong>${escapeHtml(post.title)}</strong><p>${escapeHtml(post.body).slice(0, 72)}${post.body.length > 72 ? "…" : ""}</p><a class="text-link" href="community.html?post=${encodeURIComponent(post.id)}">이야기 보기</a></article>`).join("");
       return;
     }
     root.innerHTML = `<p>${escapeHtml(message || "최근 나눔은 소통게시판에서 확인할 수 있습니다.")}</p>`;
@@ -1550,10 +1754,32 @@ normalizeSiteNav();
     </article>`;
   }
 
+  function categoryRecentRow(item) {
+    const url = new URL(window.location.href);
+    url.searchParams.set("date", item.date);
+    url.hash = "dailyContentCard";
+    const displayDate = new Intl.DateTimeFormat("ko-KR", { month: "short", day: "numeric" }).format(new Date(`${item.date}T00:00:00+09:00`));
+    return `<a class="category-recent-row" href="${safeText(url.href)}">
+      <time datetime="${safeText(item.date)}">${safeText(displayDate)}</time>
+      <span><strong>${safeText(item.title)}</strong><small>${safeText(item.scriptureRef)}</small></span>
+    </a>`;
+  }
+
   function renderRecent(category, count = 7) {
     const root = document.getElementById("recentCategoryContents");
     if (!root) return;
-    root.innerHTML = contentsFor(category).slice(0, count).map(compactCard).join("");
+    const items = contentsFor(category).slice(0, count);
+    root.className = "category-recent-list";
+    root.innerHTML = items.length
+      ? items.map(categoryRecentRow).join("")
+      : `<p class="muted">아직 지난 자료가 없습니다.</p>`;
+  }
+
+  function updateSelectedDate(date, { replace = false } = {}) {
+    const url = new URL(window.location.href);
+    url.searchParams.set("date", date);
+    url.hash = "dailyContentCard";
+    window.history[replace ? "replaceState" : "pushState"]({}, "", url);
   }
 
   function renderCalendar(category, selectedDate = displayDateSeoul()) {
@@ -1603,12 +1829,20 @@ normalizeSiteNav();
         }
         draw();
       });
-      root.querySelector("[data-back-today]")?.addEventListener("click", () => renderCategory(category, displayDateSeoul()));
+      root.querySelector("[data-back-today]")?.addEventListener("click", () => {
+        const today = displayDateSeoul();
+        updateSelectedDate(today);
+        renderCategory(category, today);
+      });
       root.querySelectorAll("[data-recent-count]").forEach((button) => {
         button.addEventListener("click", () => renderRecent(category, Number(button.dataset.recentCount || 7)));
       });
       root.querySelectorAll(".calendar-day:not(:disabled)").forEach((button) => {
-        button.addEventListener("click", () => renderCategory(category, button.dataset.date || displayDateSeoul()));
+        button.addEventListener("click", () => {
+          const nextDate = button.dataset.date || displayDateSeoul();
+          updateSelectedDate(nextDate);
+          renderCategory(category, nextDate);
+        });
       });
     }
     draw();
@@ -1663,6 +1897,15 @@ normalizeSiteNav();
   }
 
   const categoryRoot = document.querySelector("[data-daily-category]");
-  if (categoryRoot) renderCategory(categoryRoot.dataset.dailyCategory || "word");
+  if (categoryRoot) {
+    const category = categoryRoot.dataset.dailyCategory || "word";
+    categoryRoot.querySelector(".calendar-disclosure")?.setAttribute("open", "");
+    const requestedDate = new URLSearchParams(window.location.search).get("date") || displayDateSeoul();
+    renderCategory(category, requestedDate);
+    window.addEventListener("popstate", () => {
+      const date = new URLSearchParams(window.location.search).get("date") || displayDateSeoul();
+      renderCategory(category, date);
+    });
+  }
   renderArchiveFromDailyContents();
 })();

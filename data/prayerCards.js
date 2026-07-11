@@ -8,3 +8,5 @@ const PRAYER_CARDS = [
   ["family", "가정예배 나눔 카드", "가정", "가정 안에서 함께 읽고 짧게 기도할 수 있는 구성입니다.", "여호수아 24장 15절", "가정예배, 주일 저녁 나눔", ["가정", "예배"], "가정"],
   ["smallgroup", "소그룹 묵상 카드", "소그룹", "모임 시작 전 말씀과 기도 제목을 나누기 좋습니다.", "히브리서 10장 24절", "교회 소그룹, 구역 모임", ["소그룹", "묵상"], "나눔"]
 ].map(([id, title, category, description, scripture, useCase, tags, label]) => ({ id, title, category, description, scripture, useCase, tags, label }));
+
+window.PRAYER_CARDS = PRAYER_CARDS;

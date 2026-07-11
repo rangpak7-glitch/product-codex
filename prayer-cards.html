@@ -26,6 +26,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800&family=Noto+Sans+KR:wght@400;500;600;700;800;900&family=Noto+Serif+KR:wght@500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="assets/css/editorial-redesign.css">
 <!-- Microsoft Clarity -->
 <script type="text/javascript">
     (function(c,l,a,r,i,t,y){
@@ -35,111 +36,123 @@
     })(window, document, "clarity", "script", "xjr1qnoeaa");
 </script>
 </head>
-<body>
-<header class="site-header">
+<body data-site-page="prayer-cards">
+<header class="site-header" data-site-header>
   <a class="brand" href="index.html" aria-label="기도의샘물 홈으로 이동">
-    <img src="assets/logo-sam.png" alt="기도의샘물 로고">
+    <img src="assets/logo-sam.png" alt="기도의샘물 로고" width="44" height="44">
     <span><strong>기도의샘물</strong><small>기도와 말씀으로 쉬어가는 곳</small></span>
   </a>
-  <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-nav"><span></span><span></span><span></span><span class="sr-only">메뉴 열기</span></button>
-  <nav id="site-nav" class="site-nav" aria-label="주요 메뉴"><a href="about.html">기도의샘물 소개</a>
-<a href="prayers.html">말씀 붙들기</a>
-<a href="night-prayer.html">저녁기도</a>
-<a href="morning-prayer.html">아침기도</a>
-<a href="meditation.html">큐티(QT)</a>
-<a href="videos.html">기도(유튜브)</a>
-<a class="active" href="prayer-cards.html">신앙자료</a>
-<a href="prayer-request.html">기도제목</a>
-<a href="contact.html">문의하기</a></nav>
+  <div class="site-header-utility" aria-label="보조 메뉴">
+    <a href="about.html">소개</a>
+    <a href="contact.html">문의하기</a>
+    <a href="index.html#homeSearchSection" aria-label="통합 검색으로 이동">검색</a>
+  </div>
+  <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-nav"><span></span><span></span><span></span><span class="sr-only">전체 메뉴 열기</span></button>
+  <nav id="site-nav" class="site-nav" aria-label="주요 메뉴" data-site-nav-v2>
+    <div class="site-nav-main">
+      <details class="site-nav-section" data-nav-section="bible">
+        <summary class="site-nav-summary">성경말씀<span aria-hidden="true">⌄</span></summary>
+        <div class="site-nav-panel">
+          <a href="meditation.html"><strong>오늘의 큐티(QT)</strong><span>성경과 오늘의 삶을 잇는 묵상</span></a>
+          <a href="prayers.html"><strong>말씀 붙들기</strong><span>현실의 상황에서 붙드는 말씀과 기도</span></a>
+        </div>
+      </details>
+      <details class="site-nav-section" data-nav-section="prayer">
+        <summary class="site-nav-summary">기도<span aria-hidden="true">⌄</span></summary>
+        <div class="site-nav-panel">
+          <a href="prayers.html?category=감사"><strong>감사기도</strong><span>어떤 상황에서도 감사를 회복하는 기도</span></a>
+          <a href="night-prayer.html"><strong>저녁기도</strong><span>하루를 내려놓고 평안을 구하는 기도</span></a>
+          <a href="morning-prayer.html"><strong>아침기도</strong><span>새 하루를 말씀과 감사로 여는 기도</span></a>
+        </div>
+      </details>
+      <a class="site-nav-direct" href="community.html">나눔게시판</a>
+      <details class="site-nav-section" data-nav-section="youtube">
+        <summary class="site-nav-summary">유튜브<span aria-hidden="true">⌄</span></summary>
+        <div class="site-nav-panel">
+          <a href="videos.html?tab=videos"><strong>영상</strong><span>기도와 말씀 영상을 바로 듣기</span></a>
+          <a href="videos.html?tab=posts"><strong>채널 소식</strong><span>기도의샘물 채널의 새 이야기</span></a>
+        </div>
+      </details>
+      <details class="site-nav-section" data-nav-section="resources">
+        <summary class="site-nav-summary active">신앙자료<span aria-hidden="true">⌄</span></summary>
+        <div class="site-nav-panel">
+          <a href="prayer-cards.html?type=pdf"><strong>기도문 PDF</strong><span>천천히 읽고 보관하는 기도문</span></a>
+          <a href="prayer-cards.html?type=audio"><strong>기도 오디오북</strong><span>이동 중과 잠들기 전에 듣는 기도</span></a>
+          <a href="prayer-cards.html?type=card"><strong>기도카드</strong><span>저장하고 나누는 말씀·기도카드</span></a>
+        </div>
+      </details>
+    </div>
+    <div class="site-nav-mobile-utility">
+      <a href="about.html">소개</a>
+      <a href="contact.html">문의하기</a>
+      <a href="index.html#homeSearchSection">통합 검색</a>
+    </div>
+  </nav>
 </header>
 <main>
-  <section class="page-hero sub-hero hero-photo hero-photo--cards resource-hub-hero">
+  <section class="page-hero sub-hero hero-photo hero-photo--cards resource-hub-hero resource-type-hero">
     <div>
-      <p class="eyebrow">Faith resources</p>
-      <h1>오늘 마음에 가까운<br>기도 자료를 찾아보세요</h1>
-      <p>읽고, 듣고, 저장하며 곁에 둘 수 있는 기도문 PDF·오디오·말씀·기도카드를 상황에 맞게 찾아보세요.</p>
+      <p class="eyebrow" id="resourceHeroEyebrow">신앙자료 · 읽는 자료</p>
+      <h1 id="resourceHeroTitle">기도문 PDF</h1>
+      <p id="resourceHeroDescription">삶의 여러 상황에서 천천히 읽고 보관할 수 있는 유료 기도문 자료를 모았습니다.</p>
       <div class="hero-actions">
-        <a class="button primary" href="#resourceCatalog">자료 찾아보기</a>
+        <a class="button primary" href="#faithResourceBrowser">등록 자료 보기</a>
       </div>
     </div>
     <span class="sub-hero-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="16" rx="2"></rect><path d="M8 8h8M8 12h5M9 16h6"></path></svg></span>
   </section>
 
-  <section id="resourceCatalog" class="section faith-resource-shell">
-    <p class="eyebrow">Choose a way</p>
-    <h2>어떤 자료가 필요하세요?</h2>
-    <p class="resource-catalog-intro">지금의 상황과 가장 가까운 방식부터 골라보세요. 아래에서 주제와 제목으로 더 자세히 찾을 수 있습니다.</p>
-    <div class="resource-subcategory-grid" role="group" aria-label="자료 형식 바로가기">
-      <button class="resource-tab" type="button" data-resource-tab="pdf" aria-pressed="false">
-        <span>읽는 자료</span>
-        <strong>읽는 기도문 PDF</strong>
-        <p>상황과 주제별로 천천히 읽고 보관할 수 있는 기도문입니다.</p>
-      </button>
-      <button class="resource-tab" type="button" data-resource-tab="audio" aria-pressed="false">
-        <span>듣는 자료</span>
-        <strong>듣는 기도 오디오</strong>
-        <p>잠들기 전이나 이동 중에도 들을 수 있는 차분한 기도 낭독입니다.</p>
-      </button>
-      <button class="resource-tab" type="button" data-resource-tab="card" aria-pressed="false">
-        <span>저장하는 자료</span>
-        <strong>저장하는 말씀·기도카드</strong>
-        <p>매일 한 장씩 저장하고 나눌 수 있는 말씀과 기도의 카드 컬렉션입니다.</p>
-      </button>
-    </div>
+  <section id="resourceCatalog" class="section resource-category-navigation" aria-labelledby="resourceCategoryTitle">
+    <p class="eyebrow">신앙자료 종류</p>
+    <h2 id="resourceCategoryTitle">자료 종류를 선택하세요</h2>
+    <nav class="resource-page-tabs" aria-label="신앙자료 하위 카테고리">
+      <a href="prayer-cards.html?type=pdf" data-resource-page-link="pdf"><span>읽는 자료</span><strong>기도문 PDF</strong></a>
+      <a href="prayer-cards.html?type=audio" data-resource-page-link="audio"><span>듣는 자료</span><strong>기도 오디오북</strong></a>
+      <a href="prayer-cards.html?type=card" data-resource-page-link="card"><span>저장하는 자료</span><strong>기도카드</strong></a>
+    </nav>
   </section>
 
   <section id="faithResourceBrowser" class="section resource-board-section">
     <div class="resource-board-head">
       <div>
-        <p class="eyebrow">Find a resource</p>
-        <h2>상황으로 찾아보기</h2>
+        <p class="eyebrow" id="resourceListEyebrow">기도문 PDF</p>
+        <h2 id="resourceListTitle">등록된 기도문 PDF</h2>
       </div>
-      <p>제목, 상황, 자료 형식을 골라 지금 필요한 기도 자료를 찾아보세요. 공개 미리보기로 구성을 확인한 뒤, 자료별 이용 방법을 선택할 수 있습니다.</p>
+      <p id="resourceListDescription">제목과 자료 설명을 확인하고, 필요한 주제를 여러 개 선택해 좁혀볼 수 있습니다.</p>
     </div>
     <div class="resource-browser-toolbar">
-      <div id="faithResourceTypes" class="resource-type-filter" role="group" aria-label="자료 형식 필터">
-        <button class="is-active" type="button" data-resource-filter-type="all" aria-pressed="true">전체 자료</button>
-        <button type="button" data-resource-filter-type="pdf" aria-pressed="false">기도문 PDF</button>
-        <button type="button" data-resource-filter-type="audio" aria-pressed="false">기도 오디오</button>
-        <button type="button" data-resource-filter-type="card" aria-pressed="false">말씀·기도카드</button>
-      </div>
       <label class="resource-search-field" for="faithResourceSearch">
-        <span>제목 또는 상황 검색</span>
-        <input id="faithResourceSearch" type="search" autocomplete="off" placeholder="예: 불안, 자녀, 잠들기 전">
+        <span>제목 또는 키워드 검색</span>
+        <input id="faithResourceSearch" type="search" autocomplete="off" placeholder="예: 자녀, 가정, 위로">
       </label>
       <button id="faithResourceReset" class="text-button resource-reset" type="button" hidden>필터 초기화</button>
     </div>
+    <p class="resource-filter-help">키워드는 여러 개 선택할 수 있으며, 새 자료에 입력한 키워드도 자동으로 추가됩니다.</p>
     <div id="faithResourceTags" class="resource-tag-filter" aria-label="신앙자료 키워드 필터"></div>
     <p id="faithResourceFilterStatus" class="resource-filter-status" aria-live="polite"></p>
     <p id="faithResourceActionStatus" class="resource-action-status form-message" role="status" aria-live="polite" hidden></p>
     <div id="faithResourceList" class="resource-board-list"></div>
   </section>
-
-  <section id="cardThreadDetail" class="section card-thread-detail" hidden>
-    <div class="thread-detail-head">
-      <div>
-        <p class="eyebrow">Resource detail</p>
-        <h2 id="cardThreadTitle">신앙자료 상세</h2>
-      </div>
-      <button class="button secondary" type="button" data-close-thread>닫기</button>
-    </div>
-    <p id="cardThreadDescription"></p>
-    <div id="cardThreadGallery" class="thread-gallery-grid"></div>
-  </section>
-
 </main>
 <footer class="site-footer">
-  <div><strong>기도의샘물</strong><p>기도문과 말씀 묵상을 정성스럽게 모아 전하는 기독교 콘텐츠 공간입니다.</p></div>
-  <div class="footer-links"><a href="privacy.html">개인정보처리방침</a><a href="terms.html">이용약관</a><a href="disclaimer.html">콘텐츠 안내</a><a href="sitemap.xml">사이트맵</a></div>
+  <div class="footer-brand"><strong>기도의샘물</strong><p>말씀과 기도로 마음이 잠시 쉬어가는 신앙 콘텐츠 공간입니다.</p><a class="text-link" href="https://youtube.com/channel/UCFrsilNKJ8xcmn0RUrFz6XQ?si=hM09ebhKwa9m_3W0" target="_blank" rel="noopener">유튜브 채널 보기</a></div>
+  <div class="footer-group"><strong>말씀과 기도</strong><a href="meditation.html">오늘의 큐티(QT)</a><a href="prayers.html">말씀 붙들기</a><a href="morning-prayer.html">아침기도</a><a href="night-prayer.html">저녁기도</a></div>
+  <div class="footer-group"><strong>함께 둘러보기</strong><a href="community.html">나눔게시판</a><a href="videos.html">유튜브</a><a href="prayer-cards.html">신앙자료</a><a href="contact.html">문의하기</a></div>
+  <div class="footer-group"><strong>운영과 정책</strong><a href="about.html">소개</a><a href="privacy.html">개인정보처리방침</a><a href="terms.html">이용약관</a><a href="disclaimer.html">콘텐츠 안내</a><a href="sitemap.xml">사이트맵</a></div>
 </footer>
-<script src="data/prayers.js"></script>
-<script src="data/meditations.js"></script>
+<script src="data/prayers.js?v=20260710-ia"></script>
+<script src="data/meditations.js?v=20260710-ia"></script>
 <script src="data/videos.js"></script>
-<script src="data/prayerCards.js"></script>
-<script src="data/prayerChallenge.js"></script>
-<script src="data/faithResources.js"></script>
+<script src="data/prayerCards.js?v=20260710-ia"></script>
+<script src="data/prayerChallenge.js?v=20260710-ia"></script>
+<script id="faithResourceFallback" type="application/json">[
+  {"id":"bdfbfab7-4798-4aa0-9a0b-617a36fd780c","type":"pdf","title":"가정을 품는 7일간의 기도","summary":"자녀의 믿음과 가정의 평안을 위해 7일 동안 차분히 읽는 기도문 PDF입니다.","tags":["자녀","가정","믿음","격려"],"productId":"bdfbfab7-4798-4aa0-9a0b-617a36fd780c","isUploaded":true},
+  {"id":"1a9ad9d3-8b81-42e5-aa2d-20c15d31eb46","type":"card","title":"마음이 다친 자녀를 위한 위로기도","summary":"상처받은 자녀의 마음과 자존감 회복을 위해 말씀과 기도를 담은 기도카드 자료입니다.","tags":["위로","자녀","존재","자존감","회복"],"productId":"1a9ad9d3-8b81-42e5-aa2d-20c15d31eb46","isUploaded":true},
+  {"id":"487ea3b0-39de-456a-a4da-aff4b79636ec","type":"card","title":"중요한 결정과 재정 부담 앞에 선 가정을 위한 지혜기도","summary":"선택과 재정 부담 앞에서 하나님의 지혜와 신뢰를 구하도록 돕는 기도카드 자료입니다.","tags":["지혜","선택","결정","가정","신뢰","평안"],"productId":"487ea3b0-39de-456a-a4da-aff4b79636ec","isUploaded":true}
+]</script>
+<script src="data/faithResources.js?v=20260711-resource-pages"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.1/dist/umd/supabase.js"></script>
 <script src="assets/js/supabase-config.js"></script>
-<script src="assets/js/script.js"></script>
+<script src="assets/js/script.js?v=20260711-resource-pages"></script>
 </body>
 </html>

@@ -54,3 +54,5 @@ const PRAYER_CHALLENGE = challengeTitles.map((title, i) => ({
   tags: ["30일", "기도", "묵상"],
   detailUrl: "prayers.html"
 }));
+
+window.PRAYER_CHALLENGE = PRAYER_CHALLENGE;

@@ -81,6 +81,12 @@
           <button class="button primary" type="submit">인증 메일 받고 가입하기</button>
           <p class="form-message">이메일은 공개되지 않으며, 게시판에는 닉네임만 표시됩니다.</p>
         </form>
+        <form id="faithResetForm" class="faith-auth-form faith-reset-form" novalidate hidden>
+          <p class="faith-auth-guidance">가입한 이메일을 입력하면 새 비밀번호를 설정할 수 있는 링크를 보내드립니다.</p>
+          <label>가입 이메일<input type="email" name="email" autocomplete="email" required placeholder="example@email.com"></label>
+          <button class="button primary" type="submit">재설정 메일 보내기</button>
+          <button class="text-button" type="button" data-faith-reset-back>로그인으로 돌아가기</button>
+        </form>
         <p class="form-message" id="faithAuthStatus" role="status" aria-live="polite"></p>
       </section>`;
     document.body.append(root);
@@ -89,7 +95,9 @@
     root.querySelectorAll("[data-faith-auth-tab]").forEach((button) => button.addEventListener("click", () => setAuthMode(button.dataset.faithAuthTab)));
     root.querySelector("#faithLoginForm")?.addEventListener("submit", submitLogin);
     root.querySelector("#faithSignupForm")?.addEventListener("submit", submitSignup);
-    root.querySelector("[data-faith-password-reset]")?.addEventListener("click", requestPasswordReset);
+    root.querySelector("#faithResetForm")?.addEventListener("submit", requestPasswordReset);
+    root.querySelector("[data-faith-password-reset]")?.addEventListener("click", openPasswordReset);
+    root.querySelector("[data-faith-reset-back]")?.addEventListener("click", () => setAuthMode("login"));
   }
 
   function setStatus(message, error = false) {
@@ -101,15 +109,20 @@
 
   function setAuthMode(mode = "login") {
     ensureModal();
-    const login = mode !== "signup";
-    document.querySelector("#faithLoginForm").hidden = !login;
-    document.querySelector("#faithSignupForm").hidden = login;
+    const normalizedMode = ["login", "signup", "reset"].includes(mode) ? mode : "login";
+    document.querySelector("#faithLoginForm").hidden = normalizedMode !== "login";
+    document.querySelector("#faithSignupForm").hidden = normalizedMode !== "signup";
+    document.querySelector("#faithResetForm").hidden = normalizedMode !== "reset";
     document.querySelectorAll("[data-faith-auth-tab]").forEach((button) => {
-      const selected = button.dataset.faithAuthTab === (login ? "login" : "signup");
+      const selected = button.dataset.faithAuthTab === normalizedMode;
       button.setAttribute("aria-selected", String(selected));
       button.classList.toggle("is-active", selected);
     });
-    document.getElementById("faithAuthTitle").textContent = login ? "기도의샘물 로그인" : "기도의샘물 회원가입";
+    document.getElementById("faithAuthTitle").textContent = normalizedMode === "signup"
+      ? "기도의샘물 회원가입"
+      : normalizedMode === "reset"
+        ? "비밀번호 재설정"
+        : "기도의샘물 로그인";
     setStatus("");
   }
 
@@ -119,7 +132,8 @@
     const root = document.getElementById("faithAuthModal");
     root.hidden = false;
     document.body.classList.add("modal-open");
-    window.setTimeout(() => root.querySelector(mode === "signup" ? "[name='nickname']" : "[name='email']")?.focus(), 0);
+    const focusSelector = mode === "signup" ? "#faithSignupForm [name='nickname']" : mode === "reset" ? "#faithResetForm [name='email']" : "#faithLoginForm [name='email']";
+    window.setTimeout(() => root.querySelector(focusSelector)?.focus(), 0);
   }
 
   function close() {
@@ -169,15 +183,30 @@
     close();
   }
 
-  async function requestPasswordReset() {
-    const form = document.getElementById("faithLoginForm");
+  function openPasswordReset() {
+    const loginForm = document.getElementById("faithLoginForm");
+    const resetForm = document.getElementById("faithResetForm");
+    const email = String(loginForm?.elements.email.value || "").trim();
+    if (resetForm && email) resetForm.elements.email.value = email;
+    setAuthMode("reset");
+    window.setTimeout(() => resetForm?.elements.email.focus(), 0);
+  }
+
+  async function requestPasswordReset(event) {
+    event?.preventDefault();
+    const form = event?.currentTarget || document.getElementById("faithResetForm");
     const email = String(form?.elements.email.value || "").trim();
-    if (!email) return setStatus("재설정할 이메일 주소를 먼저 입력해 주세요.", true);
+    if (!email) return setStatus("가입한 이메일 주소를 입력해 주세요.", true);
     const client = await getClient();
     if (!client) return setStatus("회원 서비스를 연결하지 못했습니다.", true);
+    const submitButton = form?.querySelector("button[type='submit']");
+    if (submitButton) submitButton.disabled = true;
+    setStatus("비밀번호 재설정 메일을 보내고 있습니다.");
     const redirectTo = new URL("reset-password.html", window.location.href).href;
     const { error } = await client.auth.resetPasswordForEmail(email, { redirectTo });
-    setStatus(error ? "재설정 메일을 보내지 못했습니다. 이메일을 확인해 주세요." : "비밀번호 재설정 메일을 보냈습니다.", Boolean(error));
+    if (submitButton) submitButton.disabled = false;
+    if (error) return setStatus("재설정 메일을 보내지 못했습니다. 잠시 후 다시 시도해 주세요.", true);
+    setStatus("입력한 이메일이 회원 계정과 일치하면 재설정 링크가 발송됩니다. 메일함을 확인해 주세요.");
   }
 
   async function refreshSession() {
@@ -607,14 +636,15 @@
     });
   }
 
-  const communityLabel = { prayer: "기도제목", gratitude: "감사 나눔" };
+  const communityLabel = { prayer: "기도제목", gratitude: "감사나눔", pain: "아픔나눔" };
 
   async function initCommunityPage() {
     const root = document.querySelector("[data-community-page]");
     if (!root) return;
     const client = await getClient();
     if (!client) return;
-    let selectedCategory = "all";
+    const requestedCategory = new URLSearchParams(window.location.search).get("category") || "all";
+    let selectedCategory = Object.hasOwn(communityLabel, requestedCategory) ? requestedCategory : "all";
     let selectedPost = null;
     const listRoot = root.querySelector("[data-community-list]");
     const detailRoot = root.querySelector("[data-community-detail]");
@@ -623,14 +653,14 @@
     const postCard = (post) => `<article class="community-post-card" data-community-post="${escapeHtml(post.id)}"><div class="community-post-meta"><span>${escapeHtml(communityLabel[post.category] || post.category)}</span><span>${escapeHtml(post.author?.nickname || "익명")}</span><span>${friendlyDate(post.created_at)}</span></div><h3>${escapeHtml(post.title)}</h3><p>${escapeHtml(post.body).slice(0, 160)}${post.body.length > 160 ? "..." : ""}</p><button class="text-button" type="button" data-open-community-post="${escapeHtml(post.id)}">글과 답글 보기</button></article>`;
 
     async function loadPosts() {
-      let query = client.from("community_posts").select("id,category,title,body,created_at,author_id,author:public_profiles!community_posts_author_id_fkey(nickname)").eq("status", "published").in("category", ["prayer", "gratitude"]).order("created_at", { ascending: false }).limit(50);
+      let query = client.from("community_posts").select("id,category,title,body,created_at,author_id,author:public_profiles!community_posts_author_id_fkey(nickname)").eq("status", "published").in("category", ["prayer", "gratitude", "pain"]).order("created_at", { ascending: false }).limit(50);
       if (selectedCategory !== "all") query = query.eq("category", selectedCategory);
       const { data, error } = await query;
       if (error) {
         listRoot.innerHTML = '<p class="soft-empty-state">게시판을 불러오지 못했습니다. 잠시 후 다시 확인해 주세요.</p>';
         return;
       }
-      listRoot.innerHTML = data?.length ? data.map(postCard).join("") : '<div class="soft-empty-state"><h3>아직 나눔이 없습니다.</h3><p>마음에 담아 둔 기도제목이나 감사의 마음을 첫 글로 남겨 보세요.</p></div>';
+      listRoot.innerHTML = data?.length ? data.map(postCard).join("") : '<div class="soft-empty-state"><h3>아직 나눔이 없습니다.</h3><p>마음에 담아 둔 기도제목, 감사 또는 아픔의 이야기를 첫 글로 남겨 보세요.</p></div>';
     }
 
     async function openPost(postId) {
@@ -649,12 +679,17 @@
       root.querySelectorAll("[data-community-filter]").forEach((item) => item.classList.toggle("is-active", item === button));
       loadPosts();
     }));
+    root.querySelectorAll("[data-community-filter]").forEach((button) => button.classList.toggle("is-active", button.dataset.communityFilter === selectedCategory));
+    const composeForm = root.querySelector("[data-community-form]");
+    if (composeForm && selectedCategory !== "all") composeForm.elements.category.value = selectedCategory;
     root.querySelector("[data-community-compose]")?.addEventListener("click", () => state.user ? root.querySelector("[data-community-form]")?.scrollIntoView({ behavior: "smooth", block: "center" }) : open("signup"));
     root.querySelector("[data-community-form]")?.addEventListener("submit", async (event) => {
       event.preventDefault();
       if (!state.user) return open("login");
       const form = event.currentTarget;
-      const { error } = await client.from("community_posts").insert({ author_id: state.user.id, category: form.elements.category.value, title: form.elements.title.value.trim(), body: form.elements.body.value.trim() });
+      const category = form.elements.category.value;
+      if (!Object.hasOwn(communityLabel, category)) return setMessage("나눔 유형을 다시 선택해 주세요.");
+      const { error } = await client.from("community_posts").insert({ author_id: state.user.id, category, title: form.elements.title.value.trim(), body: form.elements.body.value.trim() });
       if (error) return setMessage("게시글을 등록하지 못했습니다. 내용을 확인해 주세요.");
       form.reset();
       setMessage("게시글을 등록했습니다.");

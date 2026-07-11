@@ -9,6 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800&family=Noto+Sans+KR:wght@400;500;600;700;800;900&family=Noto+Serif+KR:wght@500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="assets/css/editorial-redesign.css">
 </head>
 <body class="admin-page">
 <main>
@@ -66,6 +67,26 @@
       <p class="form-message" data-moderation-status role="status"></p>
     </div>
     <div class="account-list" data-moderation-list></div>
+  </section>
+
+  <section class="section admin-resource-panel" data-admin-channel-panel hidden>
+    <div>
+      <p class="eyebrow">Channel News</p>
+      <h2>채널 소식 등록</h2>
+      <p>사이트에 소식을 먼저 등록하고, 유튜브에 게시한 뒤 해당 게시물 주소를 추가할 수 있습니다.</p>
+    </div>
+    <div class="admin-upload-layout">
+      <form class="admin-resource-form" data-admin-channel-form>
+        <label>제목<input type="text" name="title" minlength="2" maxlength="160" required></label>
+        <label>본문<textarea name="body" minlength="2" maxlength="5000" rows="6" required></textarea></label>
+        <label>관련 유튜브 영상 ID<input type="text" name="relatedVideoId" maxlength="32" placeholder="예: GTr3L4h-Rzg"></label>
+        <label>유튜브 게시물 주소<input type="url" name="youtubePostUrl" placeholder="게시 후 주소를 입력합니다."></label>
+        <label>상태<select name="status"><option value="draft">초안</option><option value="published">공개</option><option value="archived">보관</option></select></label>
+        <button class="button primary" type="submit">채널 소식 저장</button>
+        <p class="form-message" data-admin-channel-status role="status"></p>
+      </form>
+      <div class="account-list" data-admin-channel-list></div>
+    </div>
   </section>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.1/dist/umd/supabase.js"></script>
