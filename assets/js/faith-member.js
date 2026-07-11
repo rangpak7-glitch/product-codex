@@ -650,7 +650,7 @@
     const detailRoot = root.querySelector("[data-community-detail]");
     const setMessage = (message) => { const status = root.querySelector("[data-community-status]"); if (status) status.textContent = message; };
 
-    const postCard = (post) => `<article class="community-post-card" data-community-post="${escapeHtml(post.id)}"><div class="community-post-meta"><span>${escapeHtml(communityLabel[post.category] || post.category)}</span><span>${escapeHtml(post.author?.nickname || "익명")}</span><span>${friendlyDate(post.created_at)}</span></div><h3>${escapeHtml(post.title)}</h3><p>${escapeHtml(post.body).slice(0, 160)}${post.body.length > 160 ? "..." : ""}</p><button class="text-button" type="button" data-open-community-post="${escapeHtml(post.id)}">글과 답글 보기</button></article>`;
+    const postCard = (post) => `<article class="community-post-card community-category-${escapeHtml(post.category)}" data-community-post="${escapeHtml(post.id)}"><div class="community-post-meta"><span>${escapeHtml(communityLabel[post.category] || post.category)}</span><span>${escapeHtml(post.author?.nickname || "익명")}</span><span>${friendlyDate(post.created_at)}</span></div><h3>${escapeHtml(post.title)}</h3><p>${escapeHtml(post.body).slice(0, 100)}${post.body.length > 100 ? "..." : ""}</p><button class="text-button" type="button" data-open-community-post="${escapeHtml(post.id)}">글과 답글 보기</button></article>`;
 
     async function loadPosts() {
       let query = client.from("community_posts").select("id,category,title,body,created_at,author_id,author:public_profiles!community_posts_author_id_fkey(nickname)").eq("status", "published").in("category", ["prayer", "gratitude", "pain"]).order("created_at", { ascending: false }).limit(50);
@@ -682,7 +682,19 @@
     root.querySelectorAll("[data-community-filter]").forEach((button) => button.classList.toggle("is-active", button.dataset.communityFilter === selectedCategory));
     const composeForm = root.querySelector("[data-community-form]");
     if (composeForm && selectedCategory !== "all") composeForm.elements.category.value = selectedCategory;
-    root.querySelector("[data-community-compose]")?.addEventListener("click", () => state.user ? root.querySelector("[data-community-form]")?.scrollIntoView({ behavior: "smooth", block: "center" }) : open("signup"));
+    const composeSection = root.querySelector("#communityCompose");
+    const composeTrigger = root.querySelector("[data-community-compose]");
+    const showCompose = () => {
+      if (!state.user) return open("signup");
+      if (composeSection) composeSection.hidden = false;
+      window.requestAnimationFrame(() => root.querySelector("[data-community-form]")?.scrollIntoView({ behavior: "smooth", block: "center" }));
+    };
+    composeTrigger?.addEventListener("click", showCompose);
+    root.querySelector("[data-community-compose-close]")?.addEventListener("click", () => {
+      if (composeSection) composeSection.hidden = true;
+      composeTrigger?.focus();
+    });
+    if (window.location.hash === "#communityCompose") showCompose();
     root.querySelector("[data-community-form]")?.addEventListener("submit", async (event) => {
       event.preventDefault();
       if (!state.user) return open("login");

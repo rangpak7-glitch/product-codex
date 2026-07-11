@@ -13,7 +13,15 @@ const $ = (selector) => document.querySelector(selector);
 const toggle = $(".menu-toggle");
 const nav = $("#site-nav");
 if (toggle && nav) {
+  const navDetails = () => [...nav.querySelectorAll("details.site-nav-section")];
+  const closeNavDetails = ({ restoreFocus = false } = {}) => {
+    const opened = navDetails().filter((details) => details.open);
+    const focusTarget = opened[0]?.querySelector("summary");
+    opened.forEach((details) => { details.open = false; });
+    if (restoreFocus && focusTarget) focusTarget.focus();
+  };
   const closeMenu = ({ restoreFocus = false } = {}) => {
+    closeNavDetails();
     nav.classList.remove("open");
     document.body.classList.remove("menu-open");
     toggle.setAttribute("aria-expanded", "false");
@@ -27,15 +35,25 @@ if (toggle && nav) {
     toggle.querySelector(".sr-only").textContent = open ? "전체 메뉴 닫기" : "전체 메뉴 열기";
   });
   nav.addEventListener("click", (event) => {
-    if (event.target.closest("a") && window.matchMedia("(max-width: 860px)").matches) closeMenu();
+    if (!event.target.closest("a")) return;
+    closeNavDetails();
+    if (window.matchMedia("(max-width: 860px)").matches) closeMenu();
   });
-  document.addEventListener("click", (event) => {
-    if (!nav.classList.contains("open") || event.target.closest(".site-header")) return;
-    closeMenu();
+  document.addEventListener("pointerdown", (event) => {
+    if (event.target.closest("#site-nav")) return;
+    closeNavDetails();
+    if (nav.classList.contains("open") && !event.target.closest(".site-header")) closeMenu();
   });
   document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && nav.classList.contains("open")) closeMenu({ restoreFocus: true });
+    if (event.key !== "Escape") return;
+    if (navDetails().some((details) => details.open)) {
+      closeNavDetails({ restoreFocus: true });
+      return;
+    }
+    if (nav.classList.contains("open")) closeMenu({ restoreFocus: true });
   });
+  window.addEventListener("resize", () => closeNavDetails());
+  window.addEventListener("scroll", () => closeNavDetails(), { passive: true });
 }
 
 function escapeHtml(value = "") {
@@ -286,17 +304,16 @@ if ($("#meditationList")) {
   renderCompactContentList($("#meditationList"), window.MEDITATIONS || [], "말씀 묵상");
 }
 
-function videoCard(v, { inline = false } = {}) {
+function videoCard(v, { inline = false, featured = false } = {}) {
   const thumb = inline
     ? `<button class="video-thumb" type="button" data-play-video="${escapeHtml(v.videoId)}" aria-label="${escapeHtml(v.title)} 이 페이지에서 재생"><img src="${v.thumbnail}" alt="${escapeHtml(v.title)} 썸네일" loading="lazy"><span class="play-mark" aria-hidden="true">▶</span></button>`
     : `<a class="video-thumb" href="${v.url}" target="_blank" rel="noopener" aria-label="${escapeHtml(v.title)} 영상 보기"><img src="${v.thumbnail}" alt="${escapeHtml(v.title)} 썸네일" loading="lazy"><span class="play-mark" aria-hidden="true">▶</span></a>`;
-  return `<article class="video-card">
+  return `<article class="video-card${featured ? " home-featured-video" : ""}">
     ${thumb}
-    <p class="eyebrow">${escapeHtml(v.theme)}</p>
+    <p class="eyebrow">${escapeHtml(v.theme)}${v.publishedDate ? ` · ${escapeHtml(v.publishedDate)}` : ""}</p>
     <h3>${escapeHtml(v.title)}</h3>
-    <p><strong>관련 말씀:</strong> ${escapeHtml(v.scripture)}</p>
-    <p>${escapeHtml(v.description)}</p>
-    <a class="button secondary" href="${v.url}" target="_blank" rel="noopener">유튜브에서 보기</a>
+    <p class="video-scripture">${escapeHtml(v.scripture || "")}</p>
+    <a class="text-link" href="${v.url}" target="_blank" rel="noopener">유튜브에서 보기</a>
   </article>`;
 }
 
@@ -389,7 +406,9 @@ function channelPostCard(post) {
     if (postRoot) postRoot.innerHTML = posts.length ? posts.map(channelPostCard).join("") : '<p class="soft-empty-state">채널 소식은 새 글이 등록되면 이곳에 표시됩니다.</p>';
     if (!homeRoot) return;
     homeRoot.className = tab === "posts" ? "channel-post-grid" : "home-media-grid";
-    homeRoot.innerHTML = tab === "posts" ? posts.slice(0, 2).map(channelPostCard).join("") : videoData.slice(0, 3).map(videoCard).join("");
+    homeRoot.innerHTML = tab === "posts"
+      ? posts.slice(0, 2).map(channelPostCard).join("")
+      : videoData.slice(0, 3).map((video, index) => videoCard(video, { inline: true, featured: index === 0 })).join("");
   };
   tabs.forEach((button) => button.addEventListener("click", () => {
     tabs.forEach((item) => item.classList.toggle("is-active", item === button));
@@ -411,9 +430,6 @@ function channelPostCard(post) {
 function pdfProductCard(product) {
   const productId = product.productId || product.id;
   const canPurchase = isPurchasable(product);
-  const previewAction = product.resourceId
-    ? `<a class="button secondary" href="prayer-cards.html?resource=${encodeURIComponent(product.resourceId)}" data-resource-preview data-product-id="${escapeHtml(productId)}">공개 미리보기</a>`
-    : "";
   const action = canPurchase
     ? `<button class="button primary" type="button" data-product-purchase="${escapeHtml(productId)}">구매하기 · ${escapeHtml(formatKrw(product.priceKrw))}</button>`
     : `<a class="button primary" href="${escapeHtml(productInquiryHref(product))}" data-resource-inquiry data-product-id="${escapeHtml(productId)}">자료 문의하기</a>`;
@@ -427,7 +443,6 @@ function pdfProductCard(product) {
     <p class="product-audience">${escapeHtml(product.audience)}</p>
     <ul class="compact-list">${product.composition.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
     <div class="product-actions">
-      ${previewAction}
       ${action}
     </div>
   </article>`;
@@ -643,7 +658,7 @@ if (visualPrayerCards) {
       eyebrow: "신앙자료 · 읽는 자료",
       hero: "기도문 PDF",
       description: "삶의 여러 상황에서 천천히 읽고 보관할 수 있는 유료 기도문 자료를 모았습니다.",
-      empty: "등록된 기도문 PDF가 아직 없습니다. 자료를 준비하고 있습니다.",
+      empty: "준비중",
       placeholder: "예: 자녀, 가정, 위로"
     },
     audio: {
@@ -651,7 +666,7 @@ if (visualPrayerCards) {
       eyebrow: "신앙자료 · 듣는 자료",
       hero: "기도 오디오북",
       description: "이동 중이나 잠들기 전에 차분히 들을 수 있는 유료 기도 낭독 자료입니다.",
-      empty: "등록된 기도 오디오북이 아직 없습니다. 자료를 준비하고 있습니다.",
+      empty: "준비중",
       placeholder: "예: 잠들기 전, 평안, 회복"
     },
     card: {
@@ -659,7 +674,7 @@ if (visualPrayerCards) {
       eyebrow: "신앙자료 · 저장하는 자료",
       hero: "기도카드",
       description: "말씀과 기도를 한 장씩 저장하고 나눌 수 있도록 만든 유료 카드 자료입니다.",
-      empty: "등록된 기도카드가 아직 없습니다. 자료를 준비하고 있습니다.",
+      empty: "준비중",
       placeholder: "예: 자녀, 위로, 결정"
     }
   };
@@ -774,21 +789,6 @@ if (visualPrayerCards) {
     return tags.map((tag) => `${tag} 앞에서 천천히 읽는 기도와 묵상`);
   }
 
-  function renderHubPublicPreview(resource) {
-    const sampleAudioUrl = resource.sampleAudioUrl || resource.sample_audio_url;
-    if (resource.type === "audio" && sampleAudioUrl) {
-      return `<div class="public-preview public-audio-preview"><span>공개 미리듣기</span><audio controls preload="metadata" src="${escapeHtml(sampleAudioUrl)}">오디오 미리듣기를 지원하지 않는 브라우저입니다.</audio></div>`;
-    }
-    const items = renderHubPreviewItems(resource);
-    if (!items.length) return "";
-    if (resource.type === "card") {
-      return `<div class="public-preview public-card-preview" aria-label="${escapeHtml(resource.title)} 공개 미리보기">
-        ${items.slice(0, 2).map((item, index) => `<div><span>미리보기 ${index + 1}</span><strong>${escapeHtml(item)}</strong></div>`).join("")}
-      </div>`;
-    }
-    return `<div class="public-preview"><span>${resource.type === "audio" ? "수록 흐름 미리보기" : "자료 구성 미리보기"}</span><ul>${items.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul></div>`;
-  }
-
   function renderHubAccessPanel(resource) {
     const fileLabel = resource.type === "audio" ? "MP3 파일" : resource.type === "card" ? "카드 전체 보기" : "PDF 파일";
     const product = productForResource(resource);
@@ -805,7 +805,7 @@ if (visualPrayerCards) {
     if (isPurchasable(product)) {
       return `<div class="resource-access-panel"><p>개별 구매 후 바로 내 자료실에서 열 수 있습니다.</p><button class="button primary" type="button" data-product-purchase="${escapeHtml(product.id)}">구매하기 · ${escapeHtml(formatKrw(product.priceKrw))}</button></div>`;
     }
-    return `<div class="resource-access-panel"><p>공개 미리보기와 자료 구성을 확인한 뒤, 이용 방법을 안내받을 수 있습니다.</p><a class="button primary" href="${escapeHtml(productInquiryHref(product))}" data-resource-inquiry data-product-id="${escapeHtml(product.id)}">자료 문의하기</a></div>`;
+    return `<div class="resource-access-panel"><p>등록된 자료 구성을 확인한 뒤, 이용 방법을 안내받을 수 있습니다.</p><a class="button primary" href="${escapeHtml(productInquiryHref(product))}" data-resource-inquiry data-product-id="${escapeHtml(product.id)}">자료 문의하기</a></div>`;
   }
 
   function hubFilteredResources() {
@@ -860,7 +860,7 @@ if (visualPrayerCards) {
       ? list.map(renderHubCard).join("")
       : activeTags.size || searchQuery.trim()
         ? `<div class="resource-empty-state"><strong>선택한 조건에 맞는 자료가 없습니다.</strong><p>키워드 선택을 줄이거나 검색어를 바꿔보세요.</p><button class="button secondary" type="button" data-reset-resource-search>필터 초기화</button></div>`
-        : `<div class="resource-empty-state resource-coming-soon"><strong>준비중</strong><p>${escapeHtml(typeMeta[activeType].empty)}</p></div>`;
+        : `<div class="resource-empty-state resource-coming-soon"><strong>${escapeHtml(typeMeta[activeType].empty)}</strong></div>`;
   }
 
   function renderResourceHub() {
@@ -1315,7 +1315,6 @@ if (visualPrayerCards) {
     if (saleStatus === "available" && (!Number.isInteger(priceAmount) || priceAmount <= 0)) return setUploadStatus("온라인 구매 가능 자료에는 올바른 판매 가격을 입력해 주세요.");
     if (saleStatus !== "available" && priceInput) return setUploadStatus("문의 안내 또는 판매 비노출 자료에는 가격을 입력하지 않아야 합니다.");
     const previewItems = String(formData.get("previewItems") || "").split(/\r?\n/).map((item) => item.trim()).filter(Boolean).slice(0, 6);
-    if (!previewItems.length) return setUploadStatus("공개 미리보기 구성을 한 항목 이상 입력해 주세요.");
     const title = String(formData.get("title")).trim();
     const summary = String(formData.get("summary")).trim();
     const productPayload = {
@@ -1743,15 +1742,8 @@ normalizeSiteNav();
     </article>`;
   }
 
-  function compactCard(item) {
-    return `<article class="archive-word-card">
-      <div class="archive-card-meta"><span>${safeText(item.date)}</span><span>${safeText(item.categoryLabel)}</span></div>
-      <h3>${safeText(item.title)}</h3>
-      <p class="scripture-ref">${safeText(item.scriptureRef)}</p>
-      <p>${safeText(item.summary)}</p>
-      ${tagRow(item.tags)}
-      <a class="text-link" href="${safeText(item.detailUrl)}">자세히 보기</a>
-    </article>`;
+  function dateLabel(value) {
+    return new Intl.DateTimeFormat("ko-KR", { year: "numeric", month: "long", day: "numeric" }).format(new Date(`${value}T00:00:00+09:00`));
   }
 
   function categoryRecentRow(item) {
@@ -1759,20 +1751,52 @@ normalizeSiteNav();
     url.searchParams.set("date", item.date);
     url.hash = "dailyContentCard";
     const displayDate = new Intl.DateTimeFormat("ko-KR", { month: "short", day: "numeric" }).format(new Date(`${item.date}T00:00:00+09:00`));
-    return `<a class="category-recent-row" href="${safeText(url.href)}">
+    return `<a class="category-recent-row" href="${safeText(`${url.pathname}${url.search}${url.hash}`)}" data-history-date="${safeText(item.date)}">
       <time datetime="${safeText(item.date)}">${safeText(displayDate)}</time>
-      <span><strong>${safeText(item.title)}</strong><small>${safeText(item.scriptureRef)}</small></span>
+      <span><strong>${safeText(item.title)}</strong><small>${safeText(item.scriptureRef || item.summary || "")}</small></span>
     </a>`;
   }
 
-  function renderRecent(category, count = 7) {
+  function historyPageHref(page) {
+    const url = new URL(window.location.href);
+    url.searchParams.set("page", String(page));
+    url.hash = "recentCategoryContents";
+    return `${url.pathname}${url.search}${url.hash}`;
+  }
+
+  function renderRecent(category, requestedPage = 1, pageSize = 10) {
     const root = document.getElementById("recentCategoryContents");
+    const pagination = document.getElementById("categoryHistoryPagination");
     if (!root) return;
-    const items = contentsFor(category).slice(0, count);
+    const allItems = contentsFor(category);
+    const pageCount = Math.max(1, Math.ceil(allItems.length / pageSize));
+    const page = Math.min(pageCount, Math.max(1, Number(requestedPage) || 1));
+    const items = allItems.slice((page - 1) * pageSize, page * pageSize);
     root.className = "category-recent-list";
     root.innerHTML = items.length
       ? items.map(categoryRecentRow).join("")
       : `<p class="muted">아직 지난 자료가 없습니다.</p>`;
+
+    root.querySelectorAll("[data-history-date]").forEach((link) => {
+      link.addEventListener("click", (event) => {
+        event.preventDefault();
+        const date = link.dataset.historyDate || displayDateSeoul();
+        updateSelectedDate(date);
+        renderCategory(category, date, { focus: true });
+      });
+    });
+
+    if (!pagination) return;
+    if (pageCount <= 1) {
+      pagination.innerHTML = "";
+      return;
+    }
+    const pages = Array.from({ length: pageCount }, (_, index) => index + 1);
+    pagination.innerHTML = `${page > 1 ? `<a href="${safeText(historyPageHref(page - 1))}" aria-label="이전 페이지">이전</a>` : '<span aria-hidden="true">이전</span>'}
+      <div>${pages.map((number) => number === page
+        ? `<a class="is-current" href="${safeText(historyPageHref(number))}" aria-current="page">${number}</a>`
+        : `<a href="${safeText(historyPageHref(number))}">${number}</a>`).join("")}</div>
+      ${page < pageCount ? `<a href="${safeText(historyPageHref(page + 1))}" aria-label="다음 페이지">다음</a>` : '<span aria-hidden="true">다음</span>'}`;
   }
 
   function updateSelectedDate(date, { replace = false } = {}) {
@@ -1782,11 +1806,23 @@ normalizeSiteNav();
     window.history[replace ? "replaceState" : "pushState"]({}, "", url);
   }
 
+  function closeDateDialog({ restoreFocus = true } = {}) {
+    const dialog = document.querySelector("[data-date-picker-dialog]");
+    const trigger = document.querySelector("[data-date-picker-open]");
+    if (dialog?.open) {
+      dialog.dataset.restoreFocus = String(restoreFocus);
+      dialog.close();
+      return;
+    }
+    if (restoreFocus) trigger?.focus();
+  }
+
   function renderCalendar(category, selectedDate = displayDateSeoul()) {
     const root = document.getElementById("categoryCalendar");
     if (!root) return;
     const dates = new Set(contentsFor(category).map((item) => item.date));
-    const selectedParts = selectedDate.split("-").map(Number);
+    const safeDate = /^\d{4}-\d{2}-\d{2}$/.test(selectedDate) ? selectedDate : displayDateSeoul();
+    const selectedParts = safeDate.split("-").map(Number);
     let year = selectedParts[0];
     let month = selectedParts[1];
 
@@ -1795,117 +1831,89 @@ normalizeSiteNav();
       const lastDate = new Date(Date.UTC(year, month, 0)).getUTCDate();
       const startDay = first.getUTCDay();
       const cells = [];
-      for (let i = 0; i < startDay; i += 1) cells.push('<span class="calendar-blank"></span>');
+      for (let index = 0; index < startDay; index += 1) cells.push('<span class="calendar-blank" aria-hidden="true"></span>');
       for (let day = 1; day <= lastDate; day += 1) {
         const date = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
         const active = dates.has(date);
-        cells.push(`<button type="button" class="calendar-day${date === selectedDate ? " selected" : ""}" ${active ? "" : "disabled"} data-date="${date}" aria-label="${date} 콘텐츠 보기">${day}</button>`);
+        cells.push(`<button type="button" class="calendar-day${date === safeDate ? " selected" : ""}" ${active ? 'data-has-content="true"' : "disabled"} data-date="${date}" aria-label="${dateLabel(date)}${active ? " 콘텐츠 보기" : " 콘텐츠 없음"}">${day}</button>`);
       }
       root.innerHTML = `<div class="calendar-toolbar">
-        <button type="button" class="filter-chip" data-month-prev aria-label="이전 달 보기">‹</button>
+        <button type="button" class="calendar-month-button" data-month-prev aria-label="이전 달 보기">‹</button>
         <strong>${year}년 ${month}월</strong>
-        <button type="button" class="filter-chip" data-month-next aria-label="다음 달 보기">›</button>
+        <button type="button" class="calendar-month-button" data-month-next aria-label="다음 달 보기">›</button>
       </div>
       <div class="calendar-weekdays" aria-hidden="true"><span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span></div>
       <div class="calendar-grid">${cells.join("")}</div>
-      <div class="calendar-actions">
-        <button type="button" class="button secondary" data-back-today>${svgIcon("calendar", "icon-sm")} 오늘 콘텐츠로 돌아가기</button>
-        <button type="button" class="button secondary" data-recent-count="7">최근 7일</button>
-        <button type="button" class="button secondary" data-recent-count="30">최근 30일</button>
-      </div>`;
+      <p class="calendar-legend"><span aria-hidden="true"></span> 콘텐츠가 있는 날짜만 선택할 수 있습니다.</p>`;
       root.querySelector("[data-month-prev]")?.addEventListener("click", () => {
         month -= 1;
-        if (month < 1) {
-          month = 12;
-          year -= 1;
-        }
+        if (month < 1) { month = 12; year -= 1; }
         draw();
       });
       root.querySelector("[data-month-next]")?.addEventListener("click", () => {
         month += 1;
-        if (month > 12) {
-          month = 1;
-          year += 1;
-        }
+        if (month > 12) { month = 1; year += 1; }
         draw();
-      });
-      root.querySelector("[data-back-today]")?.addEventListener("click", () => {
-        const today = displayDateSeoul();
-        updateSelectedDate(today);
-        renderCategory(category, today);
-      });
-      root.querySelectorAll("[data-recent-count]").forEach((button) => {
-        button.addEventListener("click", () => renderRecent(category, Number(button.dataset.recentCount || 7)));
       });
       root.querySelectorAll(".calendar-day:not(:disabled)").forEach((button) => {
         button.addEventListener("click", () => {
           const nextDate = button.dataset.date || displayDateSeoul();
           updateSelectedDate(nextDate);
-          renderCategory(category, nextDate);
+          renderCategory(category, nextDate, { focus: true });
+          closeDateDialog({ restoreFocus: false });
         });
       });
     }
     draw();
   }
 
-  function renderCategory(category, date = displayDateSeoul()) {
+  function setupDatePickerDialog() {
+    const dialog = document.querySelector("[data-date-picker-dialog]");
+    const trigger = document.querySelector("[data-date-picker-open]");
+    if (!dialog || !trigger || dialog.dataset.ready === "true") return;
+    dialog.dataset.ready = "true";
+    trigger.addEventListener("click", () => {
+      if (typeof dialog.showModal === "function") dialog.showModal();
+      else dialog.setAttribute("open", "");
+      window.requestAnimationFrame(() => dialog.querySelector(".calendar-day.selected:not(:disabled), .calendar-day:not(:disabled)")?.focus());
+    });
+    dialog.querySelector("[data-date-picker-close]")?.addEventListener("click", () => closeDateDialog());
+    dialog.addEventListener("click", (event) => {
+      if (event.target === dialog) closeDateDialog();
+    });
+    dialog.addEventListener("close", () => {
+      const restoreFocus = dialog.dataset.restoreFocus !== "false";
+      delete dialog.dataset.restoreFocus;
+      if (restoreFocus) window.requestAnimationFrame(() => trigger.focus());
+    });
+  }
+
+  function renderCategory(category, date = displayDateSeoul(), { focus = false } = {}) {
     const root = document.getElementById("dailyContentCard");
     if (!root) return;
     const item = pickContent(category, date);
     root.innerHTML = dailyCard(item);
-    renderCalendar(category, item?.date || date);
-    renderRecent(category, 7);
-  }
-
-  function renderArchiveFromDailyContents() {
-    const root = document.getElementById("archiveResults");
-    const filters = document.getElementById("archiveFilters");
-    if (!root || !filters) return;
-    const search = document.getElementById("archiveSearch");
-    const categories = ["all", "word", "evening", "morning", "editorial"];
-    const labels = { all: "전체", word: "말씀 붙들기", evening: "저녁기도", morning: "아침기도", editorial: "큐티(QT)" };
-    let active = "all";
-
-    function queryItems() {
-      const q = (search?.value || "").trim().toLowerCase();
-      const items = sortDesc(dailyContents).filter((item) => {
-        if (active !== "all" && item.category !== active) return false;
-        if (!q) return true;
-        return [item.title, item.scriptureRef, item.scriptureText, item.summary, item.body, ...(item.tags || [])].join(" ").toLowerCase().includes(q);
-      });
-      root.innerHTML = items.length ? items.map(compactCard).join("") : `<div class="soft-empty-state"><h3>가까운 주제를 다시 찾아보세요</h3><p>입력한 단어와 꼭 맞는 콘텐츠는 없지만, 카테고리 필터를 바꾸면 지난 말씀과 기도를 다시 볼 수 있습니다.</p></div>`;
-    }
-
-    function drawFilters() {
-      filters.innerHTML = categories.map((category) => `<button type="button" class="filter-chip${category === active ? " active" : ""}" data-category="${category}">${labels[category]}</button>`).join("");
-      filters.querySelectorAll("[data-category]").forEach((button) => {
-        button.addEventListener("click", () => {
-          active = button.dataset.category || "all";
-          drawFilters();
-          queryItems();
-        });
-      });
-    }
-
-    drawFilters();
-    queryItems();
-    search?.addEventListener("input", queryItems);
-    document.getElementById("archiveSearchForm")?.addEventListener("submit", (event) => {
-      event.preventDefault();
-      queryItems();
-    });
+    root.setAttribute("tabindex", "-1");
+    const selectedDate = item?.date || date;
+    const selectedDateRoot = document.getElementById("selectedContentDate");
+    if (selectedDateRoot) selectedDateRoot.textContent = selectedDate ? `선택: ${dateLabel(selectedDate)}` : "";
+    renderCalendar(category, selectedDate);
+    const requestedPage = new URLSearchParams(window.location.search).get("page") || "1";
+    renderRecent(category, Number(requestedPage), 10);
+    if (focus) window.requestAnimationFrame(() => root.focus({ preventScroll: true }));
   }
 
   const categoryRoot = document.querySelector("[data-daily-category]");
   if (categoryRoot) {
     const category = categoryRoot.dataset.dailyCategory || "word";
-    categoryRoot.querySelector(".calendar-disclosure")?.setAttribute("open", "");
-    const requestedDate = new URLSearchParams(window.location.search).get("date") || displayDateSeoul();
+    setupDatePickerDialog();
+    const dateParam = new URLSearchParams(window.location.search).get("date") || "";
+    const requestedDate = /^\d{4}-\d{2}-\d{2}$/.test(dateParam) ? dateParam : displayDateSeoul();
     renderCategory(category, requestedDate);
     window.addEventListener("popstate", () => {
-      const date = new URLSearchParams(window.location.search).get("date") || displayDateSeoul();
+      const nextDateParam = new URLSearchParams(window.location.search).get("date") || "";
+      const date = /^\d{4}-\d{2}-\d{2}$/.test(nextDateParam) ? nextDateParam : displayDateSeoul();
       renderCategory(category, date);
     });
   }
-  renderArchiveFromDailyContents();
 })();

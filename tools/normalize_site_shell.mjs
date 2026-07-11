@@ -16,6 +16,10 @@ function activeAttr(page, targets) {
   return targets.includes(page) ? ' class="active" aria-current="page"' : "";
 }
 
+function currentAttr(page, targets) {
+  return targets.includes(page) ? ' aria-current="page"' : "";
+}
+
 function groupClass(page, group) {
   return pageGroups[group].has(page) ? " active" : "";
 }
@@ -29,7 +33,7 @@ function header(page) {
   <div class="site-header-utility" aria-label="보조 메뉴">
     <a${activeAttr(page, ["about.html"])} href="about.html">소개</a>
     <a${activeAttr(page, ["contact.html"])} href="contact.html">문의하기</a>
-    <a href="index.html#homeSearchSection" aria-label="통합 검색으로 이동">검색</a>
+    <a href="prayers.html#prayerSearch" aria-label="상황별 기도 검색으로 이동">검색</a>
   </div>
   <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-nav"><span></span><span></span><span></span><span class="sr-only">전체 메뉴 열기</span></button>
   <nav id="site-nav" class="site-nav" aria-label="주요 메뉴" data-site-nav-v2>
@@ -49,7 +53,7 @@ function header(page) {
           <a${activeAttr(page, ["morning-prayer.html"])} href="morning-prayer.html"><strong>아침기도</strong><span>새 하루를 말씀과 감사로 여는 기도</span></a>
         </div>
       </details>
-      <a class="site-nav-direct${groupClass(page, "community")}"${activeAttr(page, ["community.html", "prayer-request.html"])} href="community.html">나눔게시판</a>
+      <a class="site-nav-direct${groupClass(page, "community")}"${currentAttr(page, ["community.html", "prayer-request.html"])} href="community.html">나눔게시판</a>
       <details class="site-nav-section" data-nav-section="youtube">
         <summary class="site-nav-summary${groupClass(page, "youtube")}">유튜브<span aria-hidden="true">⌄</span></summary>
         <div class="site-nav-panel">
@@ -69,7 +73,7 @@ function header(page) {
     <div class="site-nav-mobile-utility">
       <a${activeAttr(page, ["about.html"])} href="about.html">소개</a>
       <a${activeAttr(page, ["contact.html"])} href="contact.html">문의하기</a>
-      <a href="index.html#homeSearchSection">통합 검색</a>
+      <a href="prayers.html#prayerSearch">기도 검색</a>
     </div>
   </nav>
 </header>`;
@@ -97,7 +101,7 @@ for (const entry of entries) {
     html = html.replace(/(<link rel="stylesheet" href="assets\/css\/style\.css(?:\?[^\"]*)?">)/, '$1\n  <link rel="stylesheet" href="assets/css/editorial-redesign.css">');
   }
   html = html.replace(/src="data\/(prayers|meditations|prayerCards|prayerChallenge)\.js(?:\?[^\"]*)?"/g, 'src="data/$1.js?v=20260710-ia"');
-  html = html.replace(/src="assets\/js\/script\.js(?:\?[^\"]*)?"/g, 'src="assets/js/script.js?v=20260710-ia"');
+  html = html.replace(/src="assets\/js\/script\.js(?:\?[^\"]*)?"/g, 'src="assets/js/script.js?v=20260711-uiux"');
   html = html.replace(/<body(?![^>]*data-site-page)([^>]*)>/, `<body data-site-page="${basename(entry.name, ".html")}"$1>`);
   await writeFile(path, html, "utf8");
 }

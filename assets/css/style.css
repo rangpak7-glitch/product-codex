@@ -44,7 +44,7 @@ body {
   margin: 0;
   background: linear-gradient(180deg, var(--color-bg) 0%, #f8f1dd 100%);
   color: var(--ink);
-  font-family: "Noto Sans KR", "Pretendard", sans-serif;
+  font-family: "Pretendard Variable", Pretendard, "Noto Sans KR", sans-serif;
   font-size: 18px;
   line-height: 1.8;
   word-break: keep-all;
@@ -68,8 +68,8 @@ a { color: inherit; }
 }
 .brand { display: flex; align-items: center; gap: 14px; text-decoration: none; min-width: max-content; }
 .brand img { width: 58px; height: 58px; border-radius: 50%; object-fit: cover; }
-.brand strong { display: block; font-family: "Noto Serif KR", serif; font-size: 1.35rem; line-height: 1.15; }
-.brand small { display: block; color: #111; font-weight: 800; white-space: nowrap; }
+.brand strong { display: block; font-family: "Noto Serif KR Variable", "Noto Serif KR", serif; font-size: 1.35rem; line-height: 1.15; }
+.brand small { display: block; color: #111; font-weight: 700; white-space: nowrap; }
 .site-nav { display: flex; align-items: center; justify-content: flex-end; gap: 4px; flex-wrap: wrap; }
 .site-nav a {
   position: relative;
@@ -136,15 +136,15 @@ a { color: inherit; }
 .eyebrow {
   margin: 0 0 12px;
   color: var(--gold-deep);
-  font: 800 .78rem/1 "Inter", sans-serif;
+  font: 700 .78rem/1 "Pretendard Variable", Pretendard, sans-serif;
   letter-spacing: .08em;
   text-transform: uppercase;
 }
-h1, h2, h3 { font-family: "Noto Serif KR", serif; line-height: 1.22; color: var(--navy-deep); letter-spacing: 0; }
+h1, h2, h3 { font-family: "Noto Serif KR Variable", "Noto Serif KR", serif; line-height: 1.22; color: var(--navy-deep); letter-spacing: 0; }
 h1 { max-width: 860px; margin: 0; font-size: clamp(2.45rem, 4.8vw, 4.7rem); }
 h2 { margin: 0 0 18px; font-size: clamp(1.9rem, 3.2vw, 3rem); }
 h3 { margin: 0 0 10px; font-size: 1.35rem; }
-.hero-name { margin: 8px 0 18px; color: var(--gold-deep); font-weight: 900; font-size: 1.35rem; }
+.hero-name { margin: 8px 0 18px; color: var(--gold-deep); font-weight: 700; font-size: 1.35rem; }
 .hero-copy, .page-hero p { max-width: 720px; color: var(--blue-gray); font-size: clamp(1.05rem, 1.75vw, 1.26rem); font-weight: 700; line-height: 1.75; }
 .hero-actions { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 28px; }
 .button {
@@ -156,7 +156,7 @@ h3 { margin: 0 0 10px; font-size: 1.35rem; }
   border-radius: 999px;
   border: 1px solid var(--line);
   text-decoration: none;
-  font-weight: 900;
+  font-weight: 700;
   cursor: pointer;
   transition: transform .2s ease, box-shadow .2s ease, background .2s ease;
 }
@@ -198,8 +198,8 @@ h3 { margin: 0 0 10px; font-size: 1.35rem; }
   background: radial-gradient(circle, rgba(199,161,90,.2), transparent 58%);
 }
 .hub-card:hover, .feature-grid article:hover, .content-card:hover, .video-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lift); }
-.hub-card span { display: inline-grid; place-items: center; width: 44px; height: 44px; margin-bottom: 16px; border-radius: 50%; background: var(--navy); color: var(--gold); font-weight: 900; }
-.hub-card strong, .content-card strong { display: block; font-size: 1.2rem; font-weight: 900; color: var(--navy-deep); }
+.hub-card span { display: inline-grid; place-items: center; width: 44px; height: 44px; margin-bottom: 16px; border-radius: 50%; background: var(--navy); color: var(--gold); font-weight: 700; }
+.hub-card strong, .content-card strong { display: block; font-size: 1.2rem; font-weight: 700; color: var(--navy-deep); }
 .hub-card p, .content-card p, .video-card p, .muted { color: var(--gray); }
 .split, .product-panel { display: grid; grid-template-columns: 1.1fr .9fr; gap: 34px; align-items: center; }
 .pdf-product-card {
@@ -233,7 +233,7 @@ h3 { margin: 0 0 10px; font-size: 1.35rem; }
   border-radius: 999px;
   background: rgba(199,161,90,.14);
   color: var(--gold-deep);
-  font-weight: 900;
+  font-weight: 700;
   font-size: .82rem;
   white-space: nowrap;
 }
@@ -246,7 +246,7 @@ h3 { margin: 0 0 10px; font-size: 1.35rem; }
 .product-price {
   margin-top: auto;
   color: var(--navy-deep);
-  font-weight: 900;
+  font-weight: 700;
 }
 .product-actions {
   display: flex;
@@ -260,10 +260,10 @@ h3 { margin: 0 0 10px; font-size: 1.35rem; }
 }
 .devotion-highlight { padding: 42px; border-radius: 24px; background: var(--navy); color: white; }
 .devotion-highlight h2, .devotion-highlight h3 { color: white; }
-blockquote { margin: 0; padding: 24px; border-left: 6px solid var(--gold); background: linear-gradient(135deg, rgba(255,253,248,.92), rgba(199,161,90,.12)); border-radius: 14px; font-family: "Noto Serif KR", serif; font-weight: 700; box-shadow: 0 10px 28px rgba(23,33,59,.07); }
+blockquote { margin: 0; padding: 24px; border-left: 6px solid var(--gold); background: linear-gradient(135deg, rgba(255,253,248,.92), rgba(199,161,90,.12)); border-radius: 14px; font-family: "Noto Serif KR Variable", "Noto Serif KR", serif; font-weight: 700; box-shadow: 0 10px 28px rgba(23,33,59,.07); }
 blockquote cite { display: block; margin-top: 12px; color: var(--gold); font-style: normal; }
 .topic-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
-.topic-grid a { padding: 16px; border-radius: 16px; background: var(--beige); text-decoration: none; font-weight: 900; text-align: center; }
+.topic-grid a { padding: 16px; border-radius: 16px; background: var(--beige); text-decoration: none; font-weight: 700; text-align: center; }
 .search-panel { padding: 40px; border-radius: 24px; background: rgba(255,248,214,.76); }
 .search-box { display: flex; gap: 12px; }
 input, textarea {
@@ -278,17 +278,17 @@ input, textarea {
 }
 input:focus, textarea:focus { outline: 3px solid rgba(199,161,90,.24); border-color: var(--gold); }
 .form-panel { display: grid; gap: 18px; }
-label { font-weight: 900; }
+label { font-weight: 700; }
 .checkbox-label { display: flex; gap: 12px; align-items: flex-start; font-weight: 700; color: var(--gray); }
 .checkbox-label input { width: auto; min-height: auto; margin-top: 8px; }
 .narrow { max-width: 780px; }
-.text-link { color: var(--gold-deep); font-weight: 900; }
+.text-link { color: var(--gold-deep); font-weight: 700; }
 .check-list li { margin: 10px 0; }
 .day-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; }
 .day-card { padding: 18px; border: 1px solid var(--line); border-radius: 16px; background: white; }
 .share-card { min-height: 260px; padding: 28px; border-radius: 22px; display: grid; align-content: center; gap: 12px; box-shadow: var(--shadow); }
-.share-card span { color: var(--gold); font-weight: 900; }
-.share-card strong { font: 800 1.6rem/1.35 "Noto Serif KR", serif; }
+.share-card span { color: var(--gold); font-weight: 700; }
+.share-card strong { font: 700 1.6rem/1.35 "Noto Serif KR Variable", "Noto Serif KR", serif; }
 .share-card.navy { background: var(--navy); color: white; }
 .share-card.ivory { background: #fffaf0; }
 .share-card.sage { background: #dfe7da; }
@@ -455,9 +455,9 @@ label { font-weight: 900; }
     linear-gradient(135deg, #17213b, #2f3c5e);
   color: white;
 }
-.visual-prayer-card span { color: var(--gold-deep); font-weight: 900; }
+.visual-prayer-card span { color: var(--gold-deep); font-weight: 700; }
 .visual-prayer-card:nth-child(3n) span, .visual-prayer-card:nth-child(3n) strong, .visual-prayer-card:nth-child(3n) p { color: white; }
-.visual-prayer-card strong { font: 800 1.5rem/1.35 "Noto Serif KR", serif; color: var(--navy-deep); }
+.visual-prayer-card strong { font: 700 1.5rem/1.35 "Noto Serif KR Variable", "Noto Serif KR", serif; color: var(--navy-deep); }
 .visual-prayer-card p { margin: 0; color: var(--gray); }
 .card-carousel {
   position: relative;
@@ -559,11 +559,11 @@ label { font-weight: 900; }
   border-radius: 999px;
   background: rgba(22,33,60,.08);
   color: var(--gold-deep);
-  font-weight: 900;
+  font-weight: 700;
 }
 .visual-stack-card small {
   color: var(--blue-gray);
-  font-weight: 800;
+  font-weight: 700;
 }
 .carousel-control {
   position: absolute;
@@ -593,7 +593,7 @@ label { font-weight: 900; }
   transform: translateX(-50%);
   margin: 0;
   color: var(--blue-gray);
-  font-weight: 900;
+  font-weight: 700;
 }
 .video-card {
   display: grid;
@@ -665,7 +665,7 @@ label { font-weight: 900; }
   border-radius: 50%;
   background: var(--navy);
   color: var(--gold);
-  font-weight: 900;
+  font-weight: 700;
 }
 .brand-hero {
   min-height: 500px;
@@ -707,11 +707,11 @@ label { font-weight: 900; }
   border-radius: 50%;
   background: var(--navy);
   color: var(--gold);
-  font: 900 .9rem/1 "Inter", sans-serif;
+  font: 700 .9rem/1 "Pretendard Variable", Pretendard, sans-serif;
 }
 .story-steps strong, .audience-card strong, .journey-card strong, .principle-grid strong, .resource-grid strong {
   color: var(--navy-deep);
-  font-weight: 900;
+  font-weight: 700;
 }
 .story-steps p, .audience-card p, .journey-card p, .principle-grid p, .resource-bridge p {
   margin: 0;
@@ -747,7 +747,7 @@ label { font-weight: 900; }
   border-radius: 999px;
   background: rgba(199,161,90,.14);
   color: var(--gold-deep);
-  font-weight: 900;
+  font-weight: 700;
   font-size: .84rem;
 }
 .video-journey {
@@ -794,7 +794,7 @@ label { font-weight: 900; }
 .resource-grid span {
   align-self: end;
   color: var(--gold-deep);
-  font-weight: 900;
+  font-weight: 700;
 }
 .closing-cta {
   padding: 52px;
@@ -919,7 +919,7 @@ label { font-weight: 900; }
   border-radius: 999px;
   background: rgba(200,168,95,.14);
   color: var(--gold-deep);
-  font-weight: 900;
+  font-weight: 700;
   font-size: .86rem;
 }
 .today-word-main h3 { font-size: clamp(1.8rem, 3.2vw, 2.75rem); }
@@ -929,7 +929,7 @@ label { font-weight: 900; }
   border-radius: 18px;
   background: rgba(22,33,60,.94);
   color: white;
-  font-weight: 800;
+  font-weight: 700;
   box-shadow: 0 18px 42px rgba(16,24,50,.16);
 }
 .tag-row {
@@ -947,7 +947,7 @@ label { font-weight: 900; }
   border-radius: 999px;
   background: rgba(207,243,209,.44);
   color: var(--navy);
-  font-weight: 800;
+  font-weight: 700;
   font-size: .84rem;
 }
 .daily-preview-grid, .visual-hub-grid, .search-results-grid, .archive-results-grid, .resource-cta-grid {
@@ -996,7 +996,7 @@ label { font-weight: 900; }
 .scripture-ref {
   margin: 0;
   color: var(--gold-deep);
-  font-weight: 900;
+  font-weight: 700;
 }
 .visual-hub-section {
   position: relative;
@@ -1069,7 +1069,7 @@ label { font-weight: 900; }
   background: var(--warm-white);
   color: var(--navy);
   font: inherit;
-  font-weight: 900;
+  font-weight: 700;
   text-decoration: none;
   cursor: pointer;
 }
@@ -1132,7 +1132,7 @@ label { font-weight: 900; }
   color: white;
 }
 .resource-cta-grid strong { color: white; }
-.resource-cta-grid span { color: #f1d38b; font-weight: 900; }
+.resource-cta-grid span { color: #f1d38b; font-weight: 700; }
 .archive-hero {
   background:
     radial-gradient(circle at 18% 18%, rgba(255,255,255,.72), transparent 28%),
@@ -1237,7 +1237,7 @@ label { font-weight: 900; }
 .daily-summary {
   color: var(--gray);
   font-size: 1.1rem;
-  font-weight: 800;
+  font-weight: 700;
 }
 .daily-body,
 .editorial-body {
@@ -1249,7 +1249,7 @@ label { font-weight: 900; }
 }
 .editorial-body {
   max-width: 780px;
-  font-family: "Noto Serif KR", serif;
+  font-family: "Noto Serif KR Variable", "Noto Serif KR", serif;
   font-size: 1.08rem;
 }
 .daily-application,
@@ -1278,7 +1278,7 @@ label { font-weight: 900; }
 .daily-confession {
   background: var(--navy);
   color: white;
-  font-weight: 900;
+  font-weight: 700;
 }
 .category-archive-layout {
   display: grid;
@@ -1306,7 +1306,7 @@ label { font-weight: 900; }
 .calendar-toolbar strong {
   text-align: center;
   color: var(--navy-deep);
-  font-family: "Noto Serif KR", serif;
+  font-family: "Noto Serif KR Variable", "Noto Serif KR", serif;
   font-size: 1.2rem;
 }
 .calendar-weekdays,
@@ -1317,7 +1317,7 @@ label { font-weight: 900; }
 }
 .calendar-weekdays span {
   color: var(--blue-gray);
-  font-weight: 900;
+  font-weight: 700;
   text-align: center;
   font-size: .82rem;
 }
@@ -1331,7 +1331,7 @@ label { font-weight: 900; }
   background: var(--warm-white);
   color: var(--navy);
   font: inherit;
-  font-weight: 900;
+  font-weight: 700;
   cursor: pointer;
 }
 .calendar-day:hover,
@@ -1413,12 +1413,12 @@ label { font-weight: 900; }
   border-radius: 999px;
   background: rgba(207,243,209,.58);
   color: var(--navy);
-  font-weight: 900;
+  font-weight: 700;
   font-size: .86rem;
 }
 .resource-subcategory-grid strong {
   color: var(--navy-deep);
-  font: 800 1.45rem/1.35 "Noto Serif KR", serif;
+  font: 700 1.45rem/1.35 "Noto Serif KR Variable", "Noto Serif KR", serif;
 }
 .resource-subcategory-grid p {
   margin: 0;
@@ -1470,7 +1470,7 @@ label { font-weight: 900; }
   border-radius: 999px;
   background: rgba(168,184,160,.18);
   color: var(--navy);
-  font-weight: 900;
+  font-weight: 700;
   font-size: .82rem;
 }
 .resource-board-section {
@@ -1512,7 +1512,7 @@ label { font-weight: 900; }
   background: rgba(255,253,243,.76);
   color: var(--navy);
   font: inherit;
-  font-weight: 900;
+  font-weight: 700;
   cursor: pointer;
   transition: background .18s ease, color .18s ease, border-color .18s ease;
 }
@@ -1527,7 +1527,7 @@ label { font-weight: 900; }
   gap: 7px;
   color: var(--navy);
   font-size: .86rem;
-  font-weight: 900;
+  font-weight: 700;
 }
 .resource-search-field input {
   width: 100%;
@@ -1566,7 +1566,7 @@ label { font-weight: 900; }
   background: rgba(255,253,243,.76);
   color: var(--navy);
   font: inherit;
-  font-weight: 900;
+  font-weight: 700;
   cursor: pointer;
 }
 .resource-tag-filter input {
@@ -1598,7 +1598,7 @@ label { font-weight: 900; }
 .resource-filter-status {
   margin: -10px 0 22px;
   color: var(--gray);
-  font-weight: 800;
+  font-weight: 700;
 }
 .resource-board-list {
   display: grid;
@@ -1636,7 +1636,7 @@ label { font-weight: 900; }
 }
 .faith-resource-card h3 {
   margin: 0;
-  font: 800 clamp(1.25rem, 2.4vw, 1.65rem)/1.32 "Noto Serif KR", serif;
+  font: 700 clamp(1.25rem, 2.4vw, 1.65rem)/1.32 "Noto Serif KR Variable", "Noto Serif KR", serif;
   color: var(--navy-deep);
 }
 .resource-summary {
@@ -1655,7 +1655,7 @@ label { font-weight: 900; }
   border-radius: 999px;
   background: rgba(168,184,160,.18);
   color: var(--navy);
-  font-weight: 800;
+  font-weight: 700;
   font-size: .84rem;
 }
 .access-pill {
@@ -1679,7 +1679,7 @@ label { font-weight: 900; }
 .public-card-preview span {
   color: var(--gray);
   font-size: .78rem;
-  font-weight: 900;
+  font-weight: 700;
 }
 .public-preview ul {
   display: grid;
@@ -1709,7 +1709,7 @@ label { font-weight: 900; }
 }
 .public-card-preview strong {
   color: var(--navy-deep);
-  font: 800 1rem/1.5 "Noto Serif KR", serif;
+  font: 700 1rem/1.5 "Noto Serif KR Variable", "Noto Serif KR", serif;
 }
 .public-audio-preview audio {
   width: 100%;
@@ -1779,7 +1779,7 @@ label { font-weight: 900; }
   color: white;
 }
 .thread-gallery-card span {
-  font-weight: 900;
+  font-weight: 700;
   color: var(--gold-deep);
 }
 .thread-gallery-card:nth-child(3n) span,
@@ -1788,7 +1788,7 @@ label { font-weight: 900; }
   color: white;
 }
 .thread-gallery-card strong {
-  font: 800 1.45rem/1.35 "Noto Serif KR", serif;
+  font: 700 1.45rem/1.35 "Noto Serif KR Variable", "Noto Serif KR", serif;
   color: var(--navy-deep);
 }
 .thread-gallery-card p {
@@ -1845,7 +1845,7 @@ label { font-weight: 900; }
   background: transparent;
   color: var(--navy);
   font: inherit;
-  font-weight: 900;
+  font-weight: 700;
   text-decoration: underline;
   cursor: pointer;
 }
@@ -1861,7 +1861,7 @@ label { font-weight: 900; }
   background: #eff8f0;
   color: #183a28;
   box-shadow: 0 16px 36px rgba(16,24,50,.18);
-  font-weight: 800;
+  font-weight: 700;
   line-height: 1.55;
 }
 .auth-notice.is-error {
@@ -1875,7 +1875,7 @@ label { font-weight: 900; }
   display: grid;
   gap: 7px;
   color: var(--navy);
-  font-weight: 900;
+  font-weight: 700;
 }
 .signup-form input,
 .admin-gate-form input,
@@ -1916,7 +1916,7 @@ label { font-weight: 900; }
 }
 .dropzone-panel span {
   color: var(--gold-deep);
-  font-weight: 900;
+  font-weight: 700;
 }
 .dropzone-panel.is-dragging {
   border-color: var(--navy);
@@ -1995,7 +1995,7 @@ label { font-weight: 900; }
 
 /* 회원, 구매 자료, 소통게시판 */
 .faith-account-control { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; white-space: nowrap; }
-.account-link { display: inline-flex; align-items: center; min-height: 38px; padding: 7px 11px; border: 1px solid transparent; border-radius: 999px; background: transparent; color: var(--navy); font: inherit; font-size: .85rem; font-weight: 800; text-decoration: none; cursor: pointer; }
+.account-link { display: inline-flex; align-items: center; min-height: 38px; padding: 7px 11px; border: 1px solid transparent; border-radius: 999px; background: transparent; color: var(--navy); font: inherit; font-size: .85rem; font-weight: 700; text-decoration: none; cursor: pointer; }
 .account-link:hover { border-color: rgba(167,124,53,.35); background: rgba(255,253,243,.7); }
 .account-signup { background: var(--navy); color: var(--color-surface); }
 .account-signup:hover { background: var(--gold); color: var(--navy-deep); }
@@ -2006,10 +2006,10 @@ label { font-weight: 900; }
 .modal-close { position: absolute; top: 14px; right: 16px; width: 40px; height: 40px; border: 0; border-radius: 50%; background: rgba(180,217,230,.42); color: var(--navy); font-size: 1.7rem; line-height: 1; cursor: pointer; }
 .faith-auth-dialog h2 { margin-bottom: 20px; font-size: clamp(1.8rem, 5vw, 2.25rem); }
 .faith-auth-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 0 0 22px; padding: 5px; border-radius: 14px; background: rgba(180,217,230,.28); }
-.faith-auth-tabs button { min-height: 44px; border: 0; border-radius: 10px; background: transparent; color: var(--muted); font: inherit; font-weight: 800; cursor: pointer; }
+.faith-auth-tabs button { min-height: 44px; border: 0; border-radius: 10px; background: transparent; color: var(--muted); font: inherit; font-weight: 700; cursor: pointer; }
 .faith-auth-tabs button.is-active { background: var(--color-surface); color: var(--navy); box-shadow: 0 4px 12px rgba(17,27,51,.09); }
 .faith-auth-form { display: grid; gap: 14px; }
-.faith-auth-form label { display: grid; gap: 7px; color: var(--navy); font-weight: 800; }
+.faith-auth-form label { display: grid; gap: 7px; color: var(--navy); font-weight: 700; }
 .faith-auth-form input, .faith-auth-form textarea, .faith-auth-form select, .community-compose-form input, .community-compose-form textarea, .community-compose-form select { width: 100%; min-height: 50px; padding: 12px 14px; border: 1px solid rgba(167,124,53,.28); border-radius: 12px; background: rgba(255,253,243,.9); color: var(--navy); font: inherit; }
 .faith-auth-form textarea, .community-compose-form textarea { min-height: 150px; resize: vertical; }
 .faith-consent { grid-template-columns: auto 1fr; align-items: start; font-size: .9rem; line-height: 1.55; }
@@ -2032,7 +2032,7 @@ body.modal-open { overflow: hidden; }
 .community-post-card:hover { transform: translateY(-3px); box-shadow: 0 20px 44px rgba(16,24,50,.12); }
 .community-post-card h3 { margin-top: 8px; }
 .community-post-card p { margin: 0 0 12px; color: var(--gray); font-size: .96rem; }
-.community-post-meta { display: flex; flex-wrap: wrap; gap: 8px 12px; color: var(--muted); font-size: .78rem; font-weight: 800; }
+.community-post-meta { display: flex; flex-wrap: wrap; gap: 8px 12px; color: var(--muted); font-size: .78rem; font-weight: 700; }
 .community-post-meta span:first-child { color: var(--gold-deep); }
 .community-detail-panel { position: sticky; top: 110px; padding: 28px; }
 .community-detail-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; }
@@ -2052,7 +2052,7 @@ body.modal-open { overflow: hidden; }
 .community-compose-heading h2 { margin-bottom: 0; font-size: clamp(1.55rem, 2.8vw, 2.25rem); }
 .community-compose-heading > p { max-width: 390px; margin: 0; color: var(--muted); font-size: .92rem; font-weight: 700; }
 .community-compose-form { display: grid; grid-template-columns: 150px minmax(220px, 1fr) minmax(280px, 1.5fr) auto; gap: 12px; align-items: end; padding: 18px; border-radius: var(--radius-card); background: var(--navy); box-shadow: var(--shadow-soft); }
-.community-compose-form label { display: grid; gap: 8px; color: var(--color-surface); font-weight: 800; }
+.community-compose-form label { display: grid; gap: 8px; color: var(--color-surface); font-weight: 700; }
 .community-compose-form input, .community-compose-form textarea, .community-compose-form select { border-color: transparent; background: rgba(255,253,243,.97); }
 .community-compose-form textarea { min-height: 52px; height: 52px; }
 .community-compose-form .button { min-height: 52px; white-space: nowrap; }
@@ -2077,7 +2077,7 @@ body.modal-open { overflow: hidden; }
 .account-list article:first-child { border-top: 0; padding-top: 0; }
 .account-list span, .account-list p { margin: 0; color: var(--muted); font-size: .82rem; }
 .account-list strong { font-size: .95rem; }
-.account-list a { color: var(--navy); font-size: .85rem; font-weight: 800; }
+.account-list a { color: var(--navy); font-size: .85rem; font-weight: 700; }
 .account-access-panel { text-align: center; }
 .account-access-panel p { max-width: 540px; margin-left: auto; margin-right: auto; }
 
@@ -2097,7 +2097,7 @@ body.modal-open { overflow: hidden; }
 .site-nav-more-panel a { white-space: nowrap; }
 .home-intro { display: flex; align-items: end; justify-content: space-between; gap: 28px; min-height: 0; padding-top: clamp(42px, 7vw, 86px); padding-bottom: clamp(26px, 4vw, 44px); border-bottom: 1px solid rgba(167,124,53,.26); }
 .home-intro > div { max-width: 840px; }
-.home-intro h1 { max-width: 830px; margin-bottom: 16px; font: 800 clamp(2.15rem, 4.2vw, 3.6rem)/1.2 "Noto Serif KR", serif; letter-spacing: -.045em; }
+.home-intro h1 { max-width: 830px; margin-bottom: 16px; font: 700 clamp(2.15rem, 4.2vw, 3.6rem)/1.2 "Noto Serif KR Variable", "Noto Serif KR", serif; letter-spacing: -.045em; }
 .home-intro p:not(.eyebrow) { max-width: 670px; margin-bottom: 0; color: var(--gray); font-size: 1.05rem; font-weight: 700; }
 .home-intro .button { flex: 0 0 auto; }
 .home-primary-section { padding-top: clamp(38px, 5vw, 68px); }
@@ -2108,10 +2108,10 @@ body.modal-open { overflow: hidden; }
 .situation-finder-grid a:nth-child(3) { background: rgba(245,237,221,.76); }
 .situation-finder-grid a:nth-child(4) { background: rgba(232,241,244,.66); }
 .situation-finder-grid a:hover { transform: translateY(-2px); border-color: rgba(167,124,53,.58); background: var(--color-surface); }
-.situation-finder-grid strong { font: 800 1.2rem/1.35 "Noto Serif KR", serif; }
+.situation-finder-grid strong { font: 700 1.2rem/1.35 "Noto Serif KR Variable", "Noto Serif KR", serif; }
 .situation-finder-grid span { color: var(--gray); font-size: .9rem; font-weight: 700; line-height: 1.55; }
 .journey-spotlight, .home-community-section { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(260px, .75fr); gap: 28px; align-items: center; padding: clamp(30px, 5vw, 56px); border: 1px solid rgba(167,124,53,.24); border-radius: 24px; background: linear-gradient(132deg, #17213b, #26385f); color: var(--color-surface); }
-.journey-spotlight h2, .home-community-section h2 { color: inherit; font: 800 clamp(1.8rem, 3.5vw, 2.75rem)/1.32 "Noto Serif KR", serif; }
+.journey-spotlight h2, .home-community-section h2 { color: inherit; font: 700 clamp(1.8rem, 3.5vw, 2.75rem)/1.32 "Noto Serif KR Variable", "Noto Serif KR", serif; }
 .journey-spotlight p:not(.eyebrow), .home-community-section p:not(.eyebrow) { max-width: 730px; color: rgba(255,253,243,.8); font-weight: 600; }
 .journey-spotlight .eyebrow, .home-community-section .eyebrow { color: #f1d99a; }
 .journey-spotlight .secondary, .home-community-section .secondary { border-color: rgba(255,253,243,.52); background: transparent; color: var(--color-surface); }
@@ -2122,7 +2122,7 @@ body.modal-open { overflow: hidden; }
 .home-resource-preview.resource-type-pdf { border-top: 4px solid rgba(167,124,53,.68); }
 .home-resource-preview.resource-type-audio { border-top: 4px solid rgba(91,137,112,.72); background: rgba(250,253,249,.9); }
 .home-resource-preview.resource-type-card { border-top: 4px solid rgba(181,111,79,.66); background: rgba(255,250,246,.92); }
-.home-resource-preview h3 { margin: 0; color: var(--navy-deep); font: 800 1.35rem/1.35 "Noto Serif KR", serif; }
+.home-resource-preview h3 { margin: 0; color: var(--navy-deep); font: 700 1.35rem/1.35 "Noto Serif KR Variable", "Noto Serif KR", serif; }
 .home-resource-preview p:not(.eyebrow) { margin: 0; color: var(--gray); font-size: .94rem; font-weight: 700; line-height: 1.7; }
 .home-resource-preview-actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-top: auto; padding-top: 8px; }
 .home-community-section { grid-template-columns: minmax(0, 1.2fr) auto; margin-bottom: clamp(52px, 8vw, 92px); background: linear-gradient(135deg, #fffdf3, #e8f1e8); color: var(--navy); }
@@ -2133,13 +2133,13 @@ body.modal-open { overflow: hidden; }
 .home-community-preview { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
 .home-community-preview > p { grid-column: 1 / -1; margin: 0; color: var(--gray) !important; }
 .home-community-preview article { display: grid; gap: 7px; min-height: 156px; padding: 18px; border: 1px solid rgba(167,124,53,.22); border-radius: 14px; background: rgba(255,253,243,.72); color: var(--navy); }
-.home-community-preview article span { color: var(--gold-deep); font-size: .78rem; font-weight: 900; }
-.home-community-preview article strong { font: 800 1.05rem/1.4 "Noto Serif KR", serif; }
+.home-community-preview article span { color: var(--gold-deep); font-size: .78rem; font-weight: 700; }
+.home-community-preview article strong { font: 700 1.05rem/1.4 "Noto Serif KR Variable", "Noto Serif KR", serif; }
 .home-community-preview article p { margin: 0; color: var(--gray) !important; font-size: .84rem; line-height: 1.55; }
 .home-community-preview article .text-link { margin-top: auto; font-size: .84rem; }
 .resource-detail-link { font-size: .9rem; }
 .resource-detail-content { grid-column: 1 / -1; display: grid; gap: 14px; max-width: 760px; padding: clamp(22px, 4vw, 32px); border: 1px solid rgba(167,124,53,.23); border-radius: 18px; background: rgba(255,253,243,.8); }
-.resource-detail-content h3 { margin: 0; color: var(--navy-deep); font: 800 1.4rem/1.35 "Noto Serif KR", serif; }
+.resource-detail-content h3 { margin: 0; color: var(--navy-deep); font: 700 1.4rem/1.35 "Noto Serif KR Variable", "Noto Serif KR", serif; }
 .resource-detail-content .compact-list { margin: 0; }
 .resource-access-panel { align-items: center; }
 #todayWordSection, #resourceCatalog, #faithResourceBrowser, #homeSearchSection, #dayGrid { scroll-margin-top: 112px; }
