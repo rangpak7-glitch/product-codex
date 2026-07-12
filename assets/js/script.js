@@ -77,10 +77,11 @@ function normalizeSiteCategoryNav() {
     const target = new URL(href, window.location.href);
     const targetPage = target.pathname.split("/").pop() || "index.html";
     if (targetPage !== currentPage) return false;
+    if (target.searchParams.size === 0) return true;
     for (const [key, value] of target.searchParams) {
       if (currentParams.get(key) !== value) return false;
     }
-    return target.searchParams.size > 0 || currentParams.size === 0;
+    return true;
   };
 
   const activeGroup = groups.find((group) => group.pages.includes(currentPage));
