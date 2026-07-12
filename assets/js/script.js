@@ -10,6 +10,94 @@ const $ = (selector) => document.querySelector(selector);
   document.head.append(script);
 })();
 
+function normalizeSiteCategoryNav() {
+  const navRoot = document.getElementById("site-nav");
+  if (!navRoot) return;
+
+  const currentPage = window.location.pathname.split("/").pop() || "index.html";
+  const currentParams = new URLSearchParams(window.location.search);
+  if (currentPage === "prayers.html" && currentParams.get("category") === "감사") {
+    window.location.replace(`gratitude-prayer.html${window.location.hash || ""}`);
+    return;
+  }
+
+  const groups = [
+    {
+      id: "bible",
+      title: "성경말씀",
+      href: "meditation.html",
+      pages: ["meditation.html", "prayers.html"],
+      links: [
+        ["meditation.html", "큐티(QT)"],
+        ["prayers.html", "말씀 붙들기"]
+      ]
+    },
+    {
+      id: "prayer",
+      title: "기도",
+      href: "gratitude-prayer.html",
+      pages: ["gratitude-prayer.html", "night-prayer.html", "morning-prayer.html"],
+      links: [
+        ["gratitude-prayer.html", "감사기도"],
+        ["night-prayer.html", "저녁기도"],
+        ["morning-prayer.html", "아침기도"]
+      ]
+    },
+    {
+      id: "community",
+      title: "나눔게시판",
+      href: "community.html",
+      pages: ["community.html", "community-write.html"],
+      links: []
+    },
+    {
+      id: "youtube",
+      title: "유튜브",
+      href: "videos.html",
+      pages: ["videos.html"],
+      links: [
+        ["videos.html?tab=videos", "영상"],
+        ["videos.html?tab=posts", "채널 소식"]
+      ]
+    },
+    {
+      id: "resources",
+      title: "신앙자료",
+      href: "prayer-cards.html",
+      pages: ["prayer-cards.html", "premium-pdf.html", "prayer-audiobook.html", "prayer-card-library.html", "prayer-challenge.html"],
+      links: [
+        ["premium-pdf.html", "기도문 PDF"],
+        ["prayer-audiobook.html", "기도 오디오북"],
+        ["prayer-card-library.html", "기도카드"]
+      ]
+    }
+  ];
+
+  const isCurrentLink = (href) => {
+    const target = new URL(href, window.location.href);
+    const targetPage = target.pathname.split("/").pop() || "index.html";
+    if (targetPage !== currentPage) return false;
+    for (const [key, value] of target.searchParams) {
+      if (currentParams.get(key) !== value) return false;
+    }
+    return target.searchParams.size > 0 || currentParams.size === 0;
+  };
+
+  const activeGroup = groups.find((group) => group.pages.includes(currentPage));
+  navRoot.innerHTML = `<div class="site-nav-map">
+    <div class="site-nav-primary" aria-label="상위 카테고리">${groups.map((group) => {
+      const groupActive = group === activeGroup;
+      return `<a href="${group.href}" data-nav-section="${group.id}"${groupActive ? ' class="active" aria-current="page"' : ""}>${group.title}</a>`;
+    }).join("")}</div>
+    ${activeGroup?.links.length ? `<div class="site-nav-secondary" aria-label="${activeGroup.title} 하위 카테고리">${activeGroup.links.map(([href, label]) => {
+      const active = isCurrentLink(href);
+      return `<a href="${href}"${active ? ' class="active" aria-current="page"' : ""}>${label}</a>`;
+    }).join("")}</div>` : ""}
+  </div>`;
+}
+
+normalizeSiteCategoryNav();
+
 const toggle = $(".menu-toggle");
 const nav = $("#site-nav");
 if (toggle && nav) {
@@ -297,6 +385,7 @@ function renderList(id, list) {
 }
 
 const sitePrayers = window.PRAYERS || [];
+renderList("gratitudeList", sitePrayers.filter((p) => p.category === "감사" || p.tags?.includes("감사")));
 renderList("nightList", sitePrayers.filter((p) => p.tags?.includes("밤") || p.tags?.includes("수면") || p.category === "수면").concat(sitePrayers.slice(0, 3)));
 renderList("morningList", sitePrayers.filter((p) => p.category === "아침").concat(sitePrayers.slice(0, 3)));
 
@@ -653,35 +742,48 @@ if (visualPrayerCards) {
   if (!listRoot || !tagRoot) return;
 
   const typeMeta = {
+    all: {
+      title: "신앙자료",
+      eyebrow: "신앙생활을 돕는 자료",
+      hero: "말씀과 기도를 오래 곁에 두는 자료",
+      description: "기도문 PDF, 기도 오디오북, 기도카드 가운데 실제로 등록된 자료만 차분히 소개합니다.",
+      empty: "현재 공개된 회원 자료가 없습니다.",
+      placeholder: "예: 자녀, 가정, 위로"
+    },
     pdf: {
       title: "기도문 PDF",
       eyebrow: "신앙자료 · 읽는 자료",
       hero: "기도문 PDF",
-      description: "삶의 여러 상황에서 천천히 읽고 보관할 수 있는 유료 기도문 자료를 모았습니다.",
-      empty: "준비중",
+      description: "삶의 여러 상황에서 천천히 읽고 보관할 수 있는 기도문 자료를 모았습니다.",
+      empty: "현재 공개된 회원 자료가 없습니다.",
       placeholder: "예: 자녀, 가정, 위로"
     },
     audio: {
       title: "기도 오디오북",
       eyebrow: "신앙자료 · 듣는 자료",
       hero: "기도 오디오북",
-      description: "이동 중이나 잠들기 전에 차분히 들을 수 있는 유료 기도 낭독 자료입니다.",
-      empty: "준비중",
+      description: "이동 중이나 잠들기 전에 차분히 들을 수 있는 기도 낭독 자료입니다.",
+      empty: "현재 공개된 회원 자료가 없습니다.",
       placeholder: "예: 잠들기 전, 평안, 회복"
     },
     card: {
       title: "기도카드",
       eyebrow: "신앙자료 · 저장하는 자료",
       hero: "기도카드",
-      description: "말씀과 기도를 한 장씩 저장하고 나눌 수 있도록 만든 유료 카드 자료입니다.",
-      empty: "준비중",
+      description: "말씀과 기도를 한 장씩 저장하고 나눌 수 있도록 만든 카드 자료입니다.",
+      empty: "현재 공개된 회원 자료가 없습니다.",
       placeholder: "예: 자녀, 위로, 결정"
     }
   };
   let resources = [];
   let viewer = null;
   let entitledResourceIds = new Set();
-  const requestedType = new URLSearchParams(window.location.search).get("type") || "pdf";
+  const resourcePageType = {
+    "premium-pdf.html": "pdf",
+    "prayer-audiobook.html": "audio",
+    "prayer-card-library.html": "card"
+  }[window.location.pathname.split("/").pop() || ""];
+  const requestedType = new URLSearchParams(window.location.search).get("type") || resourcePageType || "all";
   let activeType = Object.hasOwn(typeMeta, requestedType) ? requestedType : "pdf";
   let searchQuery = new URLSearchParams(window.location.search).get("search") || "";
   const activeTags = new Set();
@@ -770,7 +872,7 @@ if (visualPrayerCards) {
   }
 
   function resourcesByType() {
-    return resources.filter((resource) => resource.type === activeType);
+    return activeType === "all" ? resources : resources.filter((resource) => resource.type === activeType);
   }
 
   function uploadedThreads() {
@@ -824,23 +926,37 @@ if (visualPrayerCards) {
       .join("");
   }
 
+  function displayResourceTitle(resource) {
+    return String(resource?.title || "").replace(/^\(샘플\)\s*/, "");
+  }
+
   function renderHubCard(resource) {
     const tags = (resource.tags || []).map((tag) => `<span>${escapeHtml(tag)}</span>`).join("");
     const meta = typeMeta[resource.type] || typeMeta.all;
-    const product = productForResource(resource);
-    return `<article class="faith-resource-card resource-type-${escapeHtml(resource.type)}" data-resource-id="${escapeHtml(resource.id)}">
+    return `<article class="faith-resource-card resource-type-${escapeHtml(resource.type)}" data-resource-id="${escapeHtml(resource.id)}" data-resource-detail="${escapeHtml(resource.id)}" role="button" tabindex="0" aria-label="${escapeHtml(displayResourceTitle(resource))} 자료 구성 보기">
       <div class="resource-card-copy">
-        <p class="eyebrow">${escapeHtml(meta?.title || "신앙자료")}</p>
-        <h3>${escapeHtml(resource.title)}</h3>
+        <div class="resource-card-heading"><p class="eyebrow">${escapeHtml(meta?.title || "신앙자료")}</p><span class="resource-member-badge">회원 무료자료</span></div>
+        <h3>${escapeHtml(displayResourceTitle(resource))}</h3>
         <p class="resource-summary">${escapeHtml(resource.summary)}</p>
         <div class="resource-card-tags" aria-label="자료 키워드">${tags}</div>
-      </div>
-      <div class="resource-card-commerce">
-        <span class="resource-price-label">가격</span>
-        <strong>준비중</strong>
-        <a class="text-link" href="${escapeHtml(productInquiryHref(product))}" data-resource-inquiry data-product-id="${escapeHtml(product.id)}">자료 문의하기</a>
+        <span class="resource-card-open" aria-hidden="true">자료 열기 <span>→</span></span>
       </div>
     </article>`;
+  }
+
+  function renderResourceHubSamples(list) {
+    const sampleGroups = [
+      { type: "pdf", title: "기도문 PDF", href: "premium-pdf.html", description: "천천히 읽고 보관하며 반복해서 기도할 수 있는 자료" },
+      { type: "audio", title: "기도 오디오북", href: "prayer-audiobook.html", description: "이동 중이나 잠들기 전에 차분히 듣는 기도 자료" },
+      { type: "card", title: "기도카드", href: "prayer-card-library.html", description: "휴대폰에 저장하고 일상에서 다시 보는 말씀과 기도" }
+    ];
+    return `<div class="resource-hub-samples">${sampleGroups.map((group) => {
+      const resource = list.find((item) => item.type === group.type);
+      return `<section class="resource-sample-group resource-sample-${group.type}">
+        <header><div><p class="eyebrow">신앙자료</p><h3>${group.title}</h3><p>${group.description}</p></div><a class="text-link" href="${group.href}">전체 보기</a></header>
+        ${resource ? renderHubCard(resource) : `<div class="resource-empty-state resource-coming-soon"><strong>현재 공개된 회원 자료가 없습니다.</strong></div>`}
+      </section>`;
+    }).join("")}</div>`;
   }
 
   function renderHubList() {
@@ -856,8 +972,11 @@ if (visualPrayerCards) {
           ? `${typeMeta[activeType].title}에서 조건에 맞는 자료를 찾지 못했습니다${detail}`
           : `${typeMeta[activeType].title} 0건 · 준비중`;
     }
-    listRoot.innerHTML = list.length
-      ? list.map(renderHubCard).join("")
+    const isResourceHub = document.body.dataset.sitePage === "prayer-cards" && activeType === "all";
+    listRoot.innerHTML = isResourceHub
+      ? renderResourceHubSamples(list)
+      : list.length
+        ? list.map(renderHubCard).join("")
       : activeTags.size || searchQuery.trim()
         ? `<div class="resource-empty-state"><strong>선택한 조건에 맞는 자료가 없습니다.</strong><p>키워드 선택을 줄이거나 검색어를 바꿔보세요.</p><button class="button secondary" type="button" data-reset-resource-search>필터 초기화</button></div>`
         : `<div class="resource-empty-state resource-coming-soon"><strong>${escapeHtml(typeMeta[activeType].empty)}</strong></div>`;
@@ -903,7 +1022,7 @@ if (visualPrayerCards) {
     const gallery = $("#cardThreadGallery");
     if (!threadPanel) return;
     const items = renderHubPreviewItems(resource);
-    if (title) title.textContent = resource.title;
+    if (title) title.textContent = displayResourceTitle(resource);
     if (description) description.textContent = resource.description || resource.summary;
     if (gallery) {
       gallery.innerHTML = `<div class="resource-detail-content">
@@ -1012,6 +1131,15 @@ if (visualPrayerCards) {
     if (event.target.closest("[data-resource-inquiry]")) return;
     const downloadButton = event.target.closest("[data-resource-download]");
     if (downloadButton) return downloadResource(downloadButton.dataset.resourceDownload);
+  });
+
+  listRoot.addEventListener("keydown", (event) => {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    const resourceCard = event.target.closest("[data-resource-detail]");
+    if (!resourceCard) return;
+    event.preventDefault();
+    const resource = resources.find((item) => item.id === resourceCard.dataset.resourceDetail);
+    if (resource) openResourceDetail(resource);
   });
 
   document.querySelector("[data-close-thread]")?.addEventListener("click", () => {
