@@ -1403,3 +1403,107 @@ body[data-site-page="prayer-cards"] #faithResourceFilterStatus { display: none !
   .resource-board-list .faith-resource-card:hover,
   .resource-board-list .faith-resource-card:focus-visible { transform: none; }
 }
+
+/* Accessible hover, click and touch dropdown navigation */
+.site-header,
+.site-nav,
+.site-nav-map,
+.site-nav-primary { overflow: visible; }
+.site-nav-primary { align-items: stretch; }
+.site-nav-dropdown {
+  position: relative;
+  min-width: 0;
+}
+.site-nav-parent-link { width: 100%; }
+.site-nav-chevron {
+  display: inline-block;
+  margin-left: 5px;
+  color: #826039;
+  font-size: .78em;
+  transition: transform .16s ease;
+}
+.site-nav-dropdown.is-open .site-nav-chevron { transform: rotate(180deg); }
+.site-nav-dropdown-panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 50%;
+  z-index: 120;
+  display: grid;
+  gap: 2px;
+  width: max-content;
+  min-width: 210px;
+  padding: 8px;
+  border: 1px solid #d9d1c5;
+  border-radius: 10px;
+  background: #fffefb;
+  box-shadow: 0 18px 44px rgba(14, 28, 23, .18);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translate(-50%, -6px);
+  transition: opacity .16s ease, transform .16s ease, visibility 0s linear .16s;
+}
+.site-nav-dropdown.is-open > .site-nav-dropdown-panel {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translate(-50%, 0);
+  transition-delay: 0s;
+}
+.site-nav-primary .site-nav-dropdown-panel a,
+body[data-site-page="index"] .site-nav-primary .site-nav-dropdown-panel a {
+  justify-content: flex-start;
+  min-height: 42px;
+  padding: 9px 12px;
+  border-radius: 7px;
+  color: #24322e !important;
+  font-size: .86rem;
+  font-weight: 700;
+  text-align: left;
+  white-space: nowrap;
+}
+.site-nav-primary .site-nav-dropdown-panel a:hover,
+.site-nav-primary .site-nav-dropdown-panel a.active {
+  background: #edf1ed;
+  color: #17231f !important;
+}
+.site-nav-primary .site-nav-dropdown-panel a.active::after { display: none; }
+
+@media (max-width: 860px) {
+  .site-nav-dropdown { position: relative; }
+  .site-nav-parent-link { padding-right: 4px; }
+  .site-nav-chevron { margin-left: 2px; font-size: .68em; }
+  .site-nav-dropdown-panel {
+    top: calc(100% + 4px);
+    min-width: 206px;
+    transform: translate(-50%, -5px);
+  }
+  .site-nav-dropdown.is-open > .site-nav-dropdown-panel {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translate(-50%, 0);
+  }
+  .site-nav-dropdown:nth-child(1) > .site-nav-dropdown-panel,
+  .site-nav-dropdown:nth-child(2) > .site-nav-dropdown-panel {
+    right: auto;
+    left: 0;
+    transform: translate(0, -5px);
+  }
+  .site-nav-dropdown:nth-child(1).is-open > .site-nav-dropdown-panel,
+  .site-nav-dropdown:nth-child(2).is-open > .site-nav-dropdown-panel { transform: translate(0, 0); }
+  .site-nav-dropdown:nth-child(4) > .site-nav-dropdown-panel,
+  .site-nav-dropdown:nth-child(5) > .site-nav-dropdown-panel {
+    right: 0;
+    left: auto;
+    transform: translate(0, -5px);
+  }
+  .site-nav-dropdown:nth-child(4).is-open > .site-nav-dropdown-panel,
+  .site-nav-dropdown:nth-child(5).is-open > .site-nav-dropdown-panel { transform: translate(0, 0); }
+  .site-nav-primary .site-nav-dropdown-panel a { min-height: 44px; font-size: .88rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .site-nav-chevron,
+  .site-nav-dropdown-panel { transition: none; }
+}

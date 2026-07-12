@@ -14,7 +14,8 @@ function normalizeSiteCategoryNav() {
   const navRoot = document.getElementById("site-nav");
   if (!navRoot) return;
 
-  const currentPage = window.location.pathname.split("/").pop() || "index.html";
+  const pathPage = window.location.pathname.split("/").pop() || "index.html";
+  const currentPage = pathPage === "index.html" || pathPage.includes(".") ? pathPage : `${pathPage}.html`;
   const currentParams = new URLSearchParams(window.location.search);
   if (currentPage === "prayers.html" && currentParams.get("category") === "감사") {
     window.location.replace(`gratitude-prayer.html${window.location.hash || ""}`);
@@ -88,16 +89,125 @@ function normalizeSiteCategoryNav() {
   navRoot.innerHTML = `<div class="site-nav-map">
     <div class="site-nav-primary" aria-label="상위 카테고리">${groups.map((group) => {
       const groupActive = group === activeGroup;
-      return `<a href="${group.href}" data-nav-section="${group.id}"${groupActive ? ' class="active" aria-current="page"' : ""}>${group.title}</a>`;
+      const panelId = `site-nav-panel-${group.id}`;
+      const hasChildren = group.links.length > 0;
+      const parentAttributes = hasChildren
+        ? ` aria-haspopup="true" aria-expanded="false" aria-controls="${panelId}"`
+        : "";
+      const panel = hasChildren
+        ? `<div id="${panelId}" class="site-nav-dropdown-panel" aria-label="${group.title} 하위 메뉴">${group.links.map(([href, label]) => {
+            const active = isCurrentLink(href);
+            return `<a href="${href}"${active ? ' class="active" aria-current="page"' : ""}>${label}</a>`;
+          }).join("")}</div>`
+        : "";
+      return `<div class="site-nav-dropdown${groupActive ? " active" : ""}" data-nav-dropdown>
+        <a class="site-nav-parent-link${groupActive ? " active" : ""}" href="${group.href}" data-nav-section="${group.id}"${groupActive ? ' aria-current="page"' : ""}${parentAttributes}>${group.title}${hasChildren ? '<span class="site-nav-chevron" aria-hidden="true">⌄</span>' : ""}</a>
+        ${panel}
+      </div>`;
     }).join("")}</div>
-    ${activeGroup?.links.length ? `<div class="site-nav-secondary" aria-label="${activeGroup.title} 하위 카테고리">${activeGroup.links.map(([href, label]) => {
-      const active = isCurrentLink(href);
-      return `<a href="${href}"${active ? ' class="active" aria-current="page"' : ""}>${label}</a>`;
-    }).join("")}</div>` : ""}
   </div>`;
 }
 
 normalizeSiteCategoryNav();
+
+(() => {
+  const navRoot = document.getElementById("site-nav");
+  if (!navRoot) return;
+  const dropdowns = [...navRoot.querySelectorAll("[data-nav-dropdown]")].filter((item) => item.querySelector(".site-nav-dropdown-panel"));
+  const closeTimers = new WeakMap();
+  const closeDelay = 200;
+  let lastOpened = null;
+
+  const clearCloseTimer = (dropdown) => {
+    const timer = closeTimers.get(dropdown);
+    if (timer) window.clearTimeout(timer);
+    closeTimers.delete(dropdown);
+  };
+
+  const setOpen = (dropdown, open, { restoreFocus = false, method = "" } = {}) => {
+    if (!dropdown) return;
+    clearCloseTimer(dropdown);
+    dropdown.classList.toggle("is-open", open);
+    if (open && method) dropdown.dataset.openMethod = method;
+    if (!open) delete dropdown.dataset.openMethod;
+    const trigger = dropdown.querySelector(".site-nav-parent-link");
+    trigger?.setAttribute("aria-expanded", String(open));
+    if (open) lastOpened = dropdown;
+    if (!open && restoreFocus) trigger?.focus();
+  };
+
+  const closeOthers = (except = null) => {
+    dropdowns.forEach((dropdown) => {
+      if (dropdown !== except) setOpen(dropdown, false);
+    });
+  };
+
+  const scheduleClose = (dropdown) => {
+    clearCloseTimer(dropdown);
+    closeTimers.set(dropdown, window.setTimeout(() => {
+      const stillHovered = dropdown.matches(":hover");
+      const stillFocused = dropdown.contains(document.activeElement);
+      if (!stillHovered && !stillFocused) setOpen(dropdown, false);
+    }, closeDelay));
+  };
+
+  dropdowns.forEach((dropdown) => {
+    const trigger = dropdown.querySelector(".site-nav-parent-link");
+    const panel = dropdown.querySelector(".site-nav-dropdown-panel");
+
+    dropdown.addEventListener("pointerenter", (event) => {
+      if (event.pointerType === "touch") return;
+      clearCloseTimer(dropdown);
+      closeOthers(dropdown);
+      if (!dropdown.classList.contains("is-open")) setOpen(dropdown, true, { method: "hover" });
+    });
+    dropdown.addEventListener("pointerleave", (event) => {
+      if (event.pointerType === "touch") return;
+      if (dropdown.dataset.openMethod === "click") return;
+      scheduleClose(dropdown);
+    });
+    dropdown.addEventListener("focusout", () => scheduleClose(dropdown));
+
+    trigger?.addEventListener("click", (event) => {
+      event.preventDefault();
+      if (dropdown.classList.contains("is-open") && dropdown.dataset.openMethod === "hover") {
+        dropdown.dataset.openMethod = "click";
+        return;
+      }
+      const nextOpen = !dropdown.classList.contains("is-open");
+      closeOthers(dropdown);
+      setOpen(dropdown, nextOpen, { method: "click" });
+    });
+    trigger?.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        const nextOpen = !dropdown.classList.contains("is-open");
+        closeOthers(dropdown);
+        setOpen(dropdown, nextOpen, { method: "keyboard" });
+        return;
+      }
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setOpen(dropdown, false, { restoreFocus: true });
+      }
+    });
+    panel?.addEventListener("click", (event) => {
+      if (event.target.closest("a")) closeOthers();
+    });
+  });
+
+  document.addEventListener("pointerdown", (event) => {
+    if (!event.target.closest("#site-nav")) closeOthers();
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape") return;
+    const opened = dropdowns.find((dropdown) => dropdown.classList.contains("is-open")) || lastOpened;
+    if (!opened?.classList.contains("is-open")) return;
+    event.preventDefault();
+    setOpen(opened, false, { restoreFocus: true });
+  });
+  window.addEventListener("resize", () => closeOthers());
+})();
 
 const toggle = $(".menu-toggle");
 const nav = $("#site-nav");
