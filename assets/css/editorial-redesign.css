@@ -1507,3 +1507,124 @@ body[data-site-page="index"] .site-nav-primary .site-nav-dropdown-panel a {
   .site-nav-chevron,
   .site-nav-dropdown-panel { transition: none; }
 }
+
+/* Unified editorial hero typography */
+body[data-site-page]:not([data-site-page="index"]) .page-hero {
+  min-height: clamp(170px, 18vw, 210px);
+  padding: clamp(22px, 3.8vw, 34px);
+}
+body[data-site-page]:not([data-site-page="index"]) .page-hero::before {
+  background: linear-gradient(
+    90deg,
+    rgba(12, 25, 20, .94) 0%,
+    rgba(17, 34, 27, .84) 42%,
+    rgba(17, 34, 27, .62) 72%,
+    rgba(17, 34, 27, .42) 100%
+  ) !important;
+}
+body[data-site-page]:not([data-site-page="index"]) .page-hero > div,
+body[data-site-page="community"] .community-hero > .community-hero-copy,
+body[data-site-page="videos"] .sub-hero--video > div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: none;
+  text-align: center;
+}
+body[data-site-page]:not([data-site-page="index"]) .page-hero h1 {
+  width: min(100%, 860px);
+  max-width: none;
+  margin-right: auto;
+  margin-left: auto;
+  text-align: center;
+  text-shadow: 0 2px 18px rgba(0, 0, 0, .38);
+  text-wrap: balance;
+}
+body[data-site-page]:not([data-site-page="index"]) .page-hero p:not(.eyebrow) {
+  width: min(100%, 780px);
+  max-width: none;
+  margin-right: auto;
+  margin-left: auto;
+  text-align: center;
+  text-shadow: 0 1px 12px rgba(0, 0, 0, .34);
+  text-wrap: pretty;
+}
+body[data-site-page]:not([data-site-page="index"]) .page-hero .eyebrow {
+  width: 100%;
+  text-align: center;
+}
+body[data-site-page="community"] .community-hero h1,
+body[data-site-page="community"] .community-hero > .community-hero-copy > p:not(.eyebrow),
+body[data-site-page="videos"] .sub-hero--video h1,
+body[data-site-page="videos"] .sub-hero--video > div > p:not(.eyebrow) {
+  width: min(100%, 760px);
+  max-width: calc(100% - 150px);
+  margin-right: auto;
+  margin-left: auto;
+  text-align: center;
+}
+
+@media (max-width: 860px) {
+  body[data-site-page]:not([data-site-page="index"]) .page-hero {
+    min-height: 160px;
+    padding: 12px 28px;
+  }
+}
+
+@media (max-width: 560px) {
+  body[data-site-page]:not([data-site-page="index"]) .page-hero {
+    min-height: 160px;
+    padding: 14px 18px;
+    background-position: center;
+  }
+  body[data-site-page]:not([data-site-page="index"]) .page-hero::before {
+    background: linear-gradient(
+      180deg,
+      rgba(12, 25, 20, .74) 0%,
+      rgba(12, 25, 20, .84) 58%,
+      rgba(12, 25, 20, .9) 100%
+    ) !important;
+  }
+  body[data-site-page]:not([data-site-page="index"]) .page-hero > div,
+  body[data-site-page="community"] .community-hero > .community-hero-copy,
+  body[data-site-page="videos"] .sub-hero--video > div {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+  body[data-site-page]:not([data-site-page="index"]) .page-hero h1,
+  body[data-site-page]:not([data-site-page="index"]) .page-hero p:not(.eyebrow),
+  body[data-site-page="community"] .community-hero h1,
+  body[data-site-page="community"] .community-hero > .community-hero-copy > p:not(.eyebrow),
+  body[data-site-page="videos"] .sub-hero--video h1,
+  body[data-site-page="videos"] .sub-hero--video > div > p:not(.eyebrow) {
+    width: 100%;
+    max-width: 100%;
+    margin-right: auto;
+    margin-left: auto;
+    text-align: center;
+  }
+  body[data-site-page]:not([data-site-page="index"]) .page-hero h1 {
+    font-size: clamp(1.55rem, 7.7vw, 2rem);
+    line-height: 1.36;
+  }
+  body[data-site-page]:not([data-site-page="index"]) .page-hero .eyebrow {
+    width: 100%;
+    margin-bottom: 8px;
+    text-align: center;
+  }
+  body[data-site-page]:not([data-site-page="index"]) .page-hero p:not(.eyebrow) {
+    margin-top: 8px;
+    margin-bottom: 0;
+  }
+  body[data-site-page]:not([data-site-page="index"]) .hero-corner-actions {
+    position: static;
+    display: flex;
+    width: 100%;
+    margin: 16px auto 0;
+    flex-flow: row wrap;
+    justify-content: center;
+  }
+}
