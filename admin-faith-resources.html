@@ -4,91 +4,121 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="robots" content="noindex,nofollow">
-  <title>관리자 전용 자료 등록 | 기도의샘물</title>
+  <title>신앙자료 운영 대시보드 | 기도의샘물</title>
   <link rel="stylesheet" href="assets/css/style.css">
   <link rel="stylesheet" href="assets/css/editorial-redesign.css">
+  <link rel="stylesheet" href="assets/css/admin-faith-resources.css">
 </head>
 <body class="admin-page">
-<main>
-  <section class="section admin-gate-panel" data-admin-gate>
-    <div>
+<main class="admin-app">
+  <section class="admin-gate-panel" data-admin-gate>
+    <div class="admin-gate-copy">
       <p class="eyebrow">Admin Access</p>
-      <h1>관리자 전용 자료 등록</h1>
-      <p>관리자 계정으로 로그인하면 자료 등록 화면이 열립니다. 권한은 관리자 코드가 아닌 계정 권한으로 확인합니다.</p>
+      <h1>신앙자료 관리자</h1>
+      <p>관리자 계정 권한으로 자료와 파일을 관리합니다.</p>
     </div>
     <form class="admin-gate-form" data-admin-login-form aria-label="관리자 로그인">
       <label>이메일<input type="email" name="email" autocomplete="email" required></label>
       <label>비밀번호<input type="password" name="password" autocomplete="current-password" required></label>
       <button class="button primary" type="submit">관리자 로그인</button>
       <button class="text-button" type="button" data-admin-reset-password>비밀번호 재설정 메일 받기</button>
-      <p class="form-message" data-admin-auth-status role="status"></p>
+      <p class="form-message" data-admin-auth-status role="status" aria-live="polite"></p>
     </form>
   </section>
 
-  <section class="section admin-resource-panel" data-admin-panel hidden>
-    <div>
-      <p class="eyebrow">Admin Board</p>
-      <h2>신앙자료 등록</h2>
-      <p>발행이 완료된 자료만 신앙자료 탐색과 키워드 필터에 노출됩니다. 파일은 결제 완료 주문을 기준으로 보호된 다운로드로 제공됩니다.</p>
-      <button class="text-button" type="button" data-admin-logout>로그아웃</button>
-    </div>
-    <div class="admin-upload-layout">
-      <form class="admin-resource-form" data-admin-resource-form aria-label="관리자 자료 등록 양식">
-        <label>자료 제목<input type="text" name="title" maxlength="160" required placeholder="예: 불안 내려놓기 기도문"></label>
-        <label>짧은 요약<input type="text" name="summary" maxlength="500" required placeholder="목록에 보이는 짧은 소개를 입력합니다."></label>
-        <label>자료 유형<select name="type" required><option value="pdf">주제별 기도문 PDF</option><option value="audio">기도 오디오북</option><option value="card">말씀·기도카드 이미지</option><option value="journey">30일 기도 여정</option></select></label>
-        <label>상품 ID<input type="text" name="productId" pattern="[A-Za-z0-9_-]{2,120}" required placeholder="예: anxiety-prayer-pdf"></label>
-        <label>판매 상태<select name="saleStatus" required><option value="inquiry" selected>문의 안내</option><option value="unavailable">판매 비노출</option><option value="available">온라인 구매 가능</option></select></label>
-        <label>판매 가격(원)<input type="number" name="priceAmount" min="1" step="1" inputmode="numeric" placeholder="온라인 구매 가능일 때만 입력"></label>
-        <label>키워드<input type="text" name="tags" required placeholder="예: 불안, 걱정, 결정"></label>
-        <label>자료 구성 메모(선택)<textarea name="previewItems" rows="3" placeholder="한 줄에 한 항목씩 입력해 주세요. 예: 평안을 구하는 짧은 기도"></textarea></label>
-        <label>상세 설명<textarea name="description" rows="5" required placeholder="자료 구성과 사용 상황을 입력합니다."></textarea></label>
-        <label data-admin-file-field>파일<input type="file" name="files" multiple required accept="application/pdf,audio/mpeg,audio/mp3,image/jpeg,image/png,image/webp"></label>
-        <p class="muted" data-admin-journey-note hidden>기도 여정은 파일 없이 상품 구성만 등록합니다. 구매 후에는 여정 페이지와 내 자료실에서 이용합니다.</p>
-        <button class="button primary" type="submit">자료 등록 및 발행</button>
-        <p class="form-message" data-admin-upload-status role="status"></p>
-      </form>
-      <div class="dropzone-panel" data-upload-dropzone tabindex="0" role="button" aria-label="자료 파일을 여기에 놓거나 눌러서 선택">
-        <strong>파일 드래그앤드롭</strong>
-        <p>PDF, MP3, 카드 이미지를 드래그하거나 이 영역을 눌러 선택합니다.</p>
-        <span data-upload-file-summary>선택된 파일 없음</span>
+  <section class="admin-dashboard" data-admin-panel hidden>
+    <header class="admin-topbar">
+      <a class="admin-brand" href="index.html"><img src="assets/logo-sam.png" alt="" width="38" height="38"><span><strong>기도의샘물</strong><small>신앙자료 관리자</small></span></a>
+      <div class="admin-topbar-actions"><a class="button secondary" href="prayer-cards.html" target="_blank" rel="noopener">신앙자료 페이지 보기</a><button class="text-button" type="button" data-admin-logout>로그아웃</button></div>
+    </header>
+
+    <div class="admin-console">
+      <aside class="admin-sidebar" aria-label="자료 게시판">
+        <strong>자료 게시판</strong>
+        <button class="is-active" type="button" data-admin-view="all">전체 자료 <span data-nav-count="all">0</span></button>
+        <button type="button" data-admin-view="pdf">기도문 PDF <span data-nav-count="pdf">0</span></button>
+        <button type="button" data-admin-view="audio">기도 오디오북 <span data-nav-count="audio">0</span></button>
+        <button type="button" data-admin-view="card">기도카드 <span data-nav-count="card">0</span></button>
+        <button type="button" data-admin-view="incomplete">업로드 미완료 <span data-nav-count="incomplete">0</span></button>
+        <div class="admin-sidebar-links"><strong>운영 바로가기</strong><a href="community.html">나눔게시판 보기</a><a href="videos.html?tab=posts">채널 소식 보기</a></div>
+      </aside>
+
+      <div class="admin-workspace">
+        <div class="admin-workspace-head">
+          <div><p class="eyebrow">Resource Operations</p><h2 data-admin-heading>전체 자료</h2><p data-admin-description>등록된 자료의 공개 상태와 파일 구성을 관리합니다.</p></div>
+          <button class="button primary" type="button" data-admin-new-resource>새 자료 등록</button>
+        </div>
+
+        <div class="admin-stat-grid" aria-label="자료 현황">
+          <article><span>공개 자료</span><strong data-stat="published">0</strong></article>
+          <article><span>초안</span><strong data-stat="draft">0</strong></article>
+          <article><span>업로드 미완료</span><strong data-stat="incomplete">0</strong></article>
+          <article><span>판매 가능</span><strong data-stat="available">0</strong></article>
+        </div>
+
+        <div class="admin-list-toolbar">
+          <label class="admin-search"><span>자료 검색</span><input type="search" data-admin-search placeholder="제목 또는 키워드 검색"></label>
+          <label><span>공개 상태</span><select data-admin-status-filter><option value="all">전체 상태</option><option value="published">공개</option><option value="draft">초안</option><option value="archived">보관</option></select></label>
+          <label><span>판매 상태</span><select data-admin-sale-filter><option value="all">전체 판매 상태</option><option value="inquiry">문의 안내</option><option value="available">온라인 구매</option><option value="unavailable">판매 비노출</option></select></label>
+        </div>
+        <p class="admin-list-hint" data-admin-order-hint>게시판을 선택하면 드래그 또는 화살표 버튼으로 노출 순서를 바꿀 수 있습니다.</p>
+        <p class="form-message admin-global-status" data-admin-status role="status" aria-live="polite"></p>
+        <div class="admin-resource-list" data-admin-resource-list aria-live="polite"></div>
       </div>
     </div>
   </section>
 
-  <section class="section admin-resource-panel" data-community-moderation hidden>
-    <div>
-      <p class="eyebrow">Community Moderation</p>
-      <h2>소통게시판 신고 관리</h2>
-      <p>신고된 글과 답글은 운영 원칙에 따라 확인하고, 필요하면 숨김 또는 복구 처리합니다.</p>
-      <p class="form-message" data-moderation-status role="status"></p>
-    </div>
-    <div class="account-list" data-moderation-list></div>
-  </section>
+  <dialog class="admin-editor" data-admin-editor aria-labelledby="adminEditorTitle">
+    <form data-admin-resource-form>
+      <header class="admin-editor-head"><div><p class="eyebrow">Resource Editor</p><h2 id="adminEditorTitle" data-editor-title>새 자료 등록</h2></div><button class="admin-icon-button" type="button" data-editor-close aria-label="자료 편집 닫기">×</button></header>
+      <input type="hidden" name="resourceId">
+      <nav class="admin-step-nav" aria-label="자료 등록 단계">
+        <button class="is-active" type="button" data-editor-step="1">1. 기본 정보</button>
+        <button type="button" data-editor-step="2">2. 키워드·파일</button>
+        <button type="button" data-editor-step="3">3. 판매·공개</button>
+      </nav>
 
-  <section class="section admin-resource-panel" data-admin-channel-panel hidden>
-    <div>
-      <p class="eyebrow">Channel News</p>
-      <h2>채널 소식 등록</h2>
-      <p>사이트에 소식을 먼저 등록하고, 유튜브에 게시한 뒤 해당 게시물 주소를 추가할 수 있습니다.</p>
-    </div>
-    <div class="admin-upload-layout">
-      <form class="admin-resource-form" data-admin-channel-form>
-        <label>제목<input type="text" name="title" minlength="2" maxlength="160" required></label>
-        <label>본문<textarea name="body" minlength="2" maxlength="5000" rows="6" required></textarea></label>
-        <label>관련 유튜브 영상 ID<input type="text" name="relatedVideoId" maxlength="32" placeholder="예: GTr3L4h-Rzg"></label>
-        <label>유튜브 게시물 주소<input type="url" name="youtubePostUrl" placeholder="게시 후 주소를 입력합니다."></label>
-        <label>상태<select name="status"><option value="draft">초안</option><option value="published">공개</option><option value="archived">보관</option></select></label>
-        <button class="button primary" type="submit">채널 소식 저장</button>
-        <p class="form-message" data-admin-channel-status role="status"></p>
-      </form>
-      <div class="account-list" data-admin-channel-list></div>
-    </div>
-  </section>
+      <section class="admin-editor-step is-active" data-editor-panel="1">
+        <label>자료 제목<input type="text" name="title" minlength="2" maxlength="160" required placeholder="예: 불안 내려놓기 기도문"></label>
+        <label>짧은 요약<textarea name="summary" rows="3" minlength="2" maxlength="500" required placeholder="목록에서 먼저 보이는 소개를 입력합니다."></textarea></label>
+        <label>자료 유형<select name="type" required><option value="pdf">기도문 PDF</option><option value="audio">기도 오디오북</option><option value="card">기도카드</option></select></label>
+        <label>상세 설명<textarea name="description" rows="8" minlength="2" maxlength="10000" required placeholder="구매 후 확인할 수 있는 자료 구성과 사용 방법을 입력합니다."></textarea></label>
+      </section>
+
+      <section class="admin-editor-step" data-editor-panel="2" hidden>
+        <label>키워드<input type="text" name="tags" required placeholder="쉼표로 구분: 불안, 걱정, 결정"></label>
+        <div class="admin-tag-suggestions" data-admin-tag-suggestions aria-label="기존 키워드"></div>
+        <label>공개 자료 구성<textarea name="previewItems" rows="4" maxlength="1000" placeholder="한 줄에 한 항목씩 입력합니다."></textarea></label>
+        <div class="admin-file-section">
+          <div><strong>유료 원본 파일</strong><p>PDF 1개, MP3 1개 이상, 카드 이미지 1개 이상을 등록합니다.</p></div>
+          <input class="sr-only" type="file" name="files" multiple accept="application/pdf,audio/mpeg,audio/mp3,image/jpeg,image/png,image/webp">
+          <button class="admin-dropzone" type="button" data-file-picker="original">원본 파일 선택 또는 드래그앤드롭</button>
+          <div class="admin-file-list" data-original-file-list></div>
+        </div>
+        <div class="admin-file-section">
+          <div><strong>공개 미리보기 이미지</strong><p>원본과 분리된 표지 또는 미리보기 이미지를 최대 3장 등록합니다.</p></div>
+          <input class="sr-only" type="file" name="previewFiles" multiple accept="image/jpeg,image/png,image/webp">
+          <button class="admin-dropzone" type="button" data-file-picker="preview">미리보기 이미지 선택 또는 드래그앤드롭</button>
+          <div class="admin-file-list admin-preview-list" data-preview-file-list></div>
+        </div>
+      </section>
+
+      <section class="admin-editor-step" data-editor-panel="3" hidden>
+        <label>판매 상태<select name="saleStatus" required><option value="inquiry">문의 안내</option><option value="available">온라인 구매 가능</option><option value="unavailable">판매 비노출</option></select></label>
+        <label>판매 가격(원)<input type="number" name="priceAmount" min="1" step="1" inputmode="numeric" placeholder="온라인 구매 가능일 때만 입력"></label>
+        <div class="admin-publish-checklist" data-publish-checklist></div>
+        <p class="admin-worker-status" data-worker-status></p>
+      </section>
+
+      <footer class="admin-editor-footer">
+        <p class="form-message" data-admin-upload-status role="status" aria-live="polite"></p>
+        <div><button class="button secondary" type="button" data-editor-previous>이전</button><button class="button secondary" type="button" data-editor-next>다음</button><button class="button secondary" type="submit" data-save-draft>저장</button><button class="button primary" type="button" data-publish-resource>저장 후 공개</button></div>
+      </footer>
+    </form>
+  </dialog>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.1/dist/umd/supabase.js"></script>
 <script src="assets/js/supabase-config.js"></script>
-<script src="data/prayers.js"></script>
-<script src="assets/js/script.js"></script>
+<script src="assets/js/admin-faith-resources.js"></script>
 </body>
 </html>

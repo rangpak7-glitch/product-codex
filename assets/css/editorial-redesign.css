@@ -1284,9 +1284,10 @@ body[data-site-page] .page-hero {
 }
 .resource-sample-group > header h3 { margin: 2px 0 5px; font-size: 1.35rem; }
 .resource-sample-group > header p:last-child { margin: 0; color: #626d67; }
+.resource-sample-list { display: grid; gap: 12px; }
 body[data-site-page="prayer-cards"] .resource-board-list { border-top: 0; }
-body[data-site-page="prayer-cards"] #faithResourceTags,
-body[data-site-page="prayer-cards"] #faithResourceFilterStatus { display: none !important; }
+body[data-site-page="prayer-cards"] #faithResourceTags[hidden],
+body[data-site-page="prayer-cards"] #faithResourceFilterStatus[hidden] { display: none; }
 
 .resource-board-list .faith-resource-card,
 .resource-board-list .faith-resource-card.resource-type-pdf,
@@ -1308,6 +1309,42 @@ body[data-site-page="prayer-cards"] #faithResourceFilterStatus { display: none !
   transform: translateY(-2px);
   outline: none;
 }
+.resource-public-preview-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.resource-public-preview-grid.is-compact {
+  grid-template-columns: minmax(0, 180px);
+  margin-bottom: 18px;
+}
+.resource-public-preview-grid figure {
+  min-width: 0;
+  margin: 0;
+}
+.resource-public-preview-grid img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border: 1px solid #ded7cc;
+  border-radius: 6px;
+  object-fit: cover;
+}
+.resource-public-preview-grid figcaption {
+  margin-top: 6px;
+  color: #66706b;
+  font-size: .78rem;
+}
+.resource-owned-files,
+.resource-locked-detail {
+  padding: 14px 16px;
+  border-left: 3px solid #826039;
+  background: #f6f2ea;
+  color: #39443f;
+}
+.resource-owned-files ul { margin: 8px 0 0; padding-left: 20px; }
+.resource-locked-detail { margin: 0; }
 .resource-card-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .resource-card-heading .eyebrow { margin: 0; }
 .resource-member-badge {
@@ -1395,6 +1432,8 @@ body[data-site-page="prayer-cards"] #faithResourceFilterStatus { display: none !
   .gratitude-reading-intro,
   .resource-sample-group > header { align-items: flex-start; flex-direction: column; gap: 8px; }
   .resource-hub-samples { gap: 28px; }
+  .resource-public-preview-grid { grid-template-columns: 1fr; }
+  .resource-public-preview-grid.is-compact { grid-template-columns: minmax(0, 140px); }
   .resource-board-head.resource-benefit-head { margin-bottom: 10px; padding-bottom: 10px; }
 }
 
