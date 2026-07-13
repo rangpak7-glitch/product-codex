@@ -199,7 +199,7 @@
 
 데이터 중심 파일:
 
-- `data/dailyContents.js`: 말씀 붙들기, 저녁기도, 아침기도, 큐티(QT)의 날짜별 일일 콘텐츠
+- `data/dailyContents.js`: 말씀 붙들기, 감사기도, 저녁기도, 아침기도, 큐티(QT)의 날짜별 일일 콘텐츠
 - `data/prayers.js`: 상황별 기도문
 - `data/meditations.js`: 성경 말씀 묵상
 - `data/videos.js`: 유튜브 기도(유튜브)
@@ -213,9 +213,10 @@
 
 ### 일일 콘텐츠 카테고리 체계
 
-신규 일일 콘텐츠 카테고리는 다음 4개를 기준으로 한다.
+신규 일일 콘텐츠 카테고리는 다음 5개를 기준으로 한다.
 
 - `word` / 말씀 붙들기 / `prayers.html`: 오늘 하루 마음에 붙들 한 구절, 한 문장 묵상, 고백, 짧은 기도
+- `gratitude` / 감사기도 / `gratitude-prayer.html`: 이미 받은 은혜를 기억하고 감사로 응답하는 기도, 감사 고백과 실천
 - `evening` / 저녁기도 / `night-prayer.html`: 하루 정리, 내려놓음, 잠들기 전 평안, 평안 고백문
 - `morning` / 아침기도 / `morning-prayer.html`: 감사, 지혜, 말과 생각, 오늘 실천할 한 가지
 - `editorial` / 큐티(QT) / `meditation.html`: 일반 기도문이 아니라 성경 이야기와 오늘의 삶을 연결하는 사설형 묵상
@@ -237,12 +238,12 @@
 
 ### 일일 콘텐츠 자동화
 
-- GitHub Actions는 한국 시간 오전 4시(UTC `19:00`)에 `data/dailyContents.js`의 4개 일일 카테고리를 생성한다.
+- GitHub Actions는 한국 시간 오전 4시(UTC `19:00`)에 `data/dailyContents.js`의 5개 일일 카테고리를 생성한다.
 - 자동화는 GitHub Secret `OPENAI_API_KEY`와 GitHub Variable `OPENAI_MODEL`만 사용한다. 키 값은 저장소, 로그, 커밋에 넣지 않는다.
-- 같은 날짜와 카테고리의 기존 항목은 보존하며, 4개 항목이 모두 검증될 때만 파일을 갱신한다.
+- 같은 날짜와 카테고리의 기존 항목은 보존하며, 5개 항목이 모두 검증될 때만 파일을 갱신한다.
 - 생성 실패 시 기존 콘텐츠를 유지하고 커밋하지 않는다.
 
-기도(유튜브)은 일일 콘텐츠 4대 카테고리와 분리해 `videos.html`과 `data/videos.js`에서 관리한다. `data/videos.js`에는 실제 `videoId`, 제목, 주제, 관련 말씀, 설명, 태그, 게시일을 넣고, 썸네일은 YouTube 공식 URL 패턴 `https://i.ytimg.com/vi/{videoId}/hqdefault.jpg`를 사용한다.
+기도(유튜브)은 일일 콘텐츠 5개 카테고리와 분리해 `videos.html`과 `data/videos.js`에서 관리한다. `data/videos.js`에는 실제 `videoId`, 제목, 주제, 관련 말씀, 설명, 태그, 게시일을 넣고, 썸네일은 YouTube 공식 URL 패턴 `https://i.ytimg.com/vi/{videoId}/hqdefault.jpg`를 사용한다.
 
 ## 작성 톤
 

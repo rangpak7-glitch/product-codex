@@ -7,6 +7,7 @@ const directory = path.dirname(fileURLToPath(import.meta.url));
 const dataPath = path.resolve(directory, "../data/dailyContents.js");
 const categories = {
   word: { label: "말씀 붙들기", imageTheme: "open-bible", icon: "bible", detailUrl: "prayers.html" },
+  gratitude: { label: "감사기도", imageTheme: "gratitude-prayer", icon: "sun", detailUrl: "gratitude-prayer.html" },
   evening: { label: "저녁기도", imageTheme: "night-window", icon: "moon", detailUrl: "night-prayer.html" },
   morning: { label: "아침기도", imageTheme: "morning-light", icon: "sun", detailUrl: "morning-prayer.html" },
   editorial: { label: "큐티(QT)", imageTheme: "editorial-paper", icon: "book", detailUrl: "meditation.html" }
@@ -54,7 +55,7 @@ function responseSchema() {
     type: "object", additionalProperties: false, required: ["contents"],
     properties: {
       contents: {
-        type: "array", minItems: 4, maxItems: 4,
+        type: "array", minItems: categoryKeys.length, maxItems: categoryKeys.length,
         items: { type: "object", additionalProperties: false, required: Object.keys(properties), properties }
       }
     }
@@ -65,19 +66,19 @@ function prompt(date, existing) {
   const recent = existing
     .filter(function (item) { return item.date < date && categoryKeys.includes(item.category); })
     .sort(function (a, b) { return String(b.date).localeCompare(String(a.date)); })
-    .slice(0, 28)
+    .slice(0, 35)
     .map(function (item) { return item.date + " " + item.category + ": " + item.title + " [" + item.scriptureRef + "]"; });
   const instructions = [
     "당신은 기도의샘물의 한국어 기독교 일일 콘텐츠 편집자입니다.",
     "Asia/Seoul 기준 " + date + "에 게시할 콘텐츠를 JSON으로 작성하세요.",
-    "word(말씀 붙들기), evening(저녁기도), morning(아침기도), editorial(큐티 QT)를 각각 하나씩, 총 네 개만 작성하세요.",
+    "word(말씀 붙들기), gratitude(감사기도), evening(저녁기도), morning(아침기도), editorial(큐티 QT)를 각각 하나씩, 총 다섯 개만 작성하세요.",
     "문장은 차분하고 따뜻하게 쓰며 치유, 문제 해결, 응답을 보장하지 마세요.",
     "성경 본문은 짧은 구절과 출처 중심으로 쓰고 긴 인용은 피하세요.",
     "반드시 응답받는 기도, 기도만 하면 치유됩니다, 즉시 해결, 구매하면 문제가 해결됩니다라는 표현을 쓰지 마세요.",
     "모든 항목은 title, scriptureRef, scriptureText, summary, body, prayer, application과 2~5개의 짧은 tags를 채우세요.",
-    "word, evening, morning은 confession을 채우고 editorialQuestion과 editorialInsight는 빈 문자열로 두세요.",
+    "word, gratitude, evening, morning은 confession을 채우고 editorialQuestion과 editorialInsight는 빈 문자열로 두세요.",
     "editorial은 editorialQuestion과 editorialInsight를 채우고 confession은 빈 문자열로 두세요.",
-    "word는 오늘 붙들 한 구절과 짧은 기도, evening은 하루 정리와 평안, morning은 감사와 오늘 실천, editorial은 성경 이야기와 오늘 삶을 연결하는 사설형 묵상에 집중하세요.",
+    "word는 오늘 붙들 한 구절과 짧은 기도, gratitude는 이미 받은 은혜를 기억하고 감사로 응답하는 기도, evening은 하루 정리와 평안, morning은 하루 시작과 오늘 실천, editorial은 성경 이야기와 오늘 삶을 연결하는 사설형 묵상에 집중하세요.",
     "최근 콘텐츠와 제목, 핵심 주제, 성경 본문이 반복되지 않도록 새롭게 구성하세요."
   ];
   if (recent.length) instructions.push("최근 콘텐츠 목록:\n" + recent.join("\n"));
@@ -112,7 +113,7 @@ async function generate(date, existing) {
 }
 
 function validate(items) {
-  if (!Array.isArray(items) || items.length !== categoryKeys.length) throw new Error("Generation must return exactly four items.");
+  if (!Array.isArray(items) || items.length !== categoryKeys.length) throw new Error("Generation must return exactly " + categoryKeys.length + " items.");
   const seen = new Set();
   for (const item of items) {
     if (!item || !categoryKeys.includes(item.category) || seen.has(item.category)) throw new Error("Each category must appear exactly once.");
