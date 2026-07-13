@@ -1937,7 +1937,7 @@ normalizeSiteNav();
   function displayDateSeoul(date = new Date()) {
     const parts = seoulParts(date);
     const base = Date.UTC(parts.year, parts.month - 1, parts.day);
-    return formatDate(new Date(parts.hour < 6 ? base - 86400000 : base));
+    return formatDate(new Date(parts.hour < 4 ? base - 86400000 : base));
   }
 
   function sortDesc(items) {

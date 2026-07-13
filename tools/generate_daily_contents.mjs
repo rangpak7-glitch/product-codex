@@ -20,6 +20,20 @@ function todayInSeoul() {
   return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
 }
 
+function generationDate() {
+  const dateOption = process.argv.indexOf("--date");
+  if (dateOption === -1) return todayInSeoul();
+  const date = process.argv[dateOption + 1];
+  if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    throw new Error("--date must be followed by YYYY-MM-DD.");
+  }
+  const parsed = new Date(date + "T00:00:00Z");
+  if (Number.isNaN(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== date) {
+    throw new Error("--date must be a valid calendar date.");
+  }
+  return date;
+}
+
 function loadContents(source) {
   const sandbox = { window: {} };
   vm.runInNewContext(source, sandbox, { filename: dataPath, timeout: 1000 });
@@ -47,8 +61,13 @@ function responseSchema() {
   };
 }
 
-function prompt(date) {
-  return [
+function prompt(date, existing) {
+  const recent = existing
+    .filter(function (item) { return item.date < date && categoryKeys.includes(item.category); })
+    .sort(function (a, b) { return String(b.date).localeCompare(String(a.date)); })
+    .slice(0, 28)
+    .map(function (item) { return item.date + " " + item.category + ": " + item.title + " [" + item.scriptureRef + "]"; });
+  const instructions = [
     "당신은 기도의샘물의 한국어 기독교 일일 콘텐츠 편집자입니다.",
     "Asia/Seoul 기준 " + date + "에 게시할 콘텐츠를 JSON으로 작성하세요.",
     "word(말씀 붙들기), evening(저녁기도), morning(아침기도), editorial(큐티 QT)를 각각 하나씩, 총 네 개만 작성하세요.",
@@ -58,8 +77,11 @@ function prompt(date) {
     "모든 항목은 title, scriptureRef, scriptureText, summary, body, prayer, application과 2~5개의 짧은 tags를 채우세요.",
     "word, evening, morning은 confession을 채우고 editorialQuestion과 editorialInsight는 빈 문자열로 두세요.",
     "editorial은 editorialQuestion과 editorialInsight를 채우고 confession은 빈 문자열로 두세요.",
-    "word는 오늘 붙들 한 구절과 짧은 기도, evening은 하루 정리와 평안, morning은 감사와 오늘 실천, editorial은 성경 이야기와 오늘 삶을 연결하는 사설형 묵상에 집중하세요."
-  ].join("\n");
+    "word는 오늘 붙들 한 구절과 짧은 기도, evening은 하루 정리와 평안, morning은 감사와 오늘 실천, editorial은 성경 이야기와 오늘 삶을 연결하는 사설형 묵상에 집중하세요.",
+    "최근 콘텐츠와 제목, 핵심 주제, 성경 본문이 반복되지 않도록 새롭게 구성하세요."
+  ];
+  if (recent.length) instructions.push("최근 콘텐츠 목록:\n" + recent.join("\n"));
+  return instructions.join("\n");
 }
 
 function outputText(response) {
@@ -71,7 +93,7 @@ function outputText(response) {
   return text;
 }
 
-async function generate(date) {
+async function generate(date, existing) {
   const key = process.env.OPENAI_API_KEY;
   const model = process.env.OPENAI_MODEL;
   if (!key) throw new Error("OPENAI_API_KEY is required.");
@@ -81,7 +103,7 @@ async function generate(date) {
     headers: { Authorization: "Bearer " + key, "Content-Type": "application/json" },
     body: JSON.stringify({
       model,
-      input: prompt(date),
+      input: prompt(date, existing),
       text: { format: { type: "json_schema", name: "daily_content_batch", strict: true, schema: responseSchema() } }
     })
   });
@@ -139,7 +161,7 @@ function insert(source, entries) {
 }
 
 async function main() {
-  const date = todayInSeoul();
+  const date = generationDate();
   const source = fs.readFileSync(dataPath, "utf8");
   const existing = loadContents(source);
   const existingCategories = new Set(existing.filter(function (item) {
@@ -149,7 +171,7 @@ async function main() {
     console.log("All daily categories already exist for " + date + "; no update needed.");
     return;
   }
-  const generated = await generate(date);
+  const generated = await generate(date, existing);
   validate(generated);
   const additions = generated.filter(function (item) { return !existingCategories.has(item.category); })
     .map(function (item) { return complete(item, date); });

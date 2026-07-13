@@ -20,7 +20,7 @@
 
 ## 일일 콘텐츠 자동화
 
-GitHub Actions 워크플로는 매일 한국 시간 오전 6시(UTC 21:00)에 `data/dailyContents.js`에 말씀 붙들기, 저녁기도, 아침기도, 큐티(QT) 콘텐츠를 생성합니다. `main`에 변경을 푸시하면 Cloudflare Pages가 기존 Git 연동을 통해 배포합니다.
+GitHub Actions 워크플로는 매일 한국 시간 오전 4시(UTC 19:00)에 `data/dailyContents.js`에 말씀 붙들기, 저녁기도, 아침기도, 큐티(QT) 콘텐츠를 생성합니다. `main`에 변경을 푸시하면 Cloudflare Pages가 기존 Git 연동을 통해 배포합니다.
 
 ### GitHub 설정
 
