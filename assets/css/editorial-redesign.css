@@ -1060,6 +1060,92 @@ body[data-site-page="prayer-card-library"] .page-hero {
   box-shadow: none;
 }
 .community-post-card:hover { background: rgba(255,254,251,.62); transform: none; }
+.community-post-list {
+  display: block;
+  border-top: 0;
+}
+.community-bbs-wrap {
+  width: 100%;
+  overflow-x: auto;
+  border-top: 2px solid #243a32;
+  border-bottom: 1px solid #bfb6aa;
+}
+.community-bbs-table {
+  width: 100%;
+  min-width: 620px;
+  table-layout: fixed;
+  border-collapse: collapse;
+  color: #24322e;
+  font-size: .88rem;
+}
+.community-bbs-table col.community-col-number { width: 54px; }
+.community-bbs-table col.community-col-date { width: 88px; }
+.community-bbs-table col.community-col-category { width: 88px; }
+.community-bbs-table col.community-col-author { width: 96px; }
+.community-bbs-table col.community-col-replies { width: 58px; }
+.community-bbs-table th,
+.community-bbs-table td {
+  padding: 13px 10px;
+  border-bottom: 1px solid #ded7cc;
+  text-align: center;
+  vertical-align: middle;
+}
+.community-bbs-table th {
+  background: #f3efe7;
+  color: #53605a;
+  font-size: .78rem;
+  font-weight: 700;
+}
+.community-bbs-table tbody tr:last-child td { border-bottom: 0; }
+.community-bbs-table tbody tr:hover { background: #faf8f3; }
+.community-category-label { color: #4f5d57; font-size: .8rem; font-weight: 700; }
+.community-category-prayer { color: #35505c; }
+.community-category-gratitude { color: #6e5434; }
+.community-category-pain { color: #704a44; }
+.community-title-button {
+  width: 100%;
+  overflow: hidden;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #20372f;
+  font: inherit;
+  font-weight: 700;
+  line-height: 1.45;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.community-title-button:hover { color: #826039; text-decoration: underline; text-underline-offset: 3px; }
+.community-title-button:focus-visible { outline: 3px solid rgba(130,96,57,.28); outline-offset: 4px; }
+.community-cell-replies { font-variant-numeric: tabular-nums; font-weight: 700; }
+.community-board-loading { margin: 0; padding: 34px 12px; border-top: 2px solid #243a32; border-bottom: 1px solid #bfb6aa; color: #626b67; text-align: center; }
+.community-pagination {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 22px;
+}
+.community-pagination button {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  padding: 0;
+  border: 1px solid #d3cabe;
+  border-radius: 6px;
+  background: #fffefb;
+  color: #20372f;
+  font: inherit;
+  font-size: .86rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.community-pagination button:hover:not(:disabled) { border-color: #826039; color: #6e5434; }
+.community-pagination button.is-active { border-color: #2f493f; background: #2f493f; color: #fffdf8; }
+.community-pagination button:focus-visible { outline: 3px solid rgba(130,96,57,.28); outline-offset: 2px; }
+.community-pagination button:disabled { opacity: .35; cursor: default; }
 .community-detail-panel { position: static; max-width: 760px; border-radius: 0; }
 
 .video-grid { grid-template-columns: 1fr; gap: 0; border-top: 1px solid #d9d1c5; }
@@ -1135,6 +1221,10 @@ body[data-site-page="prayer-card-library"] .page-hero {
   .category-daily-card { padding: 32px 18px; }
   .category-daily-card .category-daily-head { align-items: flex-start; }
   .category-daily-card .category-icon { width: 38px; height: 38px; }
+  .community-bbs-table { min-width: 600px; font-size: .8rem; }
+  .community-bbs-table th,
+  .community-bbs-table td { padding: 11px 8px; }
+  .community-pagination button { width: 36px; height: 36px; }
   .video-grid .video-card { display: block; padding: 22px 0; }
   .video-grid .video-card .video-thumb { margin-bottom: 16px; }
   .resource-board-list .faith-resource-card { grid-template-columns: 1fr; }

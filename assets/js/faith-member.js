@@ -684,24 +684,81 @@
     if (!root) return;
     const client = await getClient();
     if (!client) return;
-    const requestedCategory = new URLSearchParams(window.location.search).get("category") || "all";
+    const searchParams = new URLSearchParams(window.location.search);
+    const requestedCategory = searchParams.get("category") || "all";
+    const requestedPage = Number.parseInt(searchParams.get("page") || "1", 10);
+    const pageSize = 15;
+    const pageWindowSize = 5;
     let selectedCategory = Object.hasOwn(communityLabel, requestedCategory) ? requestedCategory : "all";
+    let currentPage = Number.isInteger(requestedPage) && requestedPage > 0 ? requestedPage : 1;
     let selectedPost = null;
     const listRoot = root.querySelector("[data-community-list]");
     const detailRoot = root.querySelector("[data-community-detail]");
     const setMessage = (message) => { const status = root.querySelector("[data-community-status]"); if (status) status.textContent = message; };
 
-    const postCard = (post) => `<article class="community-post-card community-category-${escapeHtml(post.category)}" data-community-post="${escapeHtml(post.id)}"><div class="community-post-meta"><span>${escapeHtml(communityLabel[post.category] || post.category)}</span><span>${escapeHtml(post.author?.nickname || "익명")}</span><span>${friendlyDate(post.created_at)}</span></div><h3>${escapeHtml(post.title)}</h3><p>${escapeHtml(post.body).slice(0, 100)}${post.body.length > 100 ? "..." : ""}</p><button class="text-button" type="button" data-open-community-post="${escapeHtml(post.id)}">글과 답글 보기</button></article>`;
+    const syncCommunityUrl = () => {
+      const url = new URL(window.location.href);
+      if (selectedCategory === "all") url.searchParams.delete("category");
+      else url.searchParams.set("category", selectedCategory);
+      if (currentPage === 1) url.searchParams.delete("page");
+      else url.searchParams.set("page", String(currentPage));
+      window.history.replaceState({}, "", url);
+    };
+
+    const renderPagination = (totalPages) => {
+      const groupStart = Math.floor((currentPage - 1) / pageWindowSize) * pageWindowSize + 1;
+      const groupEnd = Math.min(groupStart + pageWindowSize - 1, totalPages);
+      const pages = [];
+      for (let page = groupStart; page <= groupEnd; page += 1) pages.push(page);
+      return `<nav class="community-pagination" aria-label="나눔게시판 페이지 선택">
+        <button type="button" data-community-page-group="previous" aria-label="이전 5페이지" title="이전 5페이지"${groupStart === 1 ? " disabled" : ""}>&lt;</button>
+        ${pages.map((page) => `<button class="${page === currentPage ? "is-active" : ""}" type="button" data-community-page="${page}"${page === currentPage ? ' aria-current="page"' : ""}>${page}</button>`).join("")}
+        <button type="button" data-community-page-group="next" aria-label="다음 5페이지" title="다음 5페이지"${groupEnd === totalPages ? " disabled" : ""}>&gt;</button>
+      </nav>`;
+    };
+
+    const renderPostBoard = (posts, replyCounts, totalCount, totalPages) => {
+      if (!posts.length) return `<div class="soft-empty-state"><h3>아직 나눔이 없습니다.</h3><p>마음에 담아 둔 기도제목, 감사 또는 아픔의 이야기를 첫 글로 남겨 보세요.</p></div>${renderPagination(totalPages)}`;
+      const offset = (currentPage - 1) * pageSize;
+      return `<div class="community-bbs-wrap"><table class="community-bbs-table">
+        <colgroup><col class="community-col-number"><col class="community-col-date"><col class="community-col-category"><col class="community-col-author"><col><col class="community-col-replies"></colgroup>
+        <thead><tr><th scope="col">번호</th><th scope="col">작성일</th><th scope="col">분류</th><th scope="col">작성자</th><th scope="col">제목</th><th scope="col">답글수</th></tr></thead>
+        <tbody>${posts.map((post, index) => `<tr>
+          <td class="community-cell-number">${totalCount - offset - index}</td>
+          <td>${shortDate(post.created_at)}</td>
+          <td><span class="community-category-label community-category-${escapeHtml(post.category)}">${escapeHtml(communityLabel[post.category] || post.category)}</span></td>
+          <td class="community-cell-author">${escapeHtml(post.author?.nickname || "익명")}</td>
+          <td><button class="community-title-button" type="button" data-open-community-post="${escapeHtml(post.id)}">${escapeHtml(post.title)}</button></td>
+          <td class="community-cell-replies">${Number(replyCounts.get(post.id) || 0)}</td>
+        </tr>`).join("")}</tbody>
+      </table></div>${renderPagination(totalPages)}`;
+    };
 
     async function loadPosts() {
-      let query = client.from("community_posts").select("id,category,title,body,created_at,author_id,author:public_profiles!community_posts_author_id_fkey(nickname)").eq("status", "published").in("category", ["prayer", "gratitude", "pain"]).order("created_at", { ascending: false }).limit(50);
+      listRoot.innerHTML = '<p class="community-board-loading" role="status">게시글을 불러오고 있습니다.</p>';
+      const offset = (currentPage - 1) * pageSize;
+      let query = client.from("community_posts").select("id,category,title,created_at,author_id,author:public_profiles!community_posts_author_id_fkey(nickname)", { count: "exact" }).eq("status", "published").in("category", ["prayer", "gratitude", "pain"]).order("created_at", { ascending: false }).range(offset, offset + pageSize - 1);
       if (selectedCategory !== "all") query = query.eq("category", selectedCategory);
-      const { data, error } = await query;
+      const { data, error, count } = await query;
       if (error) {
         listRoot.innerHTML = '<p class="soft-empty-state">게시판을 불러오지 못했습니다. 잠시 후 다시 확인해 주세요.</p>';
         return;
       }
-      listRoot.innerHTML = data?.length ? data.map(postCard).join("") : '<div class="soft-empty-state"><h3>아직 나눔이 없습니다.</h3><p>마음에 담아 둔 기도제목, 감사 또는 아픔의 이야기를 첫 글로 남겨 보세요.</p></div>';
+      const totalCount = Number(count || 0);
+      const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+      if (currentPage > totalPages) {
+        currentPage = totalPages;
+        syncCommunityUrl();
+        return loadPosts();
+      }
+      const posts = data || [];
+      const postIds = posts.map((post) => post.id);
+      const replyCounts = new Map();
+      if (postIds.length) {
+        const { data: replies, error: repliesError } = await client.from("community_replies").select("post_id").in("post_id", postIds).eq("status", "published");
+        if (!repliesError) (replies || []).forEach((reply) => replyCounts.set(reply.post_id, (replyCounts.get(reply.post_id) || 0) + 1));
+      }
+      listRoot.innerHTML = renderPostBoard(posts, replyCounts, totalCount, totalPages);
     }
 
     async function openPost(postId) {
@@ -717,7 +774,9 @@
 
     root.querySelectorAll("[data-community-filter]").forEach((button) => button.addEventListener("click", () => {
       selectedCategory = button.dataset.communityFilter || "all";
+      currentPage = 1;
       root.querySelectorAll("[data-community-filter]").forEach((item) => item.classList.toggle("is-active", item === button));
+      syncCommunityUrl();
       loadPosts();
     }));
     root.querySelectorAll("[data-community-filter]").forEach((button) => button.classList.toggle("is-active", button.dataset.communityFilter === selectedCategory));
@@ -746,11 +805,25 @@
       if (error) return setMessage("게시글을 등록하지 못했습니다. 내용을 확인해 주세요.");
       form.reset();
       setMessage("게시글을 등록했습니다.");
+      currentPage = 1;
+      syncCommunityUrl();
       await loadPosts();
     });
     listRoot.addEventListener("click", (event) => {
       const button = event.target.closest("[data-open-community-post]");
-      if (button) openPost(button.dataset.openCommunityPost);
+      if (button) return openPost(button.dataset.openCommunityPost);
+      const pageButton = event.target.closest("button[data-community-page]");
+      if (pageButton) {
+        currentPage = Number(pageButton.dataset.communityPage);
+        syncCommunityUrl();
+        return loadPosts();
+      }
+      const groupButton = event.target.closest("[data-community-page-group]");
+      if (!groupButton || groupButton.disabled) return;
+      const groupStart = Math.floor((currentPage - 1) / pageWindowSize) * pageWindowSize + 1;
+      currentPage = groupButton.dataset.communityPageGroup === "next" ? groupStart + pageWindowSize : Math.max(1, groupStart - 1);
+      syncCommunityUrl();
+      loadPosts();
     });
     detailRoot.addEventListener("click", async (event) => {
       if (event.target.closest("[data-close-community-detail]")) { detailRoot.hidden = true; return; }

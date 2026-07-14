@@ -5,7 +5,7 @@ const $ = (selector) => document.querySelector(selector);
   if (window.__faithMemberScriptLoaded) return;
   window.__faithMemberScriptLoaded = true;
   const script = document.createElement("script");
-  script.src = new URL("assets/js/faith-member.js?v=20260714-account-bbs", window.location.href).href;
+  script.src = new URL("assets/js/faith-member.js?v=20260715-community-bbs", window.location.href).href;
   script.async = true;
   document.head.append(script);
 })();
