@@ -530,7 +530,7 @@ if (homeVideos) homeVideos.innerHTML = videoData.slice(0, 3).map(videoCard).join
   const items = Array.isArray(window.DAILY_CONTENTS) ? window.DAILY_CONTENTS : [];
   const seoulNow = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Seoul" }));
   const targetDate = new Date(seoulNow);
-  if (seoulNow.getHours() < 6) targetDate.setDate(targetDate.getDate() - 1);
+  if (seoulNow.getHours() < 4) targetDate.setDate(targetDate.getDate() - 1);
   const date = `${targetDate.getFullYear()}-${String(targetDate.getMonth() + 1).padStart(2, "0")}-${String(targetDate.getDate()).padStart(2, "0")}`;
   const latest = (category) => [...items].filter((item) => item.category === category).sort((a, b) => String(b.date).localeCompare(String(a.date)))[0];
   const pick = (category) => items.find((item) => item.category === category && item.date === date) || latest(category);
