@@ -4,6 +4,9 @@
   const client = window.FaithSupabase;
   const ORIGINAL_BUCKET = "faith-resources";
   const PREVIEW_BUCKET = "faith-resource-previews";
+  const IMAGE_PREVIEW_LIMIT = 3;
+  const IMAGE_PREVIEW_MAX_BYTES = 5 * 1024 * 1024;
+  const AUDIO_PREVIEW_MAX_BYTES = 15 * 1024 * 1024;
   const TYPE_LABELS = { pdf: "기도문 PDF", audio: "기도 오디오북", card: "기도카드" };
   const STATUS_LABELS = { draft: "초안", published: "공개", archived: "보관" };
   const SALE_LABELS = { inquiry: "문의 안내", available: "온라인 구매", unavailable: "판매 비노출" };
@@ -270,7 +273,10 @@
       return;
     }
     const canReorder = isReorderMode();
-    resourceList.innerHTML = rows.map((resource, index) => {
+    const boardHead = `<div class="admin-resource-board-head" role="row">
+      <span role="columnheader">번호</span><span role="columnheader">업로드일</span><span role="columnheader">자료 유형</span><span role="columnheader">제목</span>
+    </div>`;
+    resourceList.innerHTML = boardHead + rows.map((resource, index) => {
       const product = resourceProduct(resource.id) || { sale_status: "inquiry", price_amount: null };
       const incomplete = isIncomplete(resource);
       const badgeClass = incomplete ? "incomplete" : resource.status;
@@ -281,14 +287,47 @@
         : resource.status === "archived"
           ? '<button type="button" data-action="recover">복구</button>'
           : `<button type="button" data-action="publish" ${incomplete ? "disabled" : ""}>공개</button>`;
+      const detailId = `admin-resource-detail-${resource.id}`;
       return `<article class="admin-resource-row" data-resource-id="${escapeHtml(resource.id)}" draggable="${String(canReorder)}">
-        <div class="admin-order-controls"><button type="button" data-move="up" aria-label="${escapeHtml(resource.title)} 위로 이동" ${!canReorder || index === 0 ? "disabled" : ""}>↑</button><button type="button" data-move="down" aria-label="${escapeHtml(resource.title)} 아래로 이동" ${!canReorder || index === rows.length - 1 ? "disabled" : ""}>↓</button></div>
-        <div class="admin-resource-copy"><span class="admin-badge admin-badge-${badgeClass}">${badgeText}</span><h3>${escapeHtml(resource.title)}</h3><p>${escapeHtml(resource.summary)}</p><div class="admin-resource-tags">${tags}</div></div>
-        <div class="admin-resource-meta"><span>${escapeHtml(TYPE_LABELS[resource.type])}</span><span>원본 ${resourceFiles(resource.id).length}개 · 미리보기 ${resourcePreviews(resource.id).length}개</span><span>수정 ${escapeHtml(formatDate(resource.updated_at))}</span></div>
-        <div class="admin-resource-meta"><strong>${escapeHtml(SALE_LABELS[product.sale_status] || "문의 안내")}</strong><span>${escapeHtml(formatPrice(product.price_amount))}</span></div>
-        <div class="admin-resource-actions"><button type="button" data-action="edit">수정</button><button type="button" data-action="preview">미리보기</button>${primaryAction}${resource.status !== "archived" ? '<button type="button" data-action="archive">보관</button>' : ""}<button type="button" data-action="delete">영구 삭제</button></div>
+        <button class="admin-resource-summary" type="button" data-resource-toggle aria-expanded="false" aria-controls="${escapeHtml(detailId)}" aria-label="${escapeHtml(resource.title)} 상세 정보 열기">
+          <span class="admin-resource-number">${rows.length - index}</span>
+          <time datetime="${escapeHtml(resource.created_at || resource.updated_at || "")}">${escapeHtml(formatDate(resource.created_at || resource.updated_at))}</time>
+          <span>${escapeHtml(TYPE_LABELS[resource.type])}</span>
+          <strong>${escapeHtml(resource.title)}</strong>
+        </button>
+        <div class="admin-resource-webzine" id="${escapeHtml(detailId)}" hidden>
+          <div class="admin-resource-copy"><span class="admin-badge admin-badge-${badgeClass}">${badgeText}</span><p>${escapeHtml(resource.summary)}</p><div class="admin-resource-tags">${tags}</div></div>
+          <dl class="admin-resource-detail-meta">
+            <div><dt>파일</dt><dd>원본 ${resourceFiles(resource.id).length}개 · 미리보기 ${resourcePreviews(resource.id).length}개</dd></div>
+            <div><dt>최근 수정</dt><dd>${escapeHtml(formatDate(resource.updated_at))}</dd></div>
+            <div><dt>판매 상태</dt><dd>${escapeHtml(SALE_LABELS[product.sale_status] || "문의 안내")} · ${escapeHtml(formatPrice(product.price_amount))}</dd></div>
+          </dl>
+          <div class="admin-resource-management">
+            <div class="admin-order-controls" aria-label="노출 순서 변경"><button type="button" data-move="up" aria-label="${escapeHtml(resource.title)} 위로 이동" ${!canReorder || index === 0 ? "disabled" : ""}>↑</button><button type="button" data-move="down" aria-label="${escapeHtml(resource.title)} 아래로 이동" ${!canReorder || index === rows.length - 1 ? "disabled" : ""}>↓</button></div>
+            <div class="admin-resource-actions"><button type="button" data-action="edit">수정</button><button type="button" data-action="preview">미리보기</button>${primaryAction}${resource.status !== "archived" ? '<button type="button" data-action="archive">보관</button>' : ""}<button type="button" data-action="delete">영구 삭제</button></div>
+          </div>
+        </div>
       </article>`;
     }).join("");
+  }
+
+  function toggleResourceDetails(row, toggle) {
+    const panel = row.querySelector(".admin-resource-webzine");
+    if (!panel) return;
+    const shouldOpen = toggle.getAttribute("aria-expanded") !== "true";
+    resourceList.querySelectorAll("[data-resource-toggle][aria-expanded='true']").forEach((openToggle) => {
+      if (openToggle === toggle) return;
+      const openRow = openToggle.closest("[data-resource-id]");
+      const openPanel = openRow?.querySelector(".admin-resource-webzine");
+      openToggle.setAttribute("aria-expanded", "false");
+      openToggle.setAttribute("aria-label", `${openRow?.querySelector(".admin-resource-summary strong")?.textContent || "자료"} 상세 정보 열기`);
+      openRow?.classList.remove("is-expanded");
+      if (openPanel) openPanel.hidden = true;
+    });
+    toggle.setAttribute("aria-expanded", String(shouldOpen));
+    toggle.setAttribute("aria-label", `${toggle.querySelector("strong")?.textContent || "자료"} 상세 정보 ${shouldOpen ? "닫기" : "열기"}`);
+    row.classList.toggle("is-expanded", shouldOpen);
+    panel.hidden = !shouldOpen;
   }
 
   function allKnownTags() {
@@ -317,6 +356,7 @@
     setStatus(uploadStatus, "");
     setEditorStep(1);
     syncPriceField();
+    syncPreviewUploadMode();
     renderTagSuggestions();
     renderEditorFiles();
     renderPublishChecklist();
@@ -355,15 +395,71 @@
       : '<span class="muted">등록된 키워드가 없습니다.</span>';
   }
 
+  function isAudioPreview(item) {
+    return /^audio\/(mpeg|mp3)$/i.test(String(item?.mime_type || "")) || /\.mp3$/i.test(String(item?.file_name || ""));
+  }
+
+  function isImagePreview(item) {
+    return /^image\/(jpeg|png|webp)$/i.test(String(item?.mime_type || "")) || /\.(jpe?g|png|webp)$/i.test(String(item?.file_name || ""));
+  }
+
+  function previewFilesValid({ requireAudio = false } = {}) {
+    const isAudio = form.elements.type.value === "audio";
+    if (isAudio) {
+      return (!requireAudio || state.editorPreviews.length === 1)
+        && state.editorPreviews.length <= 1
+        && state.editorPreviews.every((item) => isAudioPreview(item) && Number(item.file_size || 0) <= AUDIO_PREVIEW_MAX_BYTES);
+    }
+    return state.editorPreviews.length <= IMAGE_PREVIEW_LIMIT
+      && state.editorPreviews.every((item) => isImagePreview(item) && Number(item.file_size || 0) <= IMAGE_PREVIEW_MAX_BYTES);
+  }
+
+  function syncPreviewUploadMode() {
+    if (!previewInput || !form) return;
+    const isAudio = form.elements.type.value === "audio";
+    const title = document.querySelector("[data-preview-file-title]");
+    const description = document.querySelector("[data-preview-file-description]");
+    const picker = document.querySelector("[data-preview-file-picker]");
+    previewInput.accept = isAudio ? "audio/mpeg,audio/mp3,.mp3" : "image/jpeg,image/png,image/webp";
+    previewInput.multiple = !isAudio;
+    if (title) title.textContent = isAudio ? "공개 미리듣기 MP3" : "공개 미리보기 이미지";
+    if (description) description.textContent = isAudio
+      ? "원본과 분리된 미리듣기용 MP3 파일을 1개 등록합니다. 웹페이지에서 스트리밍으로 재생됩니다."
+      : "원본과 분리된 표지 또는 미리보기 이미지를 최대 3장 등록합니다.";
+    if (picker) picker.textContent = isAudio ? "미리듣기 MP3 선택 또는 드래그앤드롭" : "미리보기 이미지 선택 또는 드래그앤드롭";
+    renderPublishChecklist();
+  }
+
   function addFiles(kind, fileList) {
     const files = [...fileList];
     if (!files.length) return;
     const target = kind === "preview" ? state.editorPreviews : state.editorOriginals;
-    if (kind === "preview" && target.length + files.length > 3) {
-      setStatus(uploadStatus, "공개 미리보기 이미지는 최대 3장까지 등록할 수 있습니다.", true);
-      return;
+    if (kind === "preview") {
+      const isAudio = form.elements.type.value === "audio";
+      const maximum = isAudio ? 1 : IMAGE_PREVIEW_LIMIT;
+      if (target.length + files.length > maximum) {
+        setStatus(uploadStatus, isAudio ? "공개 미리듣기 MP3는 1개만 등록할 수 있습니다." : "공개 미리보기 이미지는 최대 3장까지 등록할 수 있습니다.", true);
+        return;
+      }
+      const invalidType = files.some((file) => isAudio
+        ? !(/^audio\/(mpeg|mp3)$/i.test(file.type) || /\.mp3$/i.test(file.name))
+        : !(/^image\/(jpeg|png|webp)$/i.test(file.type) || /\.(jpe?g|png|webp)$/i.test(file.name)));
+      if (invalidType) {
+        setStatus(uploadStatus, isAudio ? "미리듣기 파일은 MP3 형식만 등록할 수 있습니다." : "미리보기 파일은 JPG, PNG, WEBP 이미지만 등록할 수 있습니다.", true);
+        return;
+      }
+      const maximumBytes = isAudio ? AUDIO_PREVIEW_MAX_BYTES : IMAGE_PREVIEW_MAX_BYTES;
+      if (files.some((file) => file.size > maximumBytes)) {
+        setStatus(uploadStatus, isAudio ? "미리듣기 MP3는 15MB 이하로 등록해 주세요." : "미리보기 이미지는 파일당 5MB 이하로 등록해 주세요.", true);
+        return;
+      }
     }
-    files.forEach((file) => target.push({ key: makeKey(), source: "pending", file, file_name: file.name, file_size: file.size, mime_type: file.type || "application/octet-stream", status: "queued", progress: 0 }));
+    files.forEach((file) => {
+      const mimeType = kind === "preview" && form.elements.type.value === "audio" && /\.mp3$/i.test(file.name)
+        ? "audio/mpeg"
+        : file.type || "application/octet-stream";
+      target.push({ key: makeKey(), source: "pending", file, file_name: file.name, file_size: file.size, mime_type: mimeType, status: "queued", progress: 0 });
+    });
     renderEditorFiles();
     renderPublishChecklist();
   }
@@ -452,7 +548,7 @@
       { ready: tags.length > 0, label: "키워드 1개 이상" },
       { ready: originalFilesValid(), label: form.elements.type.value === "card" ? "기도카드 이미지 10~12장" : "자료 유형에 맞는 원본 파일" },
       { ready: saleStatus === "inquiry" || (saleStatus === "available" && price > 0 && state.workerReady), label: "판매 상태와 가격" },
-      { ready: state.editorPreviews.length <= 3, label: "공개 미리보기 최대 3장" }
+      { ready: previewFilesValid({ requireAudio: form.elements.type.value === "audio" }), label: form.elements.type.value === "audio" ? "공개 미리듣기 MP3 1개" : "공개 미리보기 이미지 3장 이하" }
     ];
     root.innerHTML = checks.map((check) => `<p class="${check.ready ? "is-ready" : ""}">${check.ready ? "완료" : "확인 필요"} · ${escapeHtml(check.label)}</p>`).join("");
   }
@@ -477,7 +573,10 @@
     if (tags.length > 12 || tags.some((tag) => tag.length > 40)) return "키워드는 12개 이하, 각 40자 이하로 입력해 주세요.";
     if (saleStatus === "available" && (!Number.isInteger(price) || price <= 0)) return "온라인 구매 자료의 가격을 입력해 주세요.";
     if (saleStatus === "available" && !state.workerReady) return "결제 Worker 연결이 확인된 뒤 온라인 구매 상태를 사용할 수 있습니다.";
-    if (state.editorPreviews.length > 3 || state.editorPreviews.some((item) => !/^image\/(jpeg|png|webp)$/.test(item.mime_type))) return "공개 미리보기는 JPG, PNG, WEBP 이미지 3장 이하로 등록해 주세요.";
+    if (!previewFilesValid()) return form.elements.type.value === "audio"
+      ? "공개 미리듣기는 15MB 이하 MP3 파일 1개로 등록해 주세요."
+      : "공개 미리보기는 파일당 5MB 이하 JPG, PNG, WEBP 이미지 3장 이하로 등록해 주세요.";
+    if (publishing && form.elements.type.value === "audio" && !previewFilesValid({ requireAudio: true })) return "기도 오디오북을 공개하려면 15MB 이하 미리듣기 MP3 파일 1개를 등록해 주세요.";
     if (publishing && form.elements.type.value === "card" && !originalFilesValid()) return "기도카드는 이미지 10~12장을 등록해야 공개할 수 있습니다.";
     if (publishing && !originalFilesValid()) return "자료 유형에 맞는 원본 파일 구성을 확인해 주세요.";
     if (publishing && saleStatus === "unavailable") return "판매 비노출 자료는 공개할 수 없습니다.";
@@ -568,10 +667,15 @@
         if (error) throw error;
       }
 
-      setStatus(uploadStatus, publishing ? "자료를 공개했습니다." : "자료를 저장했습니다.");
+      setStatus(uploadStatus, publishing ? "자료를 저장하고 공개했습니다." : "자료를 저장했습니다.");
       state.loading = false;
       await loadDashboard();
-      window.setTimeout(closeEditor, 350);
+      if (publishing) {
+        closeEditor();
+        setStatus(globalStatus, "자료를 저장하고 공개했습니다.");
+      } else {
+        window.setTimeout(closeEditor, 350);
+      }
     } catch (error) {
       setStatus(uploadStatus, `저장하지 못했습니다. ${error.message || "다시 시도해 주세요."}`, true);
     } finally {
@@ -765,7 +869,7 @@
   form?.elements.title.addEventListener("input", renderPublishChecklist);
   form?.elements.summary.addEventListener("input", renderPublishChecklist);
   form?.elements.description.addEventListener("input", renderPublishChecklist);
-  form?.elements.type.addEventListener("change", renderPublishChecklist);
+  form?.elements.type.addEventListener("change", syncPreviewUploadMode);
   form?.elements.saleStatus.addEventListener("change", syncPriceField);
   form?.elements.priceAmount.addEventListener("input", renderPublishChecklist);
 
@@ -804,6 +908,11 @@
   resourceList?.addEventListener("click", async (event) => {
     const row = event.target.closest("[data-resource-id]");
     if (!row) return;
+    const toggle = event.target.closest("[data-resource-toggle]");
+    if (toggle) {
+      toggleResourceDetails(row, toggle);
+      return;
+    }
     const moveButton = event.target.closest("[data-move]");
     if (moveButton) {
       try { await moveResource(row.dataset.resourceId, moveButton.dataset.move); }

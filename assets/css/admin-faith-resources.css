@@ -180,20 +180,66 @@
 .admin-list-hint { margin: 12px 0 0; color: var(--admin-muted); font-size: .82rem; }
 .admin-global-status { min-height: 22px; margin: 8px 0; }
 
-.admin-resource-list { border-top: 1px solid var(--admin-border); }
-.admin-resource-row {
-  min-height: 102px;
-  padding: 15px 8px;
-  display: grid;
-  grid-template-columns: 38px minmax(240px, 1.5fr) minmax(150px, .7fr) minmax(150px, .7fr) auto;
-  align-items: center;
-  gap: 14px;
-  border-bottom: 1px solid var(--admin-border);
-  background: transparent;
+.admin-resource-list {
+  overflow: hidden;
+  border: 1px solid var(--admin-border);
+  border-radius: 6px;
+  background: var(--admin-surface);
 }
-.admin-resource-row[draggable="true"] { cursor: grab; }
+.admin-resource-board-head {
+  padding: 10px 14px;
+  display: grid;
+  grid-template-columns: 64px 132px 150px minmax(220px, 1fr);
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid var(--admin-border);
+  color: var(--admin-muted);
+  background: #f0f3f0;
+  font-size: .74rem;
+  font-weight: 800;
+  letter-spacing: .04em;
+}
+.admin-resource-board-head span { text-align: center; }
+.admin-resource-row {
+  border-bottom: 1px solid var(--admin-border);
+  background: #fff;
+}
+.admin-resource-row:last-child { border-bottom: 0; }
+.admin-resource-row.is-expanded { background: #fbfcfa; }
+.admin-resource-row[draggable="true"] .admin-resource-summary { cursor: grab; }
 .admin-resource-row.is-dragging { opacity: .45; }
 .admin-resource-row.is-drop-target { box-shadow: inset 0 3px var(--admin-green); }
+.admin-resource-summary {
+  width: 100%;
+  min-height: 62px;
+  padding: 12px 14px;
+  display: grid;
+  grid-template-columns: 64px 132px 150px minmax(220px, 1fr);
+  align-items: center;
+  gap: 10px;
+  border: 0;
+  color: var(--admin-text);
+  background: transparent;
+  font: inherit;
+  text-align: center;
+  cursor: pointer;
+}
+.admin-resource-summary:hover { background: #f7faf7; }
+.admin-resource-summary:focus-visible { position: relative; z-index: 1; outline: 3px solid rgba(47, 105, 85, .28); outline-offset: -3px; }
+.admin-resource-summary strong { min-width: 0; font-size: .94rem; overflow-wrap: anywhere; }
+.admin-resource-summary time,
+.admin-resource-summary span { color: var(--admin-muted); font-size: .82rem; }
+.admin-resource-number { font-weight: 800; color: var(--admin-text) !important; }
+.admin-resource-summary[aria-expanded="true"] strong { color: var(--admin-green); }
+.admin-resource-webzine {
+  padding: 18px 20px 20px;
+  display: grid;
+  grid-template-columns: minmax(240px, 1.35fr) minmax(210px, .85fr);
+  gap: 18px 28px;
+  border-top: 1px solid var(--admin-border);
+  background: #fbfcfa;
+}
+.admin-resource-webzine[hidden] { display: none; }
 .admin-order-controls { display: grid; gap: 3px; }
 .admin-order-controls button,
 .admin-icon-button {
@@ -208,11 +254,15 @@
 }
 .admin-order-controls button:disabled { opacity: .3; cursor: default; }
 .admin-resource-copy { min-width: 0; }
-.admin-resource-copy h3 { margin: 5px 0; font-size: 1.02rem; overflow-wrap: anywhere; }
 .admin-resource-copy p { margin: 0; color: var(--admin-muted); font-size: .82rem; }
 .admin-resource-tags { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 5px; }
 .admin-resource-tags span { padding: 3px 7px; border-radius: 999px; color: #385449; background: #e7eee9; font-size: .72rem; }
-.admin-resource-meta { display: grid; gap: 6px; color: var(--admin-muted); font-size: .8rem; }
+.admin-resource-detail-meta { margin: 0; display: grid; gap: 8px; }
+.admin-resource-detail-meta div { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 10px; font-size: .8rem; }
+.admin-resource-detail-meta dt { color: var(--admin-muted); font-weight: 700; }
+.admin-resource-detail-meta dd { margin: 0; color: var(--admin-text); }
+.admin-resource-management { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.admin-resource-management .admin-order-controls { grid-auto-flow: column; }
 .admin-resource-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
 .admin-resource-actions button { min-height: 36px; padding: 7px 10px; border: 1px solid var(--admin-border); border-radius: 6px; background: #fff; cursor: pointer; }
 .admin-resource-actions button[data-action="delete"] { color: var(--admin-danger); }
@@ -279,9 +329,10 @@
   .admin-stat-grid { grid-template-columns: repeat(2, minmax(120px, 1fr)); }
   .admin-list-toolbar { grid-template-columns: 1fr 1fr; }
   .admin-search { grid-column: 1 / -1; }
-  .admin-resource-row { grid-template-columns: 38px minmax(0, 1fr) auto; }
-  .admin-resource-meta { display: none; }
-  .admin-resource-actions { grid-column: 2 / -1; justify-content: flex-start; }
+  .admin-resource-board-head,
+  .admin-resource-summary { grid-template-columns: 52px 112px 132px minmax(160px, 1fr); }
+  .admin-resource-webzine { grid-template-columns: 1fr; }
+  .admin-resource-management { grid-column: auto; }
 }
 
 @media (max-width: 640px) {
@@ -293,8 +344,17 @@
   .admin-workspace-head .button { width: 100%; }
   .admin-list-toolbar { grid-template-columns: 1fr; }
   .admin-search { grid-column: auto; }
-  .admin-resource-row { grid-template-columns: 34px minmax(0, 1fr); gap: 9px; }
-  .admin-resource-actions { grid-column: 1 / -1; padding-left: 43px; }
+  .admin-resource-board-head,
+  .admin-resource-summary { grid-template-columns: 32px 78px 86px minmax(90px, 1fr); gap: 5px; }
+  .admin-resource-board-head { padding: 9px 8px; font-size: .65rem; letter-spacing: 0; }
+  .admin-resource-summary { min-height: 58px; padding: 10px 8px; }
+  .admin-resource-summary strong { font-size: .82rem; }
+  .admin-resource-summary time,
+  .admin-resource-summary span { font-size: .72rem; }
+  .admin-resource-webzine { padding: 15px 12px 16px; }
+  .admin-resource-management { align-items: stretch; flex-direction: column; }
+  .admin-resource-management .admin-order-controls { align-self: flex-start; }
+  .admin-resource-actions { justify-content: flex-start; }
   .admin-editor { width: calc(100% - 12px); max-height: calc(100vh - 12px); }
   .admin-editor form { max-height: calc(100vh - 14px); }
   .admin-editor-head, .admin-editor-step, .admin-editor-footer { padding-left: 16px; padding-right: 16px; }

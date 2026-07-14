@@ -95,10 +95,10 @@
           <button class="admin-dropzone" type="button" data-file-picker="original">원본 파일 선택 또는 드래그앤드롭</button>
           <div class="admin-file-list" data-original-file-list></div>
         </div>
-        <div class="admin-file-section">
-          <div><strong>공개 미리보기 이미지</strong><p>원본과 분리된 표지 또는 미리보기 이미지를 최대 3장 등록합니다.</p></div>
+        <div class="admin-file-section" data-preview-file-section>
+          <div><strong data-preview-file-title>공개 미리보기 이미지</strong><p data-preview-file-description>원본과 분리된 표지 또는 미리보기 이미지를 최대 3장 등록합니다.</p></div>
           <input class="sr-only" type="file" name="previewFiles" multiple accept="image/jpeg,image/png,image/webp">
-          <button class="admin-dropzone" type="button" data-file-picker="preview">미리보기 이미지 선택 또는 드래그앤드롭</button>
+          <button class="admin-dropzone" type="button" data-file-picker="preview" data-preview-file-picker>미리보기 이미지 선택 또는 드래그앤드롭</button>
           <div class="admin-file-list admin-preview-list" data-preview-file-list></div>
         </div>
       </section>
