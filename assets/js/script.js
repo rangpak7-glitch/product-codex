@@ -1058,9 +1058,54 @@ if (visualPrayerCards) {
 
   function renderPublicPreviewGallery(resource, compact = false) {
     const previewLimit = compact ? 1 : resource.type === "card" ? 2 : 3;
-    const previews = (resource.previews || []).filter((item) => item.url).slice(0, previewLimit);
+    const previews = (resource.previews || []).filter((item) => item.url && (/^image\//.test(item.mime_type || "") || /\.(jpe?g|png|webp)$/i.test(item.file_name || item.object_path || ""))).slice(0, previewLimit);
     if (!previews.length) return "";
     return `<div class="resource-public-preview-grid${compact ? " is-compact" : ""}">${previews.map((item) => `<figure><img src="${escapeHtml(item.url)}" alt="${escapeHtml(item.alt_text || `${displayResourceTitle(resource)} 미리보기`)}" loading="lazy"><figcaption>${escapeHtml(item.alt_text || "공개 미리보기")}</figcaption></figure>`).join("")}</div>`;
+  }
+
+  function randomResourceFiles(files, count) {
+    const pool = [...files];
+    for (let index = pool.length - 1; index > 0; index -= 1) {
+      const values = new Uint32Array(1);
+      window.crypto.getRandomValues(values);
+      const target = values[0] % (index + 1);
+      [pool[index], pool[target]] = [pool[target], pool[index]];
+    }
+    return pool.slice(0, count);
+  }
+
+  async function createProtectedMediaPreviews(resource, files) {
+    const publicImageCount = (resource.previews || []).filter((item) => item.url && (/^image\//.test(item.mime_type || "") || /\.(jpe?g|png|webp)$/i.test(item.file_name || item.object_path || ""))).length;
+    const matchesType = (file, type) => {
+      const name = String(file.file_name || "");
+      const mime = String(file.mime_type || "");
+      if (type === "pdf") return mime === "application/pdf" || /\.pdf$/i.test(name);
+      if (type === "audio") return /^audio\//.test(mime) || /\.(mp3|m4a|wav|ogg)$/i.test(name);
+      return /^image\//.test(mime) || /\.(jpe?g|png|webp)$/i.test(name);
+    };
+    let selected = [];
+    if (resource.type === "pdf" && !publicImageCount) selected = files.filter((file) => matchesType(file, "pdf")).slice(0, 1);
+    if (resource.type === "audio") selected = files.filter((file) => matchesType(file, "audio")).slice(0, 1);
+    if (resource.type === "card" && publicImageCount < 2) selected = randomResourceFiles(files.filter((file) => matchesType(file, "card")), 2);
+    const signed = await Promise.all(selected.map(async (file) => {
+      const { data, error } = await client.storage.from(file.bucket_id || "faith-resources").createSignedUrl(file.object_path, 900);
+      return error || !data?.signedUrl ? null : { ...file, url: data.signedUrl };
+    }));
+    return signed.filter(Boolean);
+  }
+
+  function renderProtectedMediaPreview(resource, files) {
+    if (!files.length) return "";
+    if (resource.type === "pdf") {
+      const file = files[0];
+      const source = `${file.url}#page=1&view=FitH&toolbar=0&navpanes=0`;
+      return `<section class="resource-media-preview resource-media-preview-pdf" aria-label="PDF 첫 페이지 미리보기"><div class="resource-media-heading"><p class="eyebrow">PDF Preview</p><h3>첫 페이지 미리보기</h3></div><div class="resource-pdf-frame"><iframe src="${escapeHtml(source)}" title="${escapeHtml(displayResourceTitle(resource))} 첫 페이지" loading="lazy"></iframe></div></section>`;
+    }
+    if (resource.type === "audio") {
+      const file = files[0];
+      return `<section class="resource-media-preview resource-media-preview-audio" aria-label="오디오 미리듣기"><div class="resource-media-heading"><p class="eyebrow">Audio Preview</p><h3>미리듣기</h3><p>페이지에서 바로 재생하거나 원하는 위치로 이동해 들을 수 있습니다.</p></div><audio controls preload="metadata" controlslist="nodownload"><source src="${escapeHtml(file.url)}" type="${escapeHtml(file.mime_type || "audio/mpeg")}">브라우저에서 오디오 재생을 지원하지 않습니다.</audio></section>`;
+    }
+    return `<section class="resource-media-preview resource-media-preview-card" aria-label="무작위 기도카드 미리보기"><div class="resource-media-heading"><p class="eyebrow">Card Preview</p><h3>무작위 카드 2장 미리보기</h3></div><div class="resource-private-card-preview">${files.map((file, index) => `<figure><img src="${escapeHtml(file.url)}" alt="${escapeHtml(`${displayResourceTitle(resource)} 무작위 미리보기 ${index + 1}`)}" loading="lazy"><figcaption>기도카드 ${index + 1}</figcaption></figure>`).join("")}</div></section>`;
   }
 
   function renderHubCard(resource) {
@@ -1197,23 +1242,26 @@ if (visualPrayerCards) {
     const canReadOriginal = hasPurchasedResource(resource);
     let privateDetail = null;
     let privateFiles = [];
+    let protectedMediaPreviews = [];
 
     if (canReadOriginal && client) {
       const [detailResult, filesResult] = await Promise.all([
         client.from("faith_resource_private_details").select("description,preview_items,gallery_items").eq("resource_id", resource.id).maybeSingle(),
-        client.from("resource_files").select("id,file_name,mime_type,sort_order").eq("resource_id", resource.id).order("sort_order", { ascending: true })
+        client.from("resource_files").select("id,bucket_id,object_path,file_name,mime_type,sort_order").eq("resource_id", resource.id).order("sort_order", { ascending: true })
       ]);
       if (detailResult.error || filesResult.error) {
         setResourceActionStatus("구매 자료의 상세 정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.");
       } else {
         privateDetail = detailResult.data;
         privateFiles = filesResult.data || [];
+        protectedMediaPreviews = await createProtectedMediaPreviews(resource, privateFiles);
       }
     }
 
     detail.innerHTML = `<div class="resource-detail-content">
         <p class="eyebrow">${escapeHtml((typeMeta[resource.type] || typeMeta.all).title)}</p>
-        ${renderPublicPreviewGallery(resource)}
+        ${resource.type === "card" && protectedMediaPreviews.length ? "" : renderPublicPreviewGallery(resource)}
+        ${renderProtectedMediaPreview(resource, protectedMediaPreviews)}
         <p class="resource-detail-description">${escapeHtml(privateDetail?.description || resource.summary)}</p>
         <h3>${canReadOriginal ? "구매 자료 구성" : "공개 미리보기"}</h3>
         <ul class="compact-list">${(privateDetail?.preview_items || items).map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
