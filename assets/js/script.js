@@ -1057,6 +1057,7 @@ if (visualPrayerCards) {
   }
 
   function renderPublicPreviewGallery(resource, compact = false) {
+    if (compact && resource.type === "card") return "";
     const previewLimit = compact ? 1 : resource.type === "card" ? 2 : 3;
     const previews = (resource.previews || []).filter((item) => item.url && (/^image\//.test(item.mime_type || "") || /\.(jpe?g|png|webp)$/i.test(item.file_name || item.object_path || ""))).slice(0, previewLimit);
     if (!previews.length) return "";
