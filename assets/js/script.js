@@ -524,11 +524,16 @@ function videoCard(v, { inline = false, featured = false } = {}) {
   </article>`;
 }
 
-const videoData = window.VIDEOS || (typeof VIDEOS !== "undefined" ? VIDEOS : []);
+const rawVideoData = window.VIDEOS || (typeof VIDEOS !== "undefined" ? VIDEOS : []);
+const videoData = [...rawVideoData].sort((a, b) => String(b.publishedAt || b.publishedDate || "").localeCompare(String(a.publishedAt || a.publishedDate || "")));
+const featuredVideo = videoData.find((video) => video.isShort !== true);
+const homeVideoData = featuredVideo
+  ? [featuredVideo, ...videoData.filter((video) => video.videoId !== featuredVideo.videoId)]
+  : [];
 const videoList = $("#videoList");
 if (videoList) videoList.innerHTML = videoData.map((video) => videoCard(video, { inline: true })).join("");
 const homeVideos = $("#homeVideos");
-if (homeVideos) homeVideos.innerHTML = videoData.slice(0, 3).map(videoCard).join("");
+if (homeVideos) homeVideos.innerHTML = homeVideoData.slice(0, 3).map(videoCard).join("");
 
 (() => {
   const qtRoot = document.getElementById("homeQtPreview");
@@ -577,18 +582,14 @@ document.addEventListener("click", (event) => {
   if (!videoList) return;
   const sectionTab = new URLSearchParams(location.search).get("tab") === "posts" ? "posts" : "videos";
   document.querySelectorAll("[data-media-section-tab]").forEach((link) => link.classList.toggle("active", link.dataset.mediaSectionTab === sectionTab));
-  renderFeaturedVideo(videoData[0]);
+  renderFeaturedVideo(featuredVideo);
   const filters = [...document.querySelectorAll("[data-video-filter]")];
   const draw = (filter = "all") => {
-    const list = filter === "all" ? videoData : videoData.filter((video) => {
-      const source = [video.theme, ...(video.tags || [])].join(" ");
-      if (filter === "morning") return /아침/.test(source);
-      if (filter === "evening") return /저녁|밤|수면/.test(source);
-      if (filter === "meditation") return /큐티|묵상|말씀/.test(source);
-      if (filter === "prayer") return /기도|회복|위로/.test(source);
-      if (filter === "shorts") return video.isShort === true;
-      return true;
-    });
+    const list = filter === "videos"
+      ? videoData.filter((video) => video.isShort !== true)
+      : filter === "shorts"
+        ? videoData.filter((video) => video.isShort === true)
+        : videoData;
     videoList.innerHTML = list.length ? list.map((video) => videoCard(video, { inline: true })).join("") : '<div class="soft-empty-state"><h3>해당 분류의 영상은 아직 없습니다.</h3><p>전체 영상에서 다른 기도와 묵상을 살펴보세요.</p></div>';
   };
   filters.forEach((button) => button.addEventListener("click", () => {
@@ -615,7 +616,7 @@ function channelPostCard(post) {
     homeRoot.className = tab === "posts" ? "channel-post-grid" : "home-media-grid";
     homeRoot.innerHTML = tab === "posts"
       ? posts.slice(0, 2).map(channelPostCard).join("")
-      : videoData.slice(0, 3).map((video, index) => videoCard(video, { inline: true, featured: index === 0 })).join("");
+      : homeVideoData.slice(0, 3).map((video, index) => videoCard(video, { inline: true, featured: index === 0 })).join("");
   };
   tabs.forEach((button) => button.addEventListener("click", () => {
     tabs.forEach((item) => item.classList.toggle("is-active", item === button));

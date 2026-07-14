@@ -13,7 +13,11 @@ window.VIDEOS = [
       "말씀"
     ],
     "publishedDate": "2026-07-13",
-    "isShort": true
+    "publishedAt": "2026-07-13T14:45:24+00:00",
+    "isShort": true,
+    "shortsPlaylists": [
+      "하루 한 말씀, 인생 회복"
+    ]
   },
   {
     "id": "youtube-8s0DEMI1TY4",
@@ -29,7 +33,11 @@ window.VIDEOS = [
       "말씀"
     ],
     "publishedDate": "2026-07-12",
-    "isShort": true
+    "publishedAt": "2026-07-12T20:45:07+00:00",
+    "isShort": true,
+    "shortsPlaylists": [
+      "아침기도"
+    ]
   },
   {
     "id": "youtube-ycRPwAsDc6c",
@@ -46,7 +54,9 @@ window.VIDEOS = [
       "기도"
     ],
     "publishedDate": "2026-07-12",
-    "isShort": false
+    "publishedAt": "2026-07-12T14:15:33+00:00",
+    "isShort": false,
+    "shortsPlaylists": []
   },
   {
     "id": "youtube-FfHYTNumI-w",
@@ -63,7 +73,26 @@ window.VIDEOS = [
       "기도"
     ],
     "publishedDate": "2026-07-09",
-    "isShort": false
+    "publishedAt": "2026-07-09T14:15:34+00:00",
+    "isShort": false,
+    "shortsPlaylists": []
+  },
+  {
+    "id": "healing-night-01",
+    "videoId": "PwP1VXO7AxU",
+    "title": "상한 마음을 주님께 맡기는 밤기도",
+    "theme": "저녁기도",
+    "scripture": "시편 147편 3절",
+    "description": "상처와 피로를 주님께 맡기며 잠들기 전 마음을 정돈하는 밤기도입니다.",
+    "tags": [
+      "상처",
+      "치유",
+      "밤기도"
+    ],
+    "publishedDate": "2026-07-07",
+    "publishedAt": "2026-07-07T00:00:00Z",
+    "isShort": false,
+    "shortsPlaylists": []
   },
   {
     "id": "night-worry-01",
@@ -78,7 +107,9 @@ window.VIDEOS = [
       "저녁기도"
     ],
     "publishedDate": "2026-07-05",
-    "isShort": false
+    "publishedAt": "2026-07-05T13:45:21+00:00",
+    "isShort": false,
+    "shortsPlaylists": []
   },
   {
     "id": "father-rest-01",
@@ -93,7 +124,9 @@ window.VIDEOS = [
       "회복"
     ],
     "publishedDate": "2026-07-03",
-    "isShort": false
+    "publishedAt": "2026-07-03T13:45:28+00:00",
+    "isShort": false,
+    "shortsPlaylists": []
   },
   {
     "id": "wilderness-waiting-01",
@@ -108,7 +141,9 @@ window.VIDEOS = [
       "분별"
     ],
     "publishedDate": "2026-07-02",
-    "isShort": false
+    "publishedAt": "2026-07-02T13:45:22+00:00",
+    "isShort": false,
+    "shortsPlaylists": []
   },
   {
     "id": "youtube-2xYuMJwOXH0",
@@ -125,7 +160,11 @@ window.VIDEOS = [
       "말씀"
     ],
     "publishedDate": "2026-07-01",
-    "isShort": true
+    "publishedAt": "2026-07-01T20:45:03+00:00",
+    "isShort": true,
+    "shortsPlaylists": [
+      "아침기도"
+    ]
   },
   {
     "id": "youtube-wyHw2CxYHoE",
@@ -142,7 +181,11 @@ window.VIDEOS = [
       "기도"
     ],
     "publishedDate": "2026-07-01",
-    "isShort": true
+    "publishedAt": "2026-07-01T14:15:33+00:00",
+    "isShort": true,
+    "shortsPlaylists": [
+      "하루 한 말씀, 인생 회복"
+    ]
   },
   {
     "id": "youtube-uwc6N2BYEp0",
@@ -159,7 +202,11 @@ window.VIDEOS = [
       "기도"
     ],
     "publishedDate": "2026-06-30",
-    "isShort": true
+    "publishedAt": "2026-06-30T20:45:36+00:00",
+    "isShort": true,
+    "shortsPlaylists": [
+      "아침기도"
+    ]
   },
   {
     "id": "esther-decision-01",
@@ -174,7 +221,9 @@ window.VIDEOS = [
       "아침기도"
     ],
     "publishedDate": "2026-06-30",
-    "isShort": false
+    "publishedAt": "2026-06-30T13:45:09+00:00",
+    "isShort": false,
+    "shortsPlaylists": []
   },
   {
     "id": "youtube-yJ8kV8OPt78",
@@ -191,7 +240,11 @@ window.VIDEOS = [
       "말씀"
     ],
     "publishedDate": "2026-06-30",
-    "isShort": true
+    "publishedAt": "2026-06-30T13:45:01+00:00",
+    "isShort": true,
+    "shortsPlaylists": [
+      "저녁기도"
+    ]
   },
   {
     "id": "abraham-waiting-01",
@@ -206,7 +259,9 @@ window.VIDEOS = [
       "동행"
     ],
     "publishedDate": "2026-06-28",
-    "isShort": false
+    "publishedAt": "2026-06-28T13:45:11+00:00",
+    "isShort": false,
+    "shortsPlaylists": []
   },
   {
     "id": "psalm139-rest-01",
@@ -221,7 +276,9 @@ window.VIDEOS = [
       "하나님"
     ],
     "publishedDate": "2026-06-26",
-    "isShort": false
+    "publishedAt": "2026-06-26T13:55:08+00:00",
+    "isShort": false,
+    "shortsPlaylists": []
   },
   {
     "id": "youtube-Ofp_EVyHlEo",
@@ -238,22 +295,221 @@ window.VIDEOS = [
       "기도"
     ],
     "publishedDate": "2026-06-25",
-    "isShort": true
+    "publishedAt": "2026-06-25T13:15:18+00:00",
+    "isShort": true,
+    "shortsPlaylists": [
+      "하루 한 말씀, 인생 회복"
+    ]
   },
   {
-    "id": "healing-night-01",
-    "videoId": "PwP1VXO7AxU",
-    "title": "상한 마음을 주님께 맡기는 밤기도",
+    "id": "youtube-9RHmZmF8hnk",
+    "videoId": "9RHmZmF8hnk",
+    "title": "낮에 들은 그 한마디가 밤새 마음을 찌른다면..",
     "theme": "저녁기도",
     "scripture": "시편 147편 3절",
-    "description": "상처와 피로를 주님께 맡기며 잠들기 전 마음을 정돈하는 밤기도입니다.",
+    "description": "낮에 들었던 서운한 말 한마디가 밤이 되어도 마음에서 떠나지 않을 때가 있습니다. 시편 147편 3절은 하나님께서 상심한 자들을 고치시며 그들의 상처를 싸매신다고 말씀합니다. 오늘 밤, 사람의 말에 찔린 마음을 붙잡고 잠들지 말고 주님의 위로 안에서 쉬어가세요.",
     "tags": [
-      "상처",
-      "치유",
-      "밤기도"
+      "Shorts",
+      "저녁기도",
+      "위로",
+      "기도",
+      "말씀"
     ],
-    "publishedDate": "2026-07-07",
-    "isShort": false
+    "publishedDate": "2026-06-25",
+    "publishedAt": "2026-06-25T12:45:13+00:00",
+    "isShort": true,
+    "shortsPlaylists": [
+      "저녁기도"
+    ]
+  },
+  {
+    "id": "youtube-55IIYpizNE4",
+    "videoId": "55IIYpizNE4",
+    "title": "아침기도",
+    "theme": "아침기도",
+    "scripture": "잠언 16장 9절",
+    "description": "오늘 하루의 계획이 뜻대로 풀리지 않을 것 같아 마음이 막막한 아침이라면, 먼저 주님께 길을 맡겨 보세요. 잠언 16장 9절은 사람이 마음으로 자기 길을 계획할지라도 그 걸음을 인도하시는 분은 여호와라고 말씀합니다. 미래 불안과 계획 정체 속에서도 하나님이 오늘의 걸음을 인도하신다는 믿음으로 시작하는 아침기도입니다.",
+    "tags": [
+      "Shorts",
+      "아침기도",
+      "불안",
+      "기도",
+      "말씀"
+    ],
+    "publishedDate": "2026-06-24",
+    "publishedAt": "2026-06-24T19:45:04+00:00",
+    "isShort": true,
+    "shortsPlaylists": [
+      "아침기도"
+    ]
+  },
+  {
+    "id": "youtube-kJFC3M8OgZY",
+    "videoId": "kJFC3M8OgZY",
+    "title": "나이 든 모습이..",
+    "theme": "말씀묵상",
+    "scripture": "고린도후서 4장 16절",
+    "description": "어느 날 거울 속 달라진 내 모습을 보며 마음이 서글퍼질 때가 있습니다. 그러나 성경은 우리의 겉사람은 낡아지나 속사람은 날마다 새로워진다고 말합니다. 고린도후서 4장 16절의 말씀을 통해, 나이 들어가는 몸보다 더 깊이 새로워지는 영혼의 은혜를 묵상합니다.",
+    "tags": [
+      "Shorts",
+      "말씀묵상",
+      "회복",
+      "위로",
+      "기도"
+    ],
+    "publishedDate": "2026-06-24",
+    "publishedAt": "2026-06-24T14:15:10+00:00",
+    "isShort": true,
+    "shortsPlaylists": [
+      "하루 한 말씀, 인생 회복"
+    ]
+  },
+  {
+    "id": "youtube-vfj8tr3yJNM",
+    "videoId": "vfj8tr3yJNM",
+    "title": "사람 때문에 지친 밤이라면..",
+    "theme": "저녁기도",
+    "scripture": "시편 4편 8절",
+    "description": "상처 주는 말과 무심한 태도 때문에 밤이 되어도 마음이 쉬지 못할 때가 있습니다. 착하게 대했을 뿐인데 만만하게 여겨진 것 같아 속상한 밤, 시편 4편 8절의 말씀처럼 하나님 안에서 평안히 눕고 잘 수 있기를 기도합니다. 오늘 밤, 사람의 말보다 주님의 보호 안에서 마음을 쉬게 하세요.",
+    "tags": [
+      "Shorts",
+      "저녁기도",
+      "평안",
+      "기도",
+      "말씀"
+    ],
+    "publishedDate": "2026-06-24",
+    "publishedAt": "2026-06-24T10:45:28+00:00",
+    "isShort": true,
+    "shortsPlaylists": [
+      "저녁기도"
+    ]
+  },
+  {
+    "id": "youtube-mUE7PEJlnlw",
+    "videoId": "mUE7PEJlnlw",
+    "title": "평생 참기만 했던 당신, 오늘 아침엔 '이것'부터 하세요.",
+    "theme": "아침기도",
+    "scripture": "",
+    "description": "남을 배려하느라 정작 내 마음이 무너지는 줄도 몰랐던 당신에게 건네는 따뜻한 아침 기도입니다.",
+    "tags": [
+      "Shorts",
+      "아침기도",
+      "평안",
+      "회복",
+      "위로"
+    ],
+    "publishedDate": "2026-06-23",
+    "publishedAt": "2026-06-23T20:45:30+00:00",
+    "isShort": true,
+    "shortsPlaylists": [
+      "아침기도"
+    ]
+  },
+  {
+    "id": "youtube-hIt6w-vk-o8",
+    "videoId": "hIt6w-vk-o8",
+    "title": "열심히 사느라 영혼까지 지친 당신에게..",
+    "theme": "저녁기도",
+    "scripture": "마태복음 11장 28절",
+    "description": "세상의 무게와 관계의 상처를 홀로 버텨내느라 지쳐 계시는 당신의 마음을 신실하신 주님의 약속 앞으로 인도합니다.",
+    "tags": [
+      "Shorts",
+      "저녁기도",
+      "평안",
+      "회복",
+      "위로"
+    ],
+    "publishedDate": "2026-06-23",
+    "publishedAt": "2026-06-23T11:15:26+00:00",
+    "isShort": true,
+    "shortsPlaylists": [
+      "저녁기도"
+    ]
+  },
+  {
+    "id": "youtube-Cz4j83dJ1Ko",
+    "videoId": "Cz4j83dJ1Ko",
+    "title": "돈 걱정이 들때 듣는 기적의 말씀",
+    "theme": "아침기도",
+    "scripture": "열왕기상 17장 14절",
+    "description": "치솟는 물가와 팍팍한 살림살이 속에서 오늘 아침도 무거운 마음으로 시작하셨나요?",
+    "tags": [
+      "Shorts",
+      "아침기도",
+      "불안",
+      "평안",
+      "가정"
+    ],
+    "publishedDate": "2026-06-21",
+    "publishedAt": "2026-06-21T09:47:27+00:00",
+    "isShort": true,
+    "shortsPlaylists": [
+      "하루 한 말씀, 인생 회복"
+    ]
+  },
+  {
+    "id": "youtube-XL_07hG0zOM",
+    "videoId": "XL_07hG0zOM",
+    "title": "자녀 걱정으로 잠 못 드는 어머니께",
+    "theme": "저녁기도",
+    "scripture": "시편 121편 8절",
+    "description": "다 키워놓으면 걱정이 끝날 줄 알았습니다.하지만 자녀가 나이가 들어도, 엄마의 마음은 늘 물가에 내놓은 아이 같기만 합니다.오늘도 내 눈이 닿지 않는 곳에서 애쓰고 있을 자녀 생각에 한숨 짓고 계시나요?\"여호와께서 너의 출입을 지금부터 영원까지 지키시리로다.\" (시편 121:8)내 힘으로는 다 지킬 수 없는 자녀의 앞길, 불꽃 같은 눈동자로 지키시는 하나님께 오늘 밤은 온전히 맡겨드리고 평안을 선택하세요.지금도 자녀를 위해 눈",
+    "tags": [
+      "Shorts",
+      "저녁기도",
+      "평안",
+      "자녀",
+      "위로"
+    ],
+    "publishedDate": "2026-06-20",
+    "publishedAt": "2026-06-20T10:25:50+00:00",
+    "isShort": true,
+    "shortsPlaylists": [
+      "하루 한 말씀, 인생 회복"
+    ]
+  },
+  {
+    "id": "youtube-pPaOhpvb-PU",
+    "videoId": "pPaOhpvb-PU",
+    "title": "오늘 하루도 참 애쓰신 당신에게 보냅니다 🕊️ | 마태복음 11:28",
+    "theme": "저녁기도",
+    "scripture": "마태복음 11장 28절",
+    "description": "오늘 하루도 참 애쓰셨습니다.",
+    "tags": [
+      "Shorts",
+      "저녁기도",
+      "평안",
+      "위로",
+      "기도"
+    ],
+    "publishedDate": "2026-06-19",
+    "publishedAt": "2026-06-19T22:39:59+00:00",
+    "isShort": true,
+    "shortsPlaylists": [
+      "하루 한 말씀, 인생 회복"
+    ]
+  },
+  {
+    "id": "youtube-0dRLs7lUZe4",
+    "videoId": "0dRLs7lUZe4",
+    "title": "인생 회복을 위한 성경 구절(이사야 40장 31절) #기도",
+    "theme": "저녁기도",
+    "scripture": "이사야 40장 31절",
+    "description": "#기도 #잠자며듣는기도",
+    "tags": [
+      "Shorts",
+      "저녁기도",
+      "불안",
+      "평안",
+      "자녀"
+    ],
+    "publishedDate": "2026-06-19",
+    "publishedAt": "2026-06-19T15:09:42+00:00",
+    "isShort": true,
+    "shortsPlaylists": [
+      "하루 한 말씀, 인생 회복"
+    ]
   }
 ].map((video) => ({
   ...video,

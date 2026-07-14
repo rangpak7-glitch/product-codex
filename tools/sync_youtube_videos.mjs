@@ -5,8 +5,12 @@ import vm from "node:vm";
 const channelId = process.env.YOUTUBE_CHANNEL_ID || "UCFrsilNKJ8xcmn0RUrFz6XQ";
 const outputPath = resolve(import.meta.dirname, "..", "data", "videos.js");
 const feedUrl = `https://www.youtube.com/feeds/videos.xml?channel_id=${encodeURIComponent(channelId)}`;
-const shortsUrl = `https://www.youtube.com/channel/${encodeURIComponent(channelId)}/shorts`;
 const userAgent = "Mozilla/5.0 (compatible; PrayerSpringVideoSync/1.0)";
+const shortsPlaylists = [
+  { title: "아침기도", id: "PLuSEbygGPaMhrkxuIbMatrxDjC9Uxmnvr" },
+  { title: "저녁기도", id: "PLuSEbygGPaMiScyBR1TOLb7ZAuov7cX-E" },
+  { title: "하루 한 말씀, 인생 회복", id: "PLuSEbygGPaMht5GW7sKoLYjpwFigkDeI-" }
+];
 
 async function fetchText(url, label) {
   const response = await fetch(url, {
@@ -51,13 +55,16 @@ function parseFeed(xml) {
       videoId: tagValue(entry, "yt:videoId"),
       title: tagValue(entry, "title"),
       description: tagValue(entry, "media:description"),
+      publishedAt: tagValue(entry, "published"),
       publishedDate: tagValue(entry, "published").slice(0, 10)
     };
   }).filter((video) => /^[A-Za-z0-9_-]{11}$/.test(video.videoId) && video.title);
 }
 
-function parseShortIds(html) {
-  return new Set([...html.matchAll(/"videoId":"([A-Za-z0-9_-]{11})"/g)].map((match) => match[1]));
+function mergeTags(tags, theme, isShort, text = "") {
+  const baseTags = tags?.length ? tags : inferTags(text, theme, isShort);
+  const withoutShorts = baseTags.filter((tag) => tag !== "Shorts");
+  return [...new Set([...(isShort ? ["Shorts"] : []), ...withoutShorts])].slice(0, 5);
 }
 
 function inferTheme(text) {
@@ -90,37 +97,60 @@ function firstDescriptionLine(description) {
     || "기도의샘물 유튜브에 게시된 말씀과 기도 영상입니다.";
 }
 
-function archiveRecord(video, shortIds) {
-  const isShort = shortIds.has(video.videoId) || video.isShort === true;
+function archiveRecord(video, shortIds, playlistNamesByVideoId) {
+  const knownPlaylistTitles = new Set(shortsPlaylists.map((playlist) => playlist.title));
+  const preservedPlaylists = (video.shortsPlaylists || []).filter((title) => knownPlaylistTitles.has(title));
+  const shortsPlaylistsForVideo = playlistNamesByVideoId.get(video.videoId) || preservedPlaylists;
+  const isShort = shortIds.has(video.videoId) || shortsPlaylistsForVideo.length > 0;
+  const theme = video.theme || inferTheme(video.title || "");
   return {
     id: video.id || `youtube-${video.videoId}`,
     videoId: video.videoId,
     title: video.title,
-    theme: video.theme || inferTheme(video.title || ""),
+    theme,
     scripture: video.scripture || "",
     description: video.description || "기도의샘물 유튜브에 게시된 말씀과 기도 영상입니다.",
-    tags: video.tags?.length
-      ? [...new Set([...(isShort ? ["Shorts"] : []), ...video.tags])].slice(0, 5)
-      : inferTags(video.title || "", video.theme || inferTheme(video.title || ""), isShort),
+    tags: mergeTags(video.tags, theme, isShort, video.title || ""),
     publishedDate: video.publishedDate || "",
-    isShort
+    publishedAt: video.publishedAt || (video.publishedDate ? `${video.publishedDate}T00:00:00Z` : ""),
+    isShort,
+    shortsPlaylists: shortsPlaylistsForVideo
   };
 }
 
 const existingSource = await readFile(outputPath, "utf8");
 const existing = loadExisting(existingSource);
 const existingByVideoId = new Map(existing.map((video) => [video.videoId, video]));
-const [feedXml, shortsHtml] = await Promise.all([
+const [feedXml, ...playlistFeedXmls] = await Promise.all([
   fetchText(feedUrl, "YouTube 채널 RSS"),
-  fetchText(shortsUrl, "YouTube Shorts 탭")
+  ...shortsPlaylists.map((playlist) => fetchText(
+    `https://www.youtube.com/feeds/videos.xml?playlist_id=${encodeURIComponent(playlist.id)}`,
+    `YouTube ${playlist.title} 재생목록 RSS`
+  ))
 ]);
 const feedVideos = parseFeed(feedXml);
-const shortIds = parseShortIds(shortsHtml);
+const playlistNamesByVideoId = new Map();
+const playlistVideos = playlistFeedXmls.flatMap((xml, index) => {
+  const playlist = shortsPlaylists[index];
+  const videos = parseFeed(xml);
+  if (!videos.length) throw new Error(`${playlist.title} 재생목록이 비어 있어 기존 파일을 유지합니다.`);
+  videos.forEach((video) => {
+    const names = playlistNamesByVideoId.get(video.videoId) || [];
+    playlistNamesByVideoId.set(video.videoId, [...new Set([...names, playlist.title])]);
+  });
+  return videos;
+});
+const shortIds = new Set(playlistNamesByVideoId.keys());
 
 if (!feedVideos.length) throw new Error("공개 영상 데이터를 찾지 못해 기존 파일을 유지합니다.");
-if (!shortIds.size) throw new Error("Shorts 영상 ID를 찾지 못해 기존 파일을 유지합니다.");
+if (!shortIds.size) throw new Error("Shorts 재생목록 영상을 찾지 못해 기존 파일을 유지합니다.");
 
-const currentRecords = feedVideos.map((video) => {
+const mergedFeedVideos = new Map(feedVideos.map((video) => [video.videoId, video]));
+playlistVideos.forEach((video) => {
+  if (!mergedFeedVideos.has(video.videoId)) mergedFeedVideos.set(video.videoId, video);
+});
+
+const currentRecords = [...mergedFeedVideos.values()].map((video) => {
   const previous = existingByVideoId.get(video.videoId) || {};
   const isShort = shortIds.has(video.videoId);
   const text = `${video.title} ${video.description}`;
@@ -132,19 +162,21 @@ const currentRecords = feedVideos.map((video) => {
     theme,
     scripture: previous.scripture || inferScripture(text),
     description: previous.description || firstDescriptionLine(video.description),
-    tags: previous.tags?.length
-      ? [...new Set([...(isShort ? ["Shorts"] : []), ...previous.tags])].slice(0, 5)
-      : inferTags(text, theme, isShort),
+    tags: mergeTags(previous.tags, theme, isShort, text),
     publishedDate: video.publishedDate,
-    isShort
+    publishedAt: video.publishedAt,
+    isShort,
+    shortsPlaylists: playlistNamesByVideoId.get(video.videoId) || []
   };
 });
 
 const currentIds = new Set(currentRecords.map((video) => video.videoId));
 const archiveRecords = existing
   .filter((video) => /^[A-Za-z0-9_-]{11}$/.test(video.videoId) && !currentIds.has(video.videoId))
-  .map((video) => archiveRecord(video, shortIds));
-const records = [...currentRecords, ...archiveRecords].slice(0, 60);
+  .map((video) => archiveRecord(video, shortIds, playlistNamesByVideoId));
+const records = [...currentRecords, ...archiveRecords]
+  .sort((a, b) => String(b.publishedAt || b.publishedDate).localeCompare(String(a.publishedAt || a.publishedDate)))
+  .slice(0, 60);
 
 if (new Set(records.map((video) => video.videoId)).size !== records.length) throw new Error("중복 영상 ID가 있습니다.");
 if (!records.some((video) => video.isShort)) throw new Error("Shorts로 분류된 영상이 없어 기존 파일을 유지합니다.");
@@ -159,5 +191,5 @@ if (output === existingSource) {
   console.log("YouTube 영상 데이터가 이미 최신입니다.");
 } else {
   await writeFile(outputPath, output, "utf8");
-  console.log(`YouTube 영상 ${records.length}개를 갱신했습니다. Shorts ${records.filter((video) => video.isShort).length}개를 포함합니다.`);
+  console.log(`YouTube 영상 ${records.length}개를 갱신했습니다. 3개 재생목록의 Shorts ${records.filter((video) => video.isShort).length}개를 포함합니다.`);
 }
