@@ -1293,6 +1293,16 @@ if (visualPrayerCards) {
     trackFaithEvent("resource_detail_view", { resource_id: resource.id, product_id: productForResource(resource).id });
   }
 
+  async function restoreRequestedResourceDetail() {
+    const requestedResource = new URLSearchParams(window.location.search).get("resource");
+    if (!requestedResource) return;
+    const resource = resources.find((item) => item.id === requestedResource);
+    if (!resource) return;
+    const card = [...listRoot.querySelectorAll("[data-resource-id]")].find((item) => item.dataset.resourceId === resource.id);
+    if (card?.classList.contains("is-expanded")) return;
+    await openResourceDetail(resource);
+  }
+
   async function downloadResource(resourceId) {
     const resource = resources.find((item) => item.id === resourceId);
     if (!resource) return;
@@ -1419,11 +1429,13 @@ if (visualPrayerCards) {
     viewer = await loadViewer();
     await refreshEntitlements();
     renderAll();
+    await restoreRequestedResourceDetail();
   });
 
   window.addEventListener("faith-auth-ready", async () => {
     await refreshEntitlements();
     renderAll();
+    await restoreRequestedResourceDetail();
   });
 
   (async () => {
@@ -1441,9 +1453,7 @@ if (visualPrayerCards) {
     if (searchInput) searchInput.value = searchQuery;
     await refreshEntitlements();
     renderAll();
-    const requestedResource = new URLSearchParams(window.location.search).get("resource");
-    const resource = resources.find((item) => item.id === requestedResource);
-    if (resource) await openResourceDetail(resource);
+    await restoreRequestedResourceDetail();
   })();
 })();
 
