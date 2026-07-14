@@ -1,5 +1,26 @@
 window.VIDEOS = [
   {
+    "id": "youtube-3ooYlQWYsck",
+    "videoId": "3ooYlQWYsck",
+    "title": "어제의 실패가 무거운 아침｜예레미야애가 3:22-23",
+    "theme": "아침기도",
+    "scripture": "예레미야애가 3장 22-23절",
+    "description": "🌿 기도의샘물 웹페이지: https://product-codex-90j.pages.dev/",
+    "tags": [
+      "Shorts",
+      "아침기도",
+      "회복",
+      "기도",
+      "말씀"
+    ],
+    "publishedDate": "2026-07-14",
+    "publishedAt": "2026-07-14T20:50:33+00:00",
+    "isShort": true,
+    "shortsPlaylists": [
+      "아침기도"
+    ]
+  },
+  {
     "id": "youtube-kB1bqZls2L0",
     "videoId": "kB1bqZls2L0",
     "title": "남과 비교할수록 부족해 보일 때｜시편 23:1",
