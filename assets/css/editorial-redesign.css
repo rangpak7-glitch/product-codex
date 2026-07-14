@@ -1300,7 +1300,7 @@ body[data-site-page="prayer-cards"] #faithResourceFilterStatus[hidden] { display
   border-radius: 8px;
   background: #fffefb;
   box-shadow: 0 8px 22px rgba(23,35,31,.05);
-  cursor: pointer;
+  cursor: default;
   transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
 }
 .resource-board-list .faith-resource-card:hover,
@@ -1358,6 +1358,42 @@ body[data-site-page="prayer-cards"] #faithResourceFilterStatus[hidden] { display
 }
 .resource-card-open { display: inline-flex; gap: 8px; margin-top: 18px; color: #20372f; font-weight: 800; }
 .resource-card-open span { color: #826039; }
+.resource-card-open {
+  min-height: 40px;
+  padding: 0;
+  align-items: center;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+}
+.resource-card-open:focus-visible { outline: 2px solid #826039; outline-offset: 4px; }
+.faith-resource-card.is-expanded,
+.faith-resource-card.is-expanded:hover { transform: none; border-color: #826039; }
+.resource-inline-detail[hidden] { display: none; }
+.resource-inline-detail {
+  margin-top: 22px;
+  padding-top: 22px;
+  border-top: 1px solid #d9d1c5;
+}
+.resource-inline-detail .resource-detail-content {
+  max-width: none;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+.resource-inline-detail .resource-detail-description { margin: 0; color: #4f5b55; line-height: 1.8; }
+.resource-inline-detail .resource-detail-loading { margin: 0; color: #59645f; font-weight: 700; }
+.resource-type-card .resource-inline-detail .resource-public-preview-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  max-width: 720px;
+}
+.resource-type-card .resource-inline-detail .resource-public-preview-grid img {
+  aspect-ratio: 4 / 5;
+  object-fit: contain;
+  background: #f6f2ea;
+}
 .resource-card-commerce { display: none !important; }
 .resource-empty-state.resource-coming-soon {
   min-height: 120px;
@@ -1435,6 +1471,7 @@ body[data-site-page="prayer-cards"] #faithResourceFilterStatus[hidden] { display
   .resource-hub-samples { gap: 28px; }
   .resource-public-preview-grid { grid-template-columns: 1fr; }
   .resource-public-preview-grid.is-compact { grid-template-columns: minmax(0, 140px); }
+  .resource-type-card .resource-inline-detail .resource-public-preview-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .resource-board-head.resource-benefit-head { margin-bottom: 10px; padding-bottom: 10px; }
 }
 

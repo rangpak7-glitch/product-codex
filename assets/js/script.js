@@ -5,7 +5,7 @@ const $ = (selector) => document.querySelector(selector);
   if (window.__faithMemberScriptLoaded) return;
   window.__faithMemberScriptLoaded = true;
   const script = document.createElement("script");
-  script.src = new URL("assets/js/faith-member.js?v=20260711-account", window.location.href).href;
+  script.src = new URL("assets/js/faith-member.js?v=20260714-account-bbs", window.location.href).href;
   script.async = true;
   document.head.append(script);
 })();
@@ -64,7 +64,7 @@ function normalizeSiteCategoryNav() {
     {
       id: "resources",
       title: "신앙자료",
-      href: "prayer-cards.html",
+      href: "prayer-cards?type=all",
       pages: ["prayer-cards.html", "premium-pdf.html", "prayer-audiobook.html", "prayer-card-library.html", "prayer-challenge.html"],
       links: [
         ["premium-pdf.html", "기도문 PDF"],
@@ -91,6 +91,7 @@ function normalizeSiteCategoryNav() {
       const groupActive = group === activeGroup;
       const panelId = `site-nav-panel-${group.id}`;
       const hasChildren = group.links.length > 0;
+      const directLink = group.id === "resources";
       const parentAttributes = hasChildren
         ? ` aria-haspopup="true" aria-expanded="false" aria-controls="${panelId}"`
         : "";
@@ -101,7 +102,7 @@ function normalizeSiteCategoryNav() {
           }).join("")}</div>`
         : "";
       return `<div class="site-nav-dropdown${groupActive ? " active" : ""}" data-nav-dropdown>
-        <a class="site-nav-parent-link${groupActive ? " active" : ""}" href="${group.href}" data-nav-section="${group.id}"${groupActive ? ' aria-current="page"' : ""}${parentAttributes}>${group.title}${hasChildren ? '<span class="site-nav-chevron" aria-hidden="true">⌄</span>' : ""}</a>
+        <a class="site-nav-parent-link${groupActive ? " active" : ""}" href="${group.href}" data-nav-section="${group.id}"${directLink ? " data-nav-direct" : ""}${groupActive ? ' aria-current="page"' : ""}${parentAttributes}>${group.title}${hasChildren ? '<span class="site-nav-chevron" aria-hidden="true">⌄</span>' : ""}</a>
         ${panel}
       </div>`;
     }).join("")}</div>
@@ -169,6 +170,7 @@ normalizeSiteCategoryNav();
     dropdown.addEventListener("focusout", () => scheduleClose(dropdown));
 
     trigger?.addEventListener("click", (event) => {
+      if (trigger.hasAttribute("data-nav-direct")) return;
       event.preventDefault();
       if (dropdown.classList.contains("is-open") && dropdown.dataset.openMethod === "hover") {
         dropdown.dataset.openMethod = "click";
@@ -179,6 +181,7 @@ normalizeSiteCategoryNav();
       setOpen(dropdown, nextOpen, { method: "click" });
     });
     trigger?.addEventListener("keydown", (event) => {
+      if (trigger.hasAttribute("data-nav-direct")) return;
       if (event.key === "Enter") {
         event.preventDefault();
         const nextOpen = !dropdown.classList.contains("is-open");
@@ -882,12 +885,13 @@ if (visualPrayerCards) {
   let resourceLoadFailed = false;
   let viewer = null;
   let entitledResourceIds = new Set();
+  const resourceRoute = (window.location.pathname.split("/").pop() || "").replace(/\.html$/i, "");
   const resourcePageType = {
-    "premium-pdf.html": "pdf",
-    "prayer-audiobook.html": "audio",
-    "prayer-card-library.html": "card"
-  }[window.location.pathname.split("/").pop() || ""];
-  const requestedType = new URLSearchParams(window.location.search).get("type") || resourcePageType || "all";
+    "premium-pdf": "pdf",
+    "prayer-audiobook": "audio",
+    "prayer-card-library": "card"
+  }[resourceRoute];
+  const requestedType = resourcePageType || new URLSearchParams(window.location.search).get("type") || "all";
   let activeType = Object.hasOwn(typeMeta, requestedType) ? requestedType : "pdf";
   let searchQuery = new URLSearchParams(window.location.search).get("search") || "";
   const activeTags = new Set();
@@ -1014,15 +1018,14 @@ if (visualPrayerCards) {
   }
 
   function renderHubAccessPanel(resource) {
-    const fileLabel = resource.type === "audio" ? "MP3 파일" : resource.type === "card" ? "카드 전체 보기" : "PDF 파일";
     const product = productForResource(resource);
     if (hasPurchasedResource(resource)) {
-      return `<div class="resource-access-panel"><p>구매한 자료입니다. 내 자료실에서도 다시 열 수 있습니다.</p><button class="button primary" type="button" data-resource-download="${escapeHtml(resource.id)}">${escapeHtml(fileLabel)} 열기</button></div>`;
+      return `<div class="resource-access-panel"><p>구매한 자료입니다. 내 자료실에서도 다시 다운로드할 수 있습니다.</p><button class="button primary" type="button" data-resource-download="${escapeHtml(resource.id)}">자료 다운로드</button></div>`;
     }
     if (product.salesStatus === "free") {
       const publicUrl = resource.downloadUrl || resource.download_url || resource.publicDownloadUrl || "";
       const action = publicUrl
-        ? `<a class="button primary" href="${escapeHtml(publicUrl)}">${escapeHtml(fileLabel)} 열기</a>`
+        ? `<a class="button primary" href="${escapeHtml(publicUrl)}" download>자료 다운로드</a>`
         : `<button class="button secondary" type="button" data-resource-detail="${escapeHtml(resource.id)}">자료 구성 보기</button>`;
       return `<div class="resource-access-panel"><p>공개 자료입니다. 필요한 때에 다시 꺼내 읽을 수 있습니다.</p>${action}</div>`;
     }
@@ -1054,7 +1057,8 @@ if (visualPrayerCards) {
   }
 
   function renderPublicPreviewGallery(resource, compact = false) {
-    const previews = (resource.previews || []).filter((item) => item.url).slice(0, compact ? 1 : 3);
+    const previewLimit = compact ? 1 : resource.type === "card" ? 2 : 3;
+    const previews = (resource.previews || []).filter((item) => item.url).slice(0, previewLimit);
     if (!previews.length) return "";
     return `<div class="resource-public-preview-grid${compact ? " is-compact" : ""}">${previews.map((item) => `<figure><img src="${escapeHtml(item.url)}" alt="${escapeHtml(item.alt_text || `${displayResourceTitle(resource)} 미리보기`)}" loading="lazy"><figcaption>${escapeHtml(item.alt_text || "공개 미리보기")}</figcaption></figure>`).join("")}</div>`;
   }
@@ -1066,15 +1070,16 @@ if (visualPrayerCards) {
     const badge = product.salesStatus === "available" && product.priceKrw
       ? formatKrw(product.priceKrw)
       : "자료 문의";
-    return `<article class="faith-resource-card resource-type-${escapeHtml(resource.type)}" data-resource-id="${escapeHtml(resource.id)}" data-resource-detail="${escapeHtml(resource.id)}" role="button" tabindex="0" aria-label="${escapeHtml(displayResourceTitle(resource))} 자료 구성 보기">
+    return `<article class="faith-resource-card resource-type-${escapeHtml(resource.type)}" data-resource-id="${escapeHtml(resource.id)}">
       ${renderPublicPreviewGallery(resource, true)}
       <div class="resource-card-copy">
         <div class="resource-card-heading"><p class="eyebrow">${escapeHtml(meta?.title || "신앙자료")}</p><span class="resource-member-badge">${escapeHtml(badge)}</span></div>
         <h3>${escapeHtml(displayResourceTitle(resource))}</h3>
         <p class="resource-summary">${escapeHtml(resource.summary)}</p>
         <div class="resource-card-tags" aria-label="자료 키워드">${tags}</div>
-        <span class="resource-card-open" aria-hidden="true">자료 열기 <span>→</span></span>
+        <button class="resource-card-open" type="button" data-resource-detail="${escapeHtml(resource.id)}" aria-expanded="false">자료 열기 <span aria-hidden="true">→</span></button>
       </div>
+      <div class="resource-inline-detail" data-resource-inline-detail hidden></div>
     </article>`;
   }
 
@@ -1157,11 +1162,37 @@ if (visualPrayerCards) {
     window.addEventListener("faith-auth-ready", () => window.FaithAuth?.open(viewer ? "login" : "signup"), { once: true });
   }
 
+  function closeInlineResourceDetails(exceptCard = null) {
+    listRoot.querySelectorAll(".faith-resource-card.is-expanded").forEach((card) => {
+      if (card === exceptCard) return;
+      card.classList.remove("is-expanded");
+      const detail = card.querySelector("[data-resource-inline-detail]");
+      const trigger = card.querySelector("[data-resource-detail]");
+      if (detail) {
+        detail.hidden = true;
+        detail.innerHTML = "";
+      }
+      trigger?.setAttribute("aria-expanded", "false");
+    });
+  }
+
   async function openResourceDetail(resource) {
-    const title = $("#cardThreadTitle");
-    const description = $("#cardThreadDescription");
-    const gallery = $("#cardThreadGallery");
-    if (!threadPanel) return;
+    const card = [...listRoot.querySelectorAll("[data-resource-id]")].find((item) => item.dataset.resourceId === resource.id);
+    const detail = card?.querySelector("[data-resource-inline-detail]");
+    const trigger = card?.querySelector("[data-resource-detail]");
+    if (!card || !detail || !trigger) return;
+    if (card.classList.contains("is-expanded")) {
+      closeInlineResourceDetails();
+      const closedUrl = new URL(window.location.href);
+      closedUrl.searchParams.delete("resource");
+      window.history.replaceState({}, "", closedUrl);
+      return;
+    }
+    closeInlineResourceDetails(card);
+    detail.hidden = false;
+    detail.innerHTML = '<p class="resource-detail-loading" role="status">자료 안내를 불러오고 있습니다.</p>';
+    card.classList.add("is-expanded");
+    trigger.setAttribute("aria-expanded", "true");
     const items = renderHubPreviewItems(resource);
     const canReadOriginal = hasPurchasedResource(resource);
     let privateDetail = null;
@@ -1180,25 +1211,21 @@ if (visualPrayerCards) {
       }
     }
 
-    if (title) title.textContent = displayResourceTitle(resource);
-    if (description) description.textContent = privateDetail?.description || resource.summary;
-    if (gallery) {
-      gallery.innerHTML = `<div class="resource-detail-content">
+    detail.innerHTML = `<div class="resource-detail-content">
         <p class="eyebrow">${escapeHtml((typeMeta[resource.type] || typeMeta.all).title)}</p>
         ${renderPublicPreviewGallery(resource)}
+        <p class="resource-detail-description">${escapeHtml(privateDetail?.description || resource.summary)}</p>
         <h3>${canReadOriginal ? "구매 자료 구성" : "공개 미리보기"}</h3>
         <ul class="compact-list">${(privateDetail?.preview_items || items).map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
         ${canReadOriginal && privateFiles.length ? `<div class="resource-owned-files"><strong>포함 파일</strong><ul>${privateFiles.map((file) => `<li>${escapeHtml(file.file_name)}</li>`).join("")}</ul></div>` : ""}
         ${!canReadOriginal ? `<p class="resource-locked-detail">상세 원문과 원본 파일 정보는 구매 후 확인할 수 있습니다.</p>` : ""}
         ${renderHubAccessPanel(resource)}
       </div>`;
-    }
-    threadPanel.hidden = false;
+    if (threadPanel) threadPanel.hidden = true;
     const url = new URL(window.location.href);
     url.searchParams.set("resource", resource.id);
     window.history.replaceState({}, "", url);
     trackFaithEvent("resource_detail_view", { resource_id: resource.id, product_id: productForResource(resource).id });
-    threadPanel.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   async function downloadResource(resourceId) {
@@ -1274,12 +1301,6 @@ if (visualPrayerCards) {
       renderAll();
       return;
     }
-    const detailButton = event.target.closest("[data-resource-detail]");
-    if (detailButton) {
-      const resource = resources.find((item) => item.id === detailButton.dataset.resourceDetail);
-      if (resource) openResourceDetail(resource).catch(() => setResourceActionStatus("자료 상세를 불러오지 못했습니다."));
-      return;
-    }
     const purchaseButton = event.target.closest("[data-product-purchase]");
     if (purchaseButton) {
       const productId = purchaseButton.dataset.productPurchase;
@@ -1292,14 +1313,19 @@ if (visualPrayerCards) {
     if (event.target.closest("[data-resource-inquiry]")) return;
     const downloadButton = event.target.closest("[data-resource-download]");
     if (downloadButton) return downloadResource(downloadButton.dataset.resourceDownload);
+    const detailButton = event.target.closest("[data-resource-detail]");
+    if (detailButton) {
+      const resource = resources.find((item) => item.id === detailButton.dataset.resourceDetail);
+      if (resource) openResourceDetail(resource).catch(() => setResourceActionStatus("자료 상세를 불러오지 못했습니다."));
+    }
   });
 
   listRoot.addEventListener("keydown", (event) => {
     if (event.key !== "Enter" && event.key !== " ") return;
-    const resourceCard = event.target.closest("[data-resource-detail]");
-    if (!resourceCard) return;
+    const detailButton = event.target.closest("[data-resource-detail]");
+    if (!detailButton) return;
     event.preventDefault();
-    const resource = resources.find((item) => item.id === resourceCard.dataset.resourceDetail);
+    const resource = resources.find((item) => item.id === detailButton.dataset.resourceDetail);
     if (resource) openResourceDetail(resource).catch(() => setResourceActionStatus("자료 상세를 불러오지 못했습니다."));
   });
 
@@ -1336,7 +1362,7 @@ if (visualPrayerCards) {
   });
 
   (async () => {
-    if (!new URLSearchParams(window.location.search).has("type")) {
+    if (resourcePageType || !new URLSearchParams(window.location.search).has("type")) {
       const url = new URL(window.location.href);
       url.searchParams.set("type", activeType);
       window.history.replaceState({}, "", url);

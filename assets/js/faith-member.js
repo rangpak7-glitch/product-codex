@@ -426,7 +426,25 @@
       open("login");
       throw new Error("로그인 후 구매한 자료를 다운로드할 수 있습니다.");
     }
-    return orderRequest(`/resources/${encodeURIComponent(normalizedResourceId)}/download`);
+    if (orderApiUrl()) return orderRequest(`/resources/${encodeURIComponent(normalizedResourceId)}/download`);
+
+    const client = await getClient();
+    const { data: files, error: fileError } = await client
+      .from("resource_files")
+      .select("bucket_id,object_path,file_name,sort_order")
+      .eq("resource_id", normalizedResourceId)
+      .order("sort_order", { ascending: true });
+    if (fileError || !files?.length) throw new Error("구매 권한 또는 다운로드할 파일을 확인하지 못했습니다.");
+
+    const downloads = [];
+    for (const file of files) {
+      const { data, error } = await client.storage
+        .from(file.bucket_id || "faith-resources")
+        .createSignedUrl(file.object_path, 300, { download: true });
+      if (error || !data?.signedUrl) throw new Error("다운로드 링크를 만들지 못했습니다. 잠시 후 다시 시도해 주세요.");
+      downloads.push({ url: data.signedUrl, fileName: file.file_name });
+    }
+    return { downloads, expiresIn: 300 };
   }
 
   function downloadEntries(download) {
@@ -453,6 +471,15 @@
   function friendlyDate(value) {
     if (!value) return "-";
     return new Intl.DateTimeFormat("ko-KR", { year: "numeric", month: "long", day: "numeric" }).format(new Date(value));
+  }
+
+  function shortDate(value) {
+    if (!value) return "-";
+    const date = new Date(value);
+    const year = String(date.getFullYear()).slice(-2);
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
   }
 
   function orderStatusText(order) {
@@ -534,13 +561,12 @@
     }
     root.innerHTML = `
       <section class="page-hero sub-hero account-hero"><p class="eyebrow">My Account</p><h1>내 프로필</h1><p>공개 게시글에는 닉네임만 표시되며, 이메일과 결제수단은 공개하지 않습니다.</p></section>
-      <section class="section account-grid">
+      <section class="section account-grid account-profile-grid">
         <article class="account-card"><p class="eyebrow">Profile</p><h2>기본 정보</h2><form data-profile-form class="faith-auth-form"><label>닉네임<input name="nickname" maxlength="16" minlength="2" required value="${escapeHtml(state.publicProfile?.nickname || "")}"></label><label>가입 이메일<input value="${escapeHtml(state.user.email || "")}" disabled></label><button class="button primary" type="submit">닉네임 저장</button><p class="form-message" data-profile-status></p></form></article>
         <article class="account-card"><p class="eyebrow">Security</p><h2>비밀번호 변경</h2><form data-password-form class="faith-auth-form"><label>현재 비밀번호<input name="currentPassword" type="password" autocomplete="current-password" required></label><label>새 비밀번호<input name="newPassword" type="password" minlength="8" autocomplete="new-password" required></label><button class="button secondary" type="submit">비밀번호 변경</button><button class="text-button" type="button" data-account-reset>재설정 메일 받기</button><p class="form-message" data-password-status></p></form></article>
-        <article class="account-card account-purchase-summary"><p class="eyebrow">My Resources</p><h2>내 구매 자료</h2><p>결제 완료한 신앙자료는 언제든 이곳에서 다시 확인하고 다운로드할 수 있습니다.</p><a class="button primary" href="prayer-cards.html">신앙자료 둘러보기</a><p class="form-message" data-order-status></p><p class="muted">구매와 환불 관련 문의는 문의하기에서 도와드립니다.</p></article>
       </section>
-      <section class="section account-content-section"><div class="section-heading-row"><div><p class="eyebrow">My Orders</p><h2>내 구매 자료와 결제 내역</h2></div><a class="button secondary" href="prayer-cards.html">신앙자료 보기</a></div><div class="account-history-grid"><div><h3>내 구매 자료</h3><div data-my-purchases class="account-list"></div></div><div><h3>결제 내역</h3><div data-my-orders class="account-list"></div></div></div></section>
-      <section class="section account-content-section"><div class="section-heading-row"><div><p class="eyebrow">My Community</p><h2>내가 작성한 글과 답글</h2></div><a class="button secondary" href="community.html">소통게시판 보기</a></div><div class="account-history-grid"><div><h3>내 게시글</h3><div data-my-posts class="account-list"></div></div><div><h3>내 답글</h3><div data-my-replies class="account-list"></div></div></div></section>`;
+      <section class="section account-content-section"><div class="section-heading-row"><div><p class="eyebrow">My Orders</p><h2>내 구매 자료와 결제 내역</h2></div><a class="button secondary" href="prayer-cards?type=all">신앙자료 보기</a></div><div class="account-bbs-wrap"><table class="account-bbs"><thead><tr><th>결제일자</th><th>자료 유형</th><th>자료 제목</th><th>결제 금액</th><th>상태</th></tr></thead><tbody data-my-orders></tbody></table></div><p class="form-message account-order-status" data-order-status role="status"></p></section>
+      <section class="section account-content-section"><div class="section-heading-row"><div><p class="eyebrow">My Community</p><h2>내가 작성한 글과 답글</h2></div><a class="button secondary" href="community.html">소통게시판 보기</a></div><div class="account-bbs-section"><h3>내 게시글</h3><div class="account-bbs-wrap"><table class="account-bbs"><thead><tr><th>일자</th><th>제목</th><th>게시글</th></tr></thead><tbody data-my-posts></tbody></table></div></div><div class="account-bbs-section"><h3>내 답글</h3><div class="account-bbs-wrap"><table class="account-bbs"><thead><tr><th>일자</th><th>원문 제목</th><th>답글 내용</th><th>게시글</th></tr></thead><tbody data-my-replies></tbody></table></div></div></section>`;
 
     root.querySelector("[data-profile-form]")?.addEventListener("submit", async (event) => {
       event.preventDefault();
@@ -576,50 +602,65 @@
   }
 
   async function renderAccountHistory(client, root) {
+    const previewPurchasedPdf = ["127.0.0.1", "localhost"].includes(window.location.hostname)
+      && new URLSearchParams(window.location.search).get("preview") === "purchased-pdf";
     const [posts, replies, orderResult] = await Promise.all([
       client.from("community_posts").select("id,title,category,created_at,status").eq("author_id", state.user.id).order("created_at", { ascending: false }).limit(10),
-      client.from("community_replies").select("id,body,created_at,status,post:community_posts(title)").eq("author_id", state.user.id).order("created_at", { ascending: false }).limit(10),
+      client.from("community_replies").select("id,body,created_at,status,post:community_posts(id,title)").eq("author_id", state.user.id).order("created_at", { ascending: false }).limit(10),
       loadMyOrders(client).then((data) => ({ data })).catch((error) => ({ error }))
     ]);
-    const renderList = (target, rows, renderer, empty) => {
+    const renderRows = (target, rows, renderer, empty, colspan) => {
       const element = root.querySelector(target);
-      if (element) element.innerHTML = rows?.length ? rows.map(renderer).join("") : `<p class="muted">${empty}</p>`;
+      if (element) element.innerHTML = rows?.length ? rows.map(renderer).join("") : `<tr><td class="account-bbs-empty" colspan="${colspan}">${empty}</td></tr>`;
     };
-    renderList("[data-my-posts]", posts.data, (post) => `<article><span>${friendlyDate(post.created_at)} · ${escapeHtml(post.status)}</span><strong>${escapeHtml(post.title)}</strong><a href="community.html?post=${encodeURIComponent(post.id)}">게시글 보기</a></article>`, "작성한 게시글이 없습니다.");
-    renderList("[data-my-replies]", replies.data, (reply) => `<article><span>${friendlyDate(reply.created_at)} · ${escapeHtml(reply.status)}</span><strong>${escapeHtml(reply.post?.title || "소통게시판 답글")}</strong><p>${escapeHtml(reply.body)}</p></article>`, "작성한 답글이 없습니다.");
+    renderRows("[data-my-posts]", posts.data, (post) => `<tr><td data-label="일자">${shortDate(post.created_at)}</td><td data-label="제목"><strong>${escapeHtml(post.title)}</strong></td><td data-label="게시글"><a href="community.html?post=${encodeURIComponent(post.id)}">게시글 보기</a></td></tr>`, "작성한 게시글이 없습니다.", 3);
+    renderRows("[data-my-replies]", replies.data, (reply) => `<tr><td data-label="일자">${shortDate(reply.created_at)}</td><td data-label="원문 제목"><strong>${escapeHtml(reply.post?.title || "소통게시판 답글")}</strong></td><td data-label="답글 내용">${escapeHtml(reply.body)}</td><td data-label="게시글">${reply.post?.id ? `<a href="community.html?post=${encodeURIComponent(reply.post.id)}">게시글 보기</a>` : "-"}</td></tr>`, "작성한 답글이 없습니다.", 4);
 
-    if (orderResult.error) {
-      const message = '<p class="muted">구매 내역을 불러오지 못했습니다. 잠시 후 다시 확인해 주세요.</p>';
-      ["[data-my-purchases]", "[data-my-orders]"].forEach((target) => {
-        const element = root.querySelector(target);
-        if (element) element.innerHTML = message;
-      });
+    if (orderResult.error && !previewPurchasedPdf) {
+      renderRows("[data-my-orders]", [], () => "", "구매 내역을 불러오지 못했습니다. 잠시 후 다시 확인해 주세요.", 5);
       return;
     }
 
-    const orders = orderResult.data || [];
-    const typeLabel = { pdf: "PDF", audio: "오디오", card: "말씀·기도카드", challenge: "기도 여정", journey: "기도 여정" };
+    const orders = [...(orderResult.data || [])];
+    if (previewPurchasedPdf) {
+      orders.unshift({
+        id: "preview-pdf-order",
+        product_id: "preview-pdf-product",
+        resource_id: "preview-pdf-resource",
+        amount: 4900,
+        currency: "KRW",
+        status: "paid",
+        paid_at: new Date().toISOString(),
+        created_at: new Date().toISOString(),
+        product: { id: "preview-pdf-product", title: "가정을 품는 7일간의 기도", type: "pdf" },
+        isPreview: true
+      });
+      const previewStatus = root.querySelector("[data-order-status]");
+      if (previewStatus) previewStatus.textContent = "가상 구매 1건을 표시하고 있습니다. 실제 주문 및 결제 데이터에는 저장되지 않습니다.";
+    }
+    const typeLabel = { pdf: "기도문 PDF", audio: "기도 오디오북", card: "기도카드", challenge: "기도 여정", journey: "기도 여정" };
     const productFor = (order) => Array.isArray(order.product) ? order.product[0] : order.product;
     const orderTitle = (order) => productFor(order)?.title || "기도의샘물 신앙자료";
     const orderType = (order) => typeLabel[productFor(order)?.type] || "신앙자료";
     const orderAmount = (order) => `${Number(order.amount || 0).toLocaleString("ko-KR")}원`;
-    const paidOrders = orders.filter(isPaidOrder);
-
-    renderList("[data-my-purchases]", paidOrders, (order) => {
+    renderRows("[data-my-orders]", orders, (order) => {
       const product = productFor(order);
-      const access = order.resource_id
-        ? `<button class="text-button" type="button" data-owned-resource-download="${escapeHtml(order.resource_id)}">다시 다운로드</button>`
-        : product?.type === "journey"
+      const access = isPaidOrder(order) && order.resource_id
+        ? `<button class="text-button" type="button" data-owned-resource-download="${escapeHtml(order.resource_id)}"${order.isPreview ? " data-preview-order" : ""}>자료 다운로드</button>`
+        : isPaidOrder(order) && product?.type === "journey"
           ? `<a class="text-button" href="prayer-challenge.html?product=${encodeURIComponent(order.product_id)}">여정 열기</a>`
-          : '<p class="muted">이 자료의 이용 방법은 자료 상세에서 확인해 주세요.</p>';
-      return `<article><span>${friendlyDate(order.paid_at || order.created_at)} · ${escapeHtml(orderType(order))}</span><strong>${escapeHtml(orderTitle(order))}</strong><p>결제 완료</p>${access}</article>`;
-    }, "아직 구매한 신앙자료가 없습니다.");
-    renderList("[data-my-orders]", orders, (order) => `<article><span>${friendlyDate(order.paid_at || order.created_at)}</span><strong>${escapeHtml(orderTitle(order))}</strong><p>${orderAmount(order)} · ${escapeHtml(orderStatusText(order))}</p></article>`, "결제 내역이 없습니다.");
+          : "";
+      return `<tr><td data-label="결제일자">${shortDate(order.paid_at || order.created_at)}</td><td data-label="자료 유형">${escapeHtml(orderType(order))}</td><td data-label="자료 제목"><strong>${escapeHtml(orderTitle(order))}</strong>${access}</td><td data-label="결제 금액">${orderAmount(order)}</td><td data-label="상태">${escapeHtml(orderStatusText(order))}</td></tr>`;
+    }, "결제 내역이 없습니다.", 5);
 
-    root.querySelector("[data-my-purchases]")?.addEventListener("click", async (event) => {
+    root.querySelector("[data-my-orders]")?.addEventListener("click", async (event) => {
       const button = event.target.closest("[data-owned-resource-download]");
       if (!button) return;
       const status = root.querySelector("[data-order-status]");
+      if (button.hasAttribute("data-preview-order")) {
+        if (status) status.textContent = "가상 구매 화면입니다. 실제 구매 자료에서는 이 버튼을 누르면 다운로드가 시작됩니다.";
+        return;
+      }
       button.disabled = true;
       if (status) status.textContent = "다운로드 링크를 준비하고 있습니다.";
       try {

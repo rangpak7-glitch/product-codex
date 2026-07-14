@@ -436,7 +436,9 @@
     const type = form.elements.type.value;
     const items = state.editorOriginals;
     if (!items.length || items.some((item) => !fileMatchesType(type, item))) return false;
-    return type !== "pdf" || items.length === 1;
+    if (type === "pdf") return items.length === 1;
+    if (type === "card") return items.length >= 10 && items.length <= 12;
+    return true;
   }
 
   function renderPublishChecklist() {
@@ -448,7 +450,7 @@
     const checks = [
       { ready: form.elements.title.value.trim().length >= 2 && form.elements.summary.value.trim().length >= 2 && form.elements.description.value.trim().length >= 2, label: "기본 정보와 상세 설명" },
       { ready: tags.length > 0, label: "키워드 1개 이상" },
-      { ready: originalFilesValid(), label: "자료 유형에 맞는 원본 파일" },
+      { ready: originalFilesValid(), label: form.elements.type.value === "card" ? "기도카드 이미지 10~12장" : "자료 유형에 맞는 원본 파일" },
       { ready: saleStatus === "inquiry" || (saleStatus === "available" && price > 0 && state.workerReady), label: "판매 상태와 가격" },
       { ready: state.editorPreviews.length <= 3, label: "공개 미리보기 최대 3장" }
     ];
@@ -476,6 +478,7 @@
     if (saleStatus === "available" && (!Number.isInteger(price) || price <= 0)) return "온라인 구매 자료의 가격을 입력해 주세요.";
     if (saleStatus === "available" && !state.workerReady) return "결제 Worker 연결이 확인된 뒤 온라인 구매 상태를 사용할 수 있습니다.";
     if (state.editorPreviews.length > 3 || state.editorPreviews.some((item) => !/^image\/(jpeg|png|webp)$/.test(item.mime_type))) return "공개 미리보기는 JPG, PNG, WEBP 이미지 3장 이하로 등록해 주세요.";
+    if (publishing && form.elements.type.value === "card" && !originalFilesValid()) return "기도카드는 이미지 10~12장을 등록해야 공개할 수 있습니다.";
     if (publishing && !originalFilesValid()) return "자료 유형에 맞는 원본 파일 구성을 확인해 주세요.";
     if (publishing && saleStatus === "unavailable") return "판매 비노출 자료는 공개할 수 없습니다.";
     return "";
@@ -553,6 +556,10 @@
       if (productError) throw productError;
 
       await uploadCollection("original", resourceId, state.editorOriginals, title);
+      if (type === "card" && !state.editorPreviews.length && originalFilesValid()) {
+        setStatus(uploadStatus, "기도카드 공개 미리보기 2장을 만들고 있습니다.");
+        await queueRandomCardPreviews();
+      }
       await uploadCollection("preview", resourceId, state.editorPreviews, title);
 
       if (publishing) {
@@ -615,6 +622,32 @@
       renderEditorFiles();
     }
     await persistFileOrder(kind, items);
+  }
+
+  function randomItems(items, count) {
+    const pool = [...items];
+    for (let index = pool.length - 1; index > 0; index -= 1) {
+      const values = new Uint32Array(1);
+      window.crypto.getRandomValues(values);
+      const target = values[0] % (index + 1);
+      [pool[index], pool[target]] = [pool[target], pool[index]];
+    }
+    return pool.slice(0, count);
+  }
+
+  async function queueRandomCardPreviews() {
+    const sources = randomItems(state.editorOriginals.filter((item) => item.source === "stored" && fileMatchesType("card", item)), 2);
+    if (sources.length < 2) throw new Error("공개 미리보기용 기도카드 이미지 2장을 선택하지 못했습니다.");
+    const previews = await Promise.all(sources.map(async (source, index) => {
+      const { data: blob, error } = await client.storage.from(source.bucket_id || ORIGINAL_BUCKET).download(source.object_path);
+      if (error || !blob) throw error || new Error("기도카드 미리보기 원본을 읽지 못했습니다.");
+      const fileName = `preview-${index + 1}-${source.file_name}`;
+      const file = new File([blob], fileName, { type: source.mime_type || blob.type || "image/jpeg" });
+      return { key: makeKey(), source: "pending", file, file_name: fileName, file_size: file.size, mime_type: file.type, status: "queued", progress: 0 };
+    }));
+    state.editorPreviews.push(...previews);
+    renderEditorFiles();
+    renderPublishChecklist();
   }
 
   async function persistFileOrder(kind, items) {
