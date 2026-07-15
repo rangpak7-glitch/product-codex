@@ -360,7 +360,7 @@ def upload_copy(product: dict) -> str:
 
 {', '.join(product['keywords'])}
 
-## 5. 공개 자료 구성
+## 5. 공개자료 구성
 
 - 구성 페이지수: PDF 총 {product['total']}쪽 — 표지 1쪽, 자료 정보 1쪽, 사용 안내 1쪽, 일차별 읽기·기록 {len(product['topics']) * 2}쪽, 함께 활용하기 2쪽, 여정 회고 1쪽, 이용 안내 1쪽
 - 이 기도를 통해 목표하는 부분: {product['goal']}
