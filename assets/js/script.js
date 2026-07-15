@@ -1059,7 +1059,7 @@ if (visualPrayerCards) {
   }
 
   function renderHubPreviewItems(resource) {
-    if (Array.isArray(resource.previewItems) && resource.previewItems.length) return resource.previewItems.slice(0, 3);
+    if (Array.isArray(resource.previewItems) && resource.previewItems.length) return resource.previewItems;
     const tags = (resource.tags || []).slice(0, 3);
     if (resource.type === "audio") return tags.map((tag) => `${tag}을 위한 기도 낭독 흐름`);
     if (resource.type === "card") return tags.map((tag) => `${tag}을 위한 한 장의 기도`);
