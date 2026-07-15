@@ -7,6 +7,9 @@
   const IMAGE_PREVIEW_LIMIT = 3;
   const IMAGE_PREVIEW_MAX_BYTES = 5 * 1024 * 1024;
   const AUDIO_PREVIEW_MAX_BYTES = 15 * 1024 * 1024;
+  const PDFJS_MODULE_URL = "https://cdn.jsdelivr.net/npm/pdfjs-dist@6.1.200/build/pdf.mjs";
+  const PDFJS_WORKER_URL = "https://cdn.jsdelivr.net/npm/pdfjs-dist@6.1.200/build/pdf.worker.mjs";
+  const PDF_PREVIEW_TARGET_WIDTH = 1200;
   const TYPE_LABELS = { pdf: "기도문 PDF", audio: "기도 오디오북", card: "기도카드" };
   const STATUS_LABELS = { draft: "초안", published: "공개", archived: "보관" };
   const SALE_LABELS = { inquiry: "문의 안내", available: "온라인 구매", unavailable: "판매 비노출" };
@@ -25,10 +28,14 @@
     editorStep: 1,
     editorOriginals: [],
     editorPreviews: [],
+    editorPreviewReplacements: [],
+    pdfPreviewGenerating: false,
+    pdfPreviewGenerationError: "",
     workerReady: false,
     loading: false,
     draggedResourceId: ""
   };
+  let pdfJsPromise = null;
 
   const gate = document.querySelector("[data-admin-gate]");
   const panel = document.querySelector("[data-admin-panel]");
@@ -351,6 +358,9 @@
     form.elements.priceAmount.value = product?.price_amount || "";
     state.editorOriginals = (resource ? resourceFiles(resource.id) : []).map((item) => ({ ...item, source: "stored", status: "complete" }));
     state.editorPreviews = (resource ? resourcePreviews(resource.id) : []).map((item) => ({ ...item, source: "stored", status: "complete" }));
+    state.editorPreviewReplacements = [];
+    state.pdfPreviewGenerating = false;
+    state.pdfPreviewGenerationError = "";
     const title = document.querySelector("[data-editor-title]");
     if (title) title.textContent = resource ? "자료 수정" : "새 자료 등록";
     setStatus(uploadStatus, "");
@@ -362,6 +372,9 @@
     renderPublishChecklist();
     if (!editor.open) editor.showModal();
     form.elements.title.focus();
+    if (resource?.type === "pdf" && state.editorOriginals.length && !state.editorPreviews.length) {
+      window.setTimeout(() => generatePdfPagePreviews(), 0);
+    }
   }
 
   function closeEditor() {
@@ -369,6 +382,9 @@
     editor.close();
     state.editorOriginals = [];
     state.editorPreviews = [];
+    state.editorPreviewReplacements = [];
+    state.pdfPreviewGenerating = false;
+    state.pdfPreviewGenerationError = "";
   }
 
   function setEditorStep(step) {
@@ -403,30 +419,36 @@
     return /^image\/(jpeg|png|webp)$/i.test(String(item?.mime_type || "")) || /\.(jpe?g|png|webp)$/i.test(String(item?.file_name || ""));
   }
 
-  function previewFilesValid({ requireAudio = false } = {}) {
+  function previewFilesValid({ requireAudio = false, requirePdf = false } = {}) {
+    const isPdf = form.elements.type.value === "pdf";
     const isAudio = form.elements.type.value === "audio";
     if (isAudio) {
       return (!requireAudio || state.editorPreviews.length === 1)
         && state.editorPreviews.length <= 1
         && state.editorPreviews.every((item) => isAudioPreview(item) && Number(item.file_size || 0) <= AUDIO_PREVIEW_MAX_BYTES);
     }
-    return state.editorPreviews.length <= IMAGE_PREVIEW_LIMIT
+    return (!isPdf || !requirePdf || state.editorPreviews.length > 0)
+      && state.editorPreviews.length <= IMAGE_PREVIEW_LIMIT
       && state.editorPreviews.every((item) => isImagePreview(item) && Number(item.file_size || 0) <= IMAGE_PREVIEW_MAX_BYTES);
   }
 
   function syncPreviewUploadMode() {
     if (!previewInput || !form) return;
+    const isPdf = form.elements.type.value === "pdf";
     const isAudio = form.elements.type.value === "audio";
     const title = document.querySelector("[data-preview-file-title]");
     const description = document.querySelector("[data-preview-file-description]");
     const picker = document.querySelector("[data-preview-file-picker]");
     previewInput.accept = isAudio ? "audio/mpeg,audio/mp3,.mp3" : "image/jpeg,image/png,image/webp";
     previewInput.multiple = !isAudio;
-    if (title) title.textContent = isAudio ? "공개 미리듣기 MP3" : "공개 미리보기 이미지";
+    if (title) title.textContent = isAudio ? "공개 미리듣기 MP3" : isPdf ? "PDF 1~3페이지 공개 미리보기" : "공개 미리보기 이미지";
     if (description) description.textContent = isAudio
       ? "원본과 분리된 미리듣기용 MP3 파일을 1개 등록합니다. 웹페이지에서 스트리밍으로 재생됩니다."
-      : "원본과 분리된 표지 또는 미리보기 이미지를 최대 3장 등록합니다.";
-    if (picker) picker.textContent = isAudio ? "미리듣기 MP3 선택 또는 드래그앤드롭" : "미리보기 이미지 선택 또는 드래그앤드롭";
+      : isPdf
+        ? "PDF 원본을 선택하면 앞 3페이지가 공개용 WEBP 이미지로 자동 생성됩니다. 필요하면 다른 이미지로 교체할 수 있습니다."
+        : "원본과 분리된 표지 또는 미리보기 이미지를 최대 3장 등록합니다.";
+    if (picker) picker.textContent = isAudio ? "미리듣기 MP3 선택 또는 드래그앤드롭" : isPdf ? "다른 미리보기 이미지 선택 또는 드래그앤드롭" : "미리보기 이미지 선택 또는 드래그앤드롭";
+    renderPdfPreviewControls();
     renderPublishChecklist();
   }
 
@@ -462,11 +484,129 @@
     });
     renderEditorFiles();
     renderPublishChecklist();
+    if (kind === "original" && form.elements.type.value === "pdf" && files.length === 1) {
+      generatePdfPagePreviews(target[target.length - 1]);
+    }
   }
 
   function renderEditorFiles() {
     renderFileCollection("original", state.editorOriginals, document.querySelector("[data-original-file-list]"));
     renderFileCollection("preview", state.editorPreviews, document.querySelector("[data-preview-file-list]"));
+    renderPdfPreviewControls();
+  }
+
+  function renderPdfPreviewControls() {
+    const root = document.querySelector("[data-pdf-preview-actions]");
+    const button = document.querySelector("[data-generate-pdf-previews]");
+    const status = document.querySelector("[data-pdf-preview-status]");
+    if (!root || !button || !status || !form) return;
+    const isPdf = form.elements.type.value === "pdf";
+    root.hidden = !isPdf;
+    if (!isPdf) return;
+    const previewCount = state.editorPreviews.filter(isImagePreview).length;
+    button.disabled = state.pdfPreviewGenerating || !state.editorOriginals.some((item) => fileMatchesType("pdf", item));
+    status.classList.toggle("is-error", Boolean(state.pdfPreviewGenerationError));
+    status.textContent = state.pdfPreviewGenerating
+      ? "PDF 앞 1~3페이지를 공개 미리보기로 만들고 있습니다."
+      : state.pdfPreviewGenerationError
+        ? state.pdfPreviewGenerationError
+        : previewCount
+          ? `공개 미리보기 ${previewCount}장이 준비되었습니다. 저장하면 신앙자료 페이지에 표시됩니다.`
+          : "PDF 원본을 선택하면 앞 1~3페이지가 자동으로 준비됩니다.";
+  }
+
+  async function loadPdfJs() {
+    if (!pdfJsPromise) {
+      pdfJsPromise = import(PDFJS_MODULE_URL).then((pdfjs) => {
+        pdfjs.GlobalWorkerOptions.workerSrc = PDFJS_WORKER_URL;
+        return pdfjs;
+      }).catch((error) => {
+        pdfJsPromise = null;
+        throw error;
+      });
+    }
+    return pdfJsPromise;
+  }
+
+  function canvasToBlob(canvas, type, quality) {
+    return new Promise((resolve, reject) => {
+      canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error("PDF 미리보기 이미지를 만들지 못했습니다.")), type, quality);
+    });
+  }
+
+  async function loadPdfSource(source) {
+    if (source?.file) return source.file;
+    if (!source?.object_path) throw new Error("PDF 원본 파일을 찾지 못했습니다.");
+    const { data, error } = await client.storage.from(source.bucket_id || ORIGINAL_BUCKET).download(source.object_path);
+    if (error || !data) throw error || new Error("PDF 원본 파일을 읽지 못했습니다.");
+    return data;
+  }
+
+  async function createPdfPreviewFiles(source) {
+    const pdfjs = await loadPdfJs();
+    const blob = await loadPdfSource(source);
+    const loadingTask = pdfjs.getDocument({ data: new Uint8Array(await blob.arrayBuffer()) });
+    const pdfDocument = await loadingTask.promise;
+    const files = [];
+    try {
+      const pageCount = Math.min(pdfDocument.numPages, IMAGE_PREVIEW_LIMIT);
+      for (let pageNumber = 1; pageNumber <= pageCount; pageNumber += 1) {
+        const page = await pdfDocument.getPage(pageNumber);
+        const baseViewport = page.getViewport({ scale: 1 });
+        const scale = Math.max(1, Math.min(2.5, PDF_PREVIEW_TARGET_WIDTH / baseViewport.width));
+        const viewport = page.getViewport({ scale });
+        const canvas = document.createElement("canvas");
+        const context = canvas.getContext("2d", { alpha: false });
+        canvas.width = Math.ceil(viewport.width);
+        canvas.height = Math.ceil(viewport.height);
+        context.fillStyle = "#ffffff";
+        context.fillRect(0, 0, canvas.width, canvas.height);
+        await page.render({ canvasContext: context, viewport }).promise;
+        const previewBlob = await canvasToBlob(canvas, "image/webp", 0.86);
+        page.cleanup();
+        canvas.width = 1;
+        canvas.height = 1;
+        if (previewBlob.size > IMAGE_PREVIEW_MAX_BYTES) throw new Error(`${pageNumber}페이지 미리보기가 5MB를 초과했습니다.`);
+        const fileName = `page-${pageNumber}.webp`;
+        const file = new File([previewBlob], fileName, { type: "image/webp" });
+        files.push({ key: makeKey(), source: "pending", generatedFromPdf: true, file, file_name: fileName, file_size: file.size, mime_type: file.type, status: "queued", progress: 0 });
+      }
+    } finally {
+      await loadingTask.destroy();
+    }
+    if (!files.length) throw new Error("PDF에서 공개할 페이지를 찾지 못했습니다.");
+    return files;
+  }
+
+  async function generatePdfPagePreviews(source = null) {
+    if (state.pdfPreviewGenerating || form.elements.type.value !== "pdf") return;
+    const pdfSource = source || state.editorOriginals.find((item) => fileMatchesType("pdf", item));
+    if (!pdfSource) {
+      state.pdfPreviewGenerationError = "PDF 원본을 먼저 선택해 주세요.";
+      renderPdfPreviewControls();
+      return;
+    }
+    state.pdfPreviewGenerating = true;
+    state.pdfPreviewGenerationError = "";
+    renderPdfPreviewControls();
+    try {
+      const generated = await createPdfPreviewFiles(pdfSource);
+      const storedPreviews = state.editorPreviews.filter((item) => item.source === "stored");
+      const knownReplacementIds = new Set(state.editorPreviewReplacements.map((item) => item.id || item.object_path));
+      storedPreviews.forEach((item) => {
+        const key = item.id || item.object_path;
+        if (!knownReplacementIds.has(key)) state.editorPreviewReplacements.push(item);
+      });
+      state.editorPreviews = generated;
+      setStatus(uploadStatus, `PDF 앞 ${generated.length}페이지 미리보기가 준비되었습니다. 저장하면 공개 페이지에 반영됩니다.`);
+    } catch (error) {
+      state.pdfPreviewGenerationError = `PDF 미리보기를 만들지 못했습니다. ${error.message || "다시 시도해 주세요."}`;
+      setStatus(uploadStatus, state.pdfPreviewGenerationError, true);
+    } finally {
+      state.pdfPreviewGenerating = false;
+      renderEditorFiles();
+      renderPublishChecklist();
+    }
   }
 
   function renderFileCollection(kind, items, root) {
@@ -548,7 +688,7 @@
       { ready: tags.length > 0, label: "키워드 1개 이상" },
       { ready: originalFilesValid(), label: form.elements.type.value === "card" ? "기도카드 이미지 10~12장" : "자료 유형에 맞는 원본 파일" },
       { ready: saleStatus === "inquiry" || (saleStatus === "available" && price > 0 && state.workerReady), label: "판매 상태와 가격" },
-      { ready: previewFilesValid({ requireAudio: form.elements.type.value === "audio" }), label: form.elements.type.value === "audio" ? "공개 미리듣기 MP3 1개" : "공개 미리보기 이미지 3장 이하" }
+      { ready: !state.pdfPreviewGenerating && previewFilesValid({ requireAudio: form.elements.type.value === "audio", requirePdf: form.elements.type.value === "pdf" }), label: form.elements.type.value === "audio" ? "공개 미리듣기 MP3 1개" : form.elements.type.value === "pdf" ? "PDF 1~3페이지 공개 미리보기" : "공개 미리보기 이미지 3장 이하" }
     ];
     root.innerHTML = checks.map((check) => `<p class="${check.ready ? "is-ready" : ""}">${check.ready ? "완료" : "확인 필요"} · ${escapeHtml(check.label)}</p>`).join("");
   }
@@ -568,6 +708,7 @@
     const tags = tagsFrom(form.elements.tags.value);
     const saleStatus = form.elements.saleStatus.value;
     const price = Number(form.elements.priceAmount.value || 0);
+    if (state.pdfPreviewGenerating) return "PDF 공개 미리보기가 준비될 때까지 기다려 주세요.";
     if (title.length < 2 || summary.length < 2 || description.length < 2) return "기본 정보와 상세 설명을 입력해 주세요.";
     if (!tags.length) return "키워드를 하나 이상 입력해 주세요.";
     if (tags.length > 12 || tags.some((tag) => tag.length > 40)) return "키워드는 12개 이하, 각 40자 이하로 입력해 주세요.";
@@ -577,6 +718,7 @@
       ? "공개 미리듣기는 15MB 이하 MP3 파일 1개로 등록해 주세요."
       : "공개 미리보기는 파일당 5MB 이하 JPG, PNG, WEBP 이미지 3장 이하로 등록해 주세요.";
     if (publishing && form.elements.type.value === "audio" && !previewFilesValid({ requireAudio: true })) return "기도 오디오북을 공개하려면 15MB 이하 미리듣기 MP3 파일 1개를 등록해 주세요.";
+    if (publishing && form.elements.type.value === "pdf" && !previewFilesValid({ requirePdf: true })) return "기도문 PDF를 공개하려면 1~3페이지 공개 미리보기를 준비해 주세요.";
     if (publishing && form.elements.type.value === "card" && !originalFilesValid()) return "기도카드는 이미지 10~12장을 등록해야 공개할 수 있습니다.";
     if (publishing && !originalFilesValid()) return "자료 유형에 맞는 원본 파일 구성을 확인해 주세요.";
     if (publishing && saleStatus === "unavailable") return "판매 비노출 자료는 공개할 수 없습니다.";
@@ -725,6 +867,20 @@
       completed += 1;
       renderEditorFiles();
     }
+    if (kind === "preview" && state.editorPreviewReplacements.length && pending.length && pending.every((item) => item.source === "stored")) {
+      const replaced = [...state.editorPreviewReplacements];
+      const replacedPaths = replaced.map((item) => item.object_path).filter(Boolean);
+      const replacedIds = replaced.map((item) => item.id).filter(Boolean);
+      if (replacedPaths.length) {
+        const { error } = await client.storage.from(PREVIEW_BUCKET).remove(replacedPaths);
+        if (error) throw error;
+      }
+      if (replacedIds.length) {
+        const { error } = await client.from("resource_preview_files").delete().in("id", replacedIds);
+        if (error) throw error;
+      }
+      state.editorPreviewReplacements = [];
+    }
     await persistFileOrder(kind, items);
   }
 
@@ -776,6 +932,10 @@
   }
 
   async function publishResource(resourceId) {
+    const resource = state.resources.find((item) => item.id === resourceId);
+    if (resource?.type === "pdf" && !resourcePreviews(resourceId).some(isImagePreview)) {
+      throw new Error("PDF 자료 수정에서 1~3페이지 공개 미리보기를 먼저 만들어 주세요.");
+    }
     setStatus(globalStatus, "공개 조건을 확인하고 있습니다.");
     const { error } = await client.rpc("publish_faith_resource", { p_resource_id: resourceId });
     if (error) throw error;
@@ -864,6 +1024,7 @@
   document.querySelector("[data-editor-next]")?.addEventListener("click", () => setEditorStep(state.editorStep + 1));
   document.querySelectorAll("[data-editor-step]").forEach((button) => button.addEventListener("click", () => setEditorStep(button.dataset.editorStep)));
   document.querySelector("[data-publish-resource]")?.addEventListener("click", () => saveResource({ publishing: true }));
+  document.querySelector("[data-generate-pdf-previews]")?.addEventListener("click", () => generatePdfPagePreviews());
   form?.addEventListener("submit", (event) => { event.preventDefault(); saveResource(); });
   form?.elements.tags.addEventListener("input", () => { renderTagSuggestions(); renderPublishChecklist(); });
   form?.elements.title.addEventListener("input", renderPublishChecklist);

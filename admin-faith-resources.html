@@ -100,6 +100,10 @@
           <input class="sr-only" type="file" name="previewFiles" multiple accept="image/jpeg,image/png,image/webp">
           <button class="admin-dropzone" type="button" data-file-picker="preview" data-preview-file-picker>미리보기 이미지 선택 또는 드래그앤드롭</button>
           <div class="admin-file-list admin-preview-list" data-preview-file-list></div>
+          <div data-pdf-preview-actions hidden>
+            <button class="button secondary" type="button" data-generate-pdf-previews>PDF 1~3페이지 다시 만들기</button>
+            <p class="form-message" data-pdf-preview-status role="status" aria-live="polite"></p>
+          </div>
         </div>
       </section>
 
@@ -119,6 +123,6 @@
 </main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.1/dist/umd/supabase.js"></script>
 <script src="assets/js/supabase-config.js"></script>
-<script src="assets/js/admin-faith-resources.js"></script>
+<script src="assets/js/admin-faith-resources.js?v=20260715-pdf-previews1"></script>
 </body>
 </html>
