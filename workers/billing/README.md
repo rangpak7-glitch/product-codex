@@ -19,7 +19,7 @@ Supabase 마이그레이션은 다음 서버 중심 테이블을 만듭니다.
 - `purchasable = false`
 - `price_amount = null`
 
-Worker는 `available`, `purchasable = true`, 양의 `price_amount`, `KRW`가 모두 충족된 상품만 주문을 만들고, 그 외 상품에는 `409 inquiry_only`를 반환합니다. 가격을 코드나 Worker 환경 변수에 넣지 않습니다. 주문은 기본 30분 뒤 만료되고, 승인 직전에 현재 판매 상태·가격·통화를 다시 확인합니다. 같은 회원의 같은 상품에는 `ready` 또는 `paid` 주문을 DB에서 하나만 허용합니다.
+Worker는 `available`, `purchasable = true`, 양의 `price_amount`, `KRW`가 모두 충족된 상품만 주문을 만들고, 그 외 상품에는 `409 inquiry_only`를 반환합니다. 기도문 PDF의 인쇄 추가금은 `base_print_copies`, `print_pack_size`, `print_pack_price`로 계산하며 브라우저가 보낸 금액은 사용하지 않습니다. 가격을 코드나 Worker 환경 변수에 넣지 않습니다. 주문은 기본 30분 뒤 만료되고, 승인 직전에 현재 판매 상태·가격·통화를 다시 확인합니다. 같은 회원의 같은 상품에는 `ready` 또는 `paid` 주문을 DB에서 하나만 허용합니다.
 
 관리자 역할만 `faith_products`를 직접 생성·수정·삭제할 수 있습니다. 자료 등록 화면은 `faith_resources`를 만든 뒤 실제 UUID를 `resource_id`로 사용해 기본 `inquiry` 상품 행을 함께 만들고, 가격과 판매 여부가 확정된 뒤에만 `available`/`purchasable`로 전환해야 합니다.
 
@@ -29,7 +29,7 @@ Worker는 `available`, `purchasable = true`, 양의 `price_amount`, `KRW`가 모
 
 | API | 설명 |
 | --- | --- |
-| `POST /orders/start` | 본문 `{ "productId": "..." }`로 판매 가능한 상품의 주문을 만듭니다. 토스 결제창에 필요한 `orderId`, `amount`, `orderName`, `clientKey`, 성공/실패 URL을 반환합니다. |
+| `POST /orders/start` | 본문 `{ "productId": "...", "printCopies": 30 }`로 주문을 만듭니다. PDF는 기본 20부까지 포함하고 초과분을 10부 단위, 묶음당 3,000원으로 서버에서 다시 계산해 총액과 허용 인쇄 부수를 반환합니다. |
 | `POST /orders/approve` | 본문 `{ "paymentKey": "...", "orderId": "..." }`로 토스 결제를 승인합니다. Worker가 저장된 주문 금액으로 재검증하며, 클라이언트 금액은 신뢰하지 않습니다. |
 | `POST /orders/fail` | 실패 URL에서 본문 `{ "orderId": "..." }`로 준비 중인 주문을 `failed`로 기록합니다. |
 | `POST /resources/:resourceId/download` | 관리자 또는 동일 `resource_id`의 `paid` 주문이 있는 회원에게만 5분짜리 서명 다운로드 URL 목록을 반환합니다. 카드 컬렉션처럼 여러 파일이 있는 자료도 모두 포함합니다. |

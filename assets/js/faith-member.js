@@ -515,7 +515,7 @@
     throw new Error("안전한 결제 요청을 시작하지 못했습니다. 문의하기를 이용해 주세요.");
   }
 
-  async function requestPurchase(productId) {
+  async function requestPurchase(productId, printCopies = null) {
     const normalizedProductId = String(productId || "").trim();
     if (!normalizedProductId) throw new Error("구매할 자료 정보를 찾지 못했습니다.");
     if (!state.user) {
@@ -526,7 +526,7 @@
 
     let pending;
     try {
-      pending = await orderRequest("/orders/start", { productId: normalizedProductId });
+      pending = await orderRequest("/orders/start", { productId: normalizedProductId, printCopies: printCopies === null ? undefined : Number(printCopies) });
     } catch (error) {
       if (error?.payload?.code === "already_purchased") {
         trackOrderEvent("repurchase_attempt", { product_id: normalizedProductId });
@@ -695,7 +695,7 @@
   function orderStatusText(order) {
     const status = typeof order === "string" ? order : order?.status;
     if (status === "ready" && order?.expires_at && Date.parse(order.expires_at) <= Date.now()) return "결제 요청 만료";
-    const map = { ready: "결제 확인 중", paid: "결제 완료", failed: "결제 실패", canceled: "결제 취소", refunded: "환불 완료" };
+    const map = { ready: "결제 확인 중", paid: "결제 완료", free: "무료 자료", failed: "결제 실패", canceled: "결제 취소", refunded: "환불 완료" };
     return map[status] || "주문 상태 확인 중";
   }
 
@@ -715,15 +715,23 @@
     if (state.ordersLoading) return state.ordersLoading;
 
     const request = (async () => {
-      const { data, error } = await orderClient
-        .from("faith_orders")
-        .select("id,order_id,product_id,resource_id,amount,currency,status,expires_at,paid_at,created_at,product:faith_products(id,title,type)")
-        .eq("user_id", userId)
-        .order("created_at", { ascending: false })
-        .limit(50);
-      if (error) throw new Error("구매 내역을 불러오지 못했습니다.");
+      const [ordersResult, freeResult] = await Promise.all([
+        orderClient.from("faith_orders")
+          .select("id,order_id,product_id,resource_id,amount,currency,status,expires_at,paid_at,created_at,requested_print_copies,licensed_print_copies,base_price_amount,license_surcharge_amount,product:faith_products(id,title,type)")
+          .eq("user_id", userId).order("created_at", { ascending: false }).limit(50),
+        orderClient.from("resource_downloads")
+          .select("id,resource_id,downloaded_at,resource:faith_resources(id,title,type)")
+          .eq("user_id", userId).is("order_id", null).order("downloaded_at", { ascending: false }).limit(50)
+      ]);
+      if (ordersResult.error || freeResult.error) throw new Error("구매 내역을 불러오지 못했습니다.");
       if (state.user?.id !== userId) return [];
-      const orders = data || [];
+      const seenFree = new Set();
+      const freeDownloads = (freeResult.data || []).filter((item) => item.resource_id && !seenFree.has(item.resource_id) && seenFree.add(item.resource_id)).map((item) => ({
+        id: `free-${item.id}`, order_id: `free-${item.id}`, product_id: item.resource_id, resource_id: item.resource_id,
+        amount: 0, currency: "KRW", status: "free", paid_at: item.downloaded_at, created_at: item.downloaded_at,
+        product: Array.isArray(item.resource) ? item.resource[0] : item.resource
+      }));
+      const orders = [...(ordersResult.data || []), ...freeDownloads].sort((a, b) => Date.parse(b.paid_at || b.created_at) - Date.parse(a.paid_at || a.created_at));
       state.orders = orders;
       state.ordersByResource.clear();
       orders.filter(isPaidOrder).forEach((order) => {
@@ -853,11 +861,11 @@
     const productFor = (order) => Array.isArray(order.product) ? order.product[0] : order.product;
     const orderTitle = (order) => productFor(order)?.title || "기도의샘물 신앙자료";
     const orderType = (order) => typeLabel[productFor(order)?.type] || "신앙자료";
-    const orderAmount = (order) => `${Number(order.amount || 0).toLocaleString("ko-KR")}원`;
+    const orderAmount = (order) => order.status === "free" ? "무료" : `${Number(order.amount || 0).toLocaleString("ko-KR")}원`;
     renderRows("[data-my-orders]", orders, (order) => {
       const product = productFor(order);
-      const access = isPaidOrder(order) && order.resource_id
-        ? `<button class="text-button" type="button" data-owned-resource-download="${escapeHtml(order.resource_id)}"${order.isPreview ? " data-preview-order" : ""}>자료 다운로드</button>`
+      const access = (isPaidOrder(order) || order.status === "free") && order.resource_id
+        ? `<button class="text-button" type="button" data-owned-resource-download="${escapeHtml(order.resource_id)}"${order.isPreview ? " data-preview-order" : ""}>자료 다운로드</button>${Number(order.licensed_print_copies || 0) > 1 ? `<small class="account-print-license">비영리 인쇄 ${Number(order.licensed_print_copies).toLocaleString("ko-KR")}부 허용</small>` : ""}`
         : isPaidOrder(order) && product?.type === "journey"
           ? `<a class="text-button" href="prayer-challenge.html?product=${encodeURIComponent(order.product_id)}">여정 열기</a>`
           : "";

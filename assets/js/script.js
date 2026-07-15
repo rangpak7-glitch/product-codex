@@ -5,7 +5,7 @@ const $ = (selector) => document.querySelector(selector);
   if (window.__faithMemberScriptLoaded) return;
   window.__faithMemberScriptLoaded = true;
   const script = document.createElement("script");
-  script.src = new URL("assets/js/faith-member.js?v=20260715-download1", window.location.href).href;
+  script.src = new URL("assets/js/faith-member.js?v=20260715-pdf-sales2", window.location.href).href;
   script.async = true;
   document.head.append(script);
 })();
@@ -302,6 +302,10 @@ function normalizeFaithProduct(product = {}) {
     previewItems: product.previewItems ?? product.preview_items ?? [],
     salesStatus: product.salesStatus ?? product.saleStatus ?? product.sale_status ?? "inquiry",
     priceKrw: product.priceKrw ?? product.priceAmount ?? product.price_amount ?? null,
+    marketingDetails: product.marketingDetails ?? product.marketing_details ?? {},
+    basePrintCopies: Number(product.basePrintCopies ?? product.base_print_copies ?? 1),
+    printPackSize: Number(product.printPackSize ?? product.print_pack_size ?? 10),
+    printPackPrice: Number(product.printPackPrice ?? product.print_pack_price ?? 0),
     contactUrl: product.contactUrl ?? product.contact_url ?? "contact.html"
   };
 }
@@ -330,9 +334,19 @@ function formatKrw(value) {
   return `${Number(value).toLocaleString("ko-KR")}원`;
 }
 
-async function requestProductPurchase(productId) {
+function calculatePrintLicense(product, requestedCopies) {
+  const normalized = normalizeFaithProduct(product);
+  const base = Math.max(1, Number(normalized.basePrintCopies || 1));
+  const packSize = Math.max(1, Number(normalized.printPackSize || 10));
+  const packPrice = Math.max(0, Number(normalized.printPackPrice || 0));
+  const requested = Math.max(1, Math.min(10000, Math.floor(Number(requestedCopies || base))));
+  const packs = Math.ceil(Math.max(0, requested - base) / packSize);
+  return { requested, licensed: base + packs * packSize, surcharge: packs * packPrice, total: Number(normalized.priceKrw || 0) + packs * packPrice };
+}
+
+async function requestProductPurchase(productId, printCopies = null) {
   if (window.FaithAuth?.requestPurchase) {
-    return window.FaithAuth.requestPurchase(productId);
+    return window.FaithAuth.requestPurchase(productId, printCopies);
   }
   return new Promise((resolve, reject) => {
     const timer = window.setTimeout(() => reject(new Error("회원 서비스를 불러오지 못했습니다. 자료 문의하기를 이용해 주세요.")), 5000);
@@ -340,7 +354,7 @@ async function requestProductPurchase(productId) {
       window.clearTimeout(timer);
       try {
         if (!window.FaithAuth?.requestPurchase) throw new Error("회원 서비스를 불러오지 못했습니다. 자료 문의하기를 이용해 주세요.");
-        resolve(await window.FaithAuth.requestPurchase(productId));
+        resolve(await window.FaithAuth.requestPurchase(productId, printCopies));
       } catch (error) {
         reject(error);
       }
@@ -348,8 +362,8 @@ async function requestProductPurchase(productId) {
   });
 }
 
-async function startProductPurchase(productId) {
-  const result = await requestProductPurchase(productId);
+async function startProductPurchase(productId, printCopies = null) {
+  const result = await requestProductPurchase(productId, printCopies);
   if (!result?.alreadyPurchased) return result;
   if (!result.resourceId || !window.FaithAuth?.requestProtectedDownload) {
     window.location.assign("account.html");
@@ -789,7 +803,7 @@ async function refreshCommerceProductCatalog() {
   if (!client) return;
   const { data, error } = await client
     .from("faith_products")
-    .select("id, resource_id, type, title, summary, preview_items, sale_status, price_amount, currency, purchasable, published")
+    .select("id, resource_id, type, title, summary, preview_items, sale_status, price_amount, currency, purchasable, published, marketing_details, base_print_copies, print_pack_size, print_pack_price")
     .eq("published", true);
   if (error) return;
   window.FAITH_PRODUCT_CATALOG = (data || []).map(normalizeFaithProduct);
@@ -822,7 +836,7 @@ function productActionMarkup(product, productId) {
     if (client && ids.length) {
       const { data, error } = await client
         .from("faith_products")
-        .select("id, resource_id, type, title, summary, preview_items, sale_status, price_amount, currency, purchasable, published")
+        .select("id, resource_id, type, title, summary, preview_items, sale_status, price_amount, currency, purchasable, published, marketing_details, base_print_copies, print_pack_size, print_pack_price")
         .in("id", ids)
         .eq("published", true);
       if (!error && data?.length) window.FAITH_PRODUCT_CATALOG = (data || []).map(normalizeFaithProduct);
@@ -1011,7 +1025,7 @@ if (visualPrayerCards) {
     if (!client) return null;
     const { data, error } = await client
       .from("faith_products")
-      .select("id, resource_id, type, title, summary, preview_items, sale_status, price_amount, currency, purchasable, published")
+      .select("id, resource_id, type, title, summary, preview_items, sale_status, price_amount, currency, purchasable, published, marketing_details, base_print_copies, print_pack_size, print_pack_price")
       .eq("published", true)
       .in("sale_status", ["inquiry", "available"]);
     if (error) return null;
@@ -1090,6 +1104,10 @@ if (visualPrayerCards) {
       return `<div class="resource-access-panel"><p>회원 무료자료입니다. 로그인 후 결제 없이 내려받을 수 있습니다.</p><button class="button primary" type="button" data-resource-download="${escapeHtml(resource.id)}">무료 다운로드</button></div>`;
     }
     if (isPurchasable(product)) {
+      if (resource.type === "pdf") {
+        const license = calculatePrintLicense(product, product.basePrintCopies);
+        return `<div class="resource-access-panel pdf-print-license" data-print-license="${escapeHtml(product.id)}"><p>개인 열람과 비영리 인쇄 ${license.licensed}부까지 포함됩니다.</p><label>필요한 인쇄 부수<input type="number" min="1" max="10000" step="1" value="${license.requested}" data-print-copies></label><p class="pdf-print-price"><span>${license.licensed}부 인쇄 권한</span><strong data-print-total>${escapeHtml(formatKrw(license.total))}</strong></p><small>20부 초과 시 10부당 3,000원이 자동 추가됩니다.</small><button class="button primary" type="button" data-product-purchase="${escapeHtml(product.id)}">구매하기</button></div>`;
+      }
       return `<div class="resource-access-panel"><p>개별 구매 후 바로 내 자료실에서 열 수 있습니다.</p><button class="button primary" type="button" data-product-purchase="${escapeHtml(product.id)}">구매하기 · ${escapeHtml(formatKrw(product.priceKrw))}</button></div>`;
     }
     return `<div class="resource-access-panel"><p>등록된 자료 구성을 확인한 뒤, 이용 방법을 안내받을 수 있습니다.</p><a class="button primary" href="${escapeHtml(productInquiryHref(product))}" data-resource-inquiry data-product-id="${escapeHtml(product.id)}">자료 문의하기</a></div>`;
@@ -1162,11 +1180,11 @@ if (visualPrayerCards) {
 
   function renderPublicPreviewGallery(resource, compact = false) {
     if (compact) return "";
-    const previewLimit = compact ? 1 : resource.type === "card" ? 2 : 3;
+    const previewLimit = compact ? 1 : resource.type === "card" ? 2 : resource.type === "pdf" ? 4 : 3;
     const previews = (resource.previews || []).filter((item) => item.url && (/^image\//.test(item.mime_type || "") || /\.(jpe?g|png|webp)$/i.test(item.file_name || item.object_path || ""))).slice(0, previewLimit);
     if (!previews.length) {
       return !compact && resource.type === "pdf"
-        ? `<section class="resource-media-preview resource-media-preview-pages" aria-label="PDF 공개 미리보기"><div class="resource-media-heading"><p class="eyebrow">PDF Preview</p><h3>1~3페이지 미리보기</h3><p>이 자료에는 현재 공개된 페이지 미리보기가 없습니다.</p></div></section>`
+        ? `<section class="resource-media-preview resource-media-preview-pages" aria-label="PDF 공개 미리보기"><div class="resource-media-heading"><p class="eyebrow">PDF Preview</p><h3>1~4페이지 미리보기</h3><p>이 자료에는 현재 공개된 페이지 미리보기가 없습니다.</p></div></section>`
         : "";
     }
     const gallery = `<div class="resource-public-preview-grid${compact ? " is-compact" : ""}">${previews.map((item, index) => {
@@ -1174,7 +1192,7 @@ if (visualPrayerCards) {
       return `<figure><button class="resource-preview-open" type="button" data-resource-preview-url="${escapeHtml(item.url)}" data-resource-preview-alt="${escapeHtml(alt)}" aria-label="${escapeHtml(`${alt} 크게 보기`)}" title="미리보기 크게 보기"><img src="${escapeHtml(item.url)}" alt="${escapeHtml(alt)}" loading="lazy"></button><figcaption>${escapeHtml(alt)}</figcaption></figure>`;
     }).join("")}</div>`;
     if (compact || resource.type !== "pdf") return gallery;
-    return `<section class="resource-media-preview resource-media-preview-pages" aria-label="PDF 1페이지부터 3페이지 미리보기"><div class="resource-media-heading"><p class="eyebrow">PDF Preview</p><h3>1~3페이지 미리보기</h3><p>한 PDF의 앞 3페이지만 공개합니다.</p></div>${gallery}</section>`;
+    return `<section class="resource-media-preview resource-media-preview-pages" aria-label="PDF 1페이지부터 4페이지 미리보기"><div class="resource-media-heading"><p class="eyebrow">PDF Preview</p><h3>1~4페이지 미리보기</h3><p>표지, 자료 정보, 1일차 읽기와 기록까지 실제 4쪽을 공개합니다.</p></div>${gallery}</section>`;
   }
 
   function publicAudioPreview(resource) {
@@ -1240,15 +1258,18 @@ if (visualPrayerCards) {
     const tags = (resource.tags || []).map((tag) => `<span>${escapeHtml(tag)}</span>`).join("");
     const meta = typeMeta[resource.type] || typeMeta.all;
     const product = productForResource(resource);
-    const badge = product.salesStatus === "available" && product.priceKrw
-      ? formatKrw(product.priceKrw)
-      : "자료 문의";
+    const badge = product.salesStatus === "free"
+      ? "무료"
+      : product.salesStatus === "available" && product.priceKrw
+        ? formatKrw(product.priceKrw)
+        : "자료 문의";
+    const marketing = product.marketingDetails || {};
     return `<article class="faith-resource-card resource-type-${escapeHtml(resource.type)}" data-resource-id="${escapeHtml(resource.id)}">
       ${renderPublicPreviewGallery(resource, true)}
       <div class="resource-card-copy">
         <div class="resource-card-heading"><p class="eyebrow">${escapeHtml(meta?.title || "신앙자료")}</p><span class="resource-member-badge">${escapeHtml(badge)}</span></div>
         <h3>${escapeHtml(displayResourceTitle(resource))}</h3>
-        <p class="resource-summary">${escapeHtml(resource.summary)}</p>
+        <p class="resource-summary">${escapeHtml(marketing.hook || resource.summary)}</p>
         <div class="resource-card-tags" aria-label="자료 키워드">${tags}</div>
         <button class="resource-card-open" type="button" data-resource-detail="${escapeHtml(resource.id)}" aria-expanded="false">자료 열기 <span aria-hidden="true">→</span></button>
       </div>
@@ -1391,6 +1412,7 @@ if (visualPrayerCards) {
         ${canReadOriginal && protectedMediaPreviews.length && ["pdf", "card"].includes(resource.type) ? "" : renderPublicPreviewGallery(resource)}
         ${canReadOriginal && protectedMediaPreviews.length && resource.type === "audio" ? "" : renderPublicAudioPreview(resource)}
         ${renderProtectedMediaPreview(resource, protectedMediaPreviews)}
+        ${(() => { const marketing = productForResource(resource).marketingDetails || {}; const benefits = Array.isArray(marketing.benefits) ? marketing.benefits : []; return benefits.length ? `<div class="resource-marketing-points"><strong>${escapeHtml(marketing.hook || "이 자료가 돕는 일")}</strong><ul>${benefits.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul></div>` : ""; })()}
         <p class="resource-detail-description">${escapeHtml(privateDetail?.description || resource.summary)}</p>
         <h3>${canReadOriginal ? "구매 자료 구성" : "공개 미리보기"}</h3>
         <ul class="compact-list">${(privateDetail?.preview_items || items).map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
@@ -1474,6 +1496,20 @@ if (visualPrayerCards) {
     renderAll();
   });
 
+  listRoot.addEventListener("input", (event) => {
+    const input = event.target.closest("[data-print-copies]");
+    if (!input) return;
+    const panel = input.closest("[data-print-license]");
+    const product = findFaithProduct(panel?.dataset.printLicense);
+    if (!panel || !product) return;
+    const license = calculatePrintLicense(product, input.value);
+    input.value = license.requested;
+    const price = panel.querySelector("[data-print-total]");
+    const label = panel.querySelector(".pdf-print-price span");
+    if (price) price.textContent = formatKrw(license.total);
+    if (label) label.textContent = `${license.licensed}부 인쇄 권한`;
+  });
+
   listRoot.addEventListener("click", (event) => {
     const previewButton = event.target.closest("[data-resource-preview-url]");
     if (previewButton) {
@@ -1490,8 +1526,9 @@ if (visualPrayerCards) {
     const purchaseButton = event.target.closest("[data-product-purchase]");
     if (purchaseButton) {
       const productId = purchaseButton.dataset.productPurchase;
-      trackFaithEvent("purchase_start", { product_id: productId });
-      startProductPurchase(productId).catch((error) => {
+      const printCopies = purchaseButton.closest("[data-print-license]")?.querySelector("[data-print-copies]")?.value || null;
+      trackFaithEvent("purchase_start", { product_id: productId, print_copies: printCopies ? Number(printCopies) : undefined });
+      startProductPurchase(productId, printCopies).catch((error) => {
         setResourceActionStatus(error.message || "결제 흐름을 열지 못했습니다. 자료 문의하기로 연락해 주세요.");
       });
       return;
@@ -1526,8 +1563,9 @@ if (visualPrayerCards) {
     const purchaseButton = event.target.closest("[data-product-purchase]");
     if (purchaseButton) {
       const productId = purchaseButton.dataset.productPurchase;
-      trackFaithEvent("purchase_start", { product_id: productId });
-      startProductPurchase(productId).catch((error) => {
+      const printCopies = purchaseButton.closest("[data-print-license]")?.querySelector("[data-print-copies]")?.value || null;
+      trackFaithEvent("purchase_start", { product_id: productId, print_copies: printCopies ? Number(printCopies) : undefined });
+      startProductPurchase(productId, printCopies).catch((error) => {
         setResourceActionStatus(error.message || "결제 흐름을 열지 못했습니다. 자료 문의하기로 연락해 주세요.");
       });
       return;
@@ -1535,6 +1573,18 @@ if (visualPrayerCards) {
     const downloadButton = event.target.closest("[data-resource-download]");
     if (downloadButton) downloadResource(downloadButton.dataset.resourceDownload);
   });
+
+  function wireFreePdfCta() {
+    const cta = document.querySelector("[data-free-pdf-cta]");
+    const freePdf = resources.find((resource) => resource.type === "pdf" && productForResource(resource).salesStatus === "free");
+    if (!cta || !freePdf) return;
+    cta.href = `premium-pdf.html?resource=${encodeURIComponent(freePdf.id)}`;
+    if (cta.dataset.trackingBound) return;
+    cta.dataset.trackingBound = "true";
+    cta.addEventListener("click", () => trackFaithEvent("free_pdf_hero_click", { resource_id: freePdf.id }));
+  }
+
+  document.querySelector("[data-pdf-guide-link]")?.addEventListener("click", () => trackFaithEvent("pdf_guide_view", { source: "premium_pdf" }));
 
   window.addEventListener("faith-auth-changed", async () => {
     viewer = await loadViewer();
@@ -1564,6 +1614,7 @@ if (visualPrayerCards) {
     if (searchInput) searchInput.value = searchQuery;
     await refreshEntitlements();
     renderAll();
+    wireFreePdfCta();
     await restoreRequestedResourceDetail();
   })();
 })();

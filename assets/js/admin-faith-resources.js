@@ -5,6 +5,7 @@
   const ORIGINAL_BUCKET = "faith-resources";
   const PREVIEW_BUCKET = "faith-resource-previews";
   const IMAGE_PREVIEW_LIMIT = 3;
+  const PDF_PREVIEW_LIMIT = 4;
   const IMAGE_PREVIEW_MAX_BYTES = 5 * 1024 * 1024;
   const AUDIO_PREVIEW_MAX_BYTES = 15 * 1024 * 1024;
   const PDFJS_MODULE_URL = "https://cdn.jsdelivr.net/npm/pdfjs-dist@6.1.200/build/pdf.mjs";
@@ -100,6 +101,25 @@
 
   function previewItemsFrom(value) {
     return String(value || "").split(/\r?\n/).map((item) => item.trim()).filter(Boolean);
+  }
+
+  function linesFrom(value) {
+    return String(value || "").split(/\r?\n/).map((item) => item.trim()).filter(Boolean);
+  }
+
+  function marketingDetailsFromForm() {
+    return {
+      schemaVersion: 1,
+      hook: form.elements.marketingHook.value.trim(),
+      audiences: linesFrom(form.elements.marketingAudiences.value),
+      benefits: linesFrom(form.elements.marketingBenefits.value),
+      usageModes: linesFrom(form.elements.marketingUsageModes.value),
+      purchaseGoal: form.elements.purchaseGoal.value.trim(),
+      pageCount: Number(form.elements.pageCount.value || 0) || null,
+      dayCount: Number(form.elements.dayCount.value || 0) || null,
+      formats: ["A4 인쇄", "휴대폰 열람"],
+      relatedResourceIds: tagsFrom(form.elements.relatedResourceIds.value)
+    };
   }
 
   function previewItemsMatch(savedItems, expectedItems) {
@@ -209,7 +229,7 @@
         client.from("faith_resource_private_details").select("resource_id,description,preview_items,gallery_items,updated_at"),
         client.from("resource_files").select("id,resource_id,bucket_id,object_path,file_name,mime_type,file_size,sort_order,created_at").order("sort_order"),
         client.from("resource_preview_files").select("id,resource_id,bucket_id,object_path,file_name,mime_type,file_size,alt_text,sort_order,created_at").order("sort_order"),
-        client.from("faith_products").select("id,resource_id,type,title,summary,preview_items,sale_status,price_amount,currency,purchasable,published,updated_at")
+        client.from("faith_products").select("id,resource_id,type,title,summary,preview_items,sale_status,price_amount,currency,purchasable,published,marketing_details,base_print_copies,print_pack_size,print_pack_price,updated_at")
       ]);
       const failed = [resourcesResult, detailsResult, filesResult, previewsResult, productsResult].find((result) => result.error);
       if (failed) throw failed.error;
@@ -388,6 +408,18 @@
     syncPreviewItemsCount();
     form.elements.saleStatus.value = product?.sale_status || "inquiry";
     form.elements.priceAmount.value = product?.price_amount || "";
+    const marketing = product?.marketing_details || {};
+    form.elements.marketingHook.value = marketing.hook || "";
+    form.elements.marketingAudiences.value = (marketing.audiences || []).join("\n");
+    form.elements.marketingBenefits.value = (marketing.benefits || []).join("\n");
+    form.elements.marketingUsageModes.value = (marketing.usageModes || []).join("\n");
+    form.elements.purchaseGoal.value = marketing.purchaseGoal || "";
+    form.elements.pageCount.value = marketing.pageCount || "";
+    form.elements.dayCount.value = marketing.dayCount || "";
+    form.elements.relatedResourceIds.value = (marketing.relatedResourceIds || []).join(", ");
+    form.elements.basePrintCopies.value = product?.base_print_copies || 20;
+    form.elements.printPackSize.value = product?.print_pack_size || 10;
+    form.elements.printPackPrice.value = product?.print_pack_price ?? 3000;
     state.editorOriginals = (resource ? resourceFiles(resource.id) : []).map((item) => ({ ...item, source: "stored", status: "complete" }));
     state.editorPreviews = (resource ? resourcePreviews(resource.id) : []).map((item) => ({ ...item, source: "stored", status: "complete" }));
     state.editorPreviewReplacements = [];
@@ -459,8 +491,9 @@
         && state.editorPreviews.length <= 1
         && state.editorPreviews.every((item) => isAudioPreview(item) && Number(item.file_size || 0) <= AUDIO_PREVIEW_MAX_BYTES);
     }
-    return (!isPdf || !requirePdf || state.editorPreviews.length > 0)
-      && state.editorPreviews.length <= IMAGE_PREVIEW_LIMIT
+    const maximum = isPdf ? PDF_PREVIEW_LIMIT : IMAGE_PREVIEW_LIMIT;
+    return (!isPdf || !requirePdf || state.editorPreviews.length === PDF_PREVIEW_LIMIT)
+      && state.editorPreviews.length <= maximum
       && state.editorPreviews.every((item) => isImagePreview(item) && Number(item.file_size || 0) <= IMAGE_PREVIEW_MAX_BYTES);
   }
 
@@ -473,11 +506,11 @@
     const picker = document.querySelector("[data-preview-file-picker]");
     previewInput.accept = isAudio ? "audio/mpeg,audio/mp3,.mp3" : "image/jpeg,image/png,image/webp";
     previewInput.multiple = !isAudio;
-    if (title) title.textContent = isAudio ? "공개 미리듣기 MP3" : isPdf ? "PDF 1~3페이지 공개 미리보기" : "공개 미리보기 이미지";
+    if (title) title.textContent = isAudio ? "공개 미리듣기 MP3" : isPdf ? "PDF 1~4페이지 공개 미리보기" : "공개 미리보기 이미지";
     if (description) description.textContent = isAudio
       ? "원본과 분리된 미리듣기용 MP3 파일을 1개 등록합니다. 웹페이지에서 스트리밍으로 재생됩니다."
       : isPdf
-        ? "PDF 원본을 선택하면 앞 3페이지가 공개용 WEBP 이미지로 자동 생성됩니다. 필요하면 다른 이미지로 교체할 수 있습니다."
+        ? "PDF 원본을 선택하면 앞 4페이지가 공개용 WEBP 이미지로 자동 생성됩니다. 필요하면 다른 이미지로 교체할 수 있습니다."
         : "원본과 분리된 표지 또는 미리보기 이미지를 최대 3장 등록합니다.";
     if (picker) picker.textContent = isAudio ? "미리듣기 MP3 선택 또는 드래그앤드롭" : isPdf ? "다른 미리보기 이미지 선택 또는 드래그앤드롭" : "미리보기 이미지 선택 또는 드래그앤드롭";
     renderPdfPreviewControls();
@@ -490,9 +523,9 @@
     const target = kind === "preview" ? state.editorPreviews : state.editorOriginals;
     if (kind === "preview") {
       const isAudio = form.elements.type.value === "audio";
-      const maximum = isAudio ? 1 : IMAGE_PREVIEW_LIMIT;
+      const maximum = isAudio ? 1 : form.elements.type.value === "pdf" ? PDF_PREVIEW_LIMIT : IMAGE_PREVIEW_LIMIT;
       if (target.length + files.length > maximum) {
-        setStatus(uploadStatus, isAudio ? "공개 미리듣기 MP3는 1개만 등록할 수 있습니다." : "공개 미리보기 이미지는 최대 3장까지 등록할 수 있습니다.", true);
+        setStatus(uploadStatus, isAudio ? "공개 미리듣기 MP3는 1개만 등록할 수 있습니다." : `공개 미리보기 이미지는 최대 ${maximum}장까지 등록할 수 있습니다.`, true);
         return;
       }
       const invalidType = files.some((file) => isAudio
@@ -539,12 +572,12 @@
     button.disabled = state.pdfPreviewGenerating || !state.editorOriginals.some((item) => fileMatchesType("pdf", item));
     status.classList.toggle("is-error", Boolean(state.pdfPreviewGenerationError));
     status.textContent = state.pdfPreviewGenerating
-      ? "PDF 앞 1~3페이지를 공개 미리보기로 만들고 있습니다."
+      ? "PDF 앞 1~4페이지를 공개 미리보기로 만들고 있습니다."
       : state.pdfPreviewGenerationError
         ? state.pdfPreviewGenerationError
         : previewCount
           ? `공개 미리보기 ${previewCount}장이 준비되었습니다. 저장하면 신앙자료 페이지에 표시됩니다.`
-          : "PDF 원본을 선택하면 앞 1~3페이지가 자동으로 준비됩니다.";
+          : "PDF 원본을 선택하면 앞 1~4페이지가 자동으로 준비됩니다.";
   }
 
   async function loadPdfJs() {
@@ -581,7 +614,7 @@
     const pdfDocument = await loadingTask.promise;
     const files = [];
     try {
-      const pageCount = Math.min(pdfDocument.numPages, IMAGE_PREVIEW_LIMIT);
+      const pageCount = Math.min(pdfDocument.numPages, PDF_PREVIEW_LIMIT);
       for (let pageNumber = 1; pageNumber <= pageCount; pageNumber += 1) {
         const page = await pdfDocument.getPage(pageNumber);
         const baseViewport = page.getViewport({ scale: 1 });
@@ -721,7 +754,7 @@
       { ready: tags.length > 0, label: "키워드 1개 이상" },
       { ready: originalFilesValid(), label: form.elements.type.value === "card" ? "기도카드 이미지 10~12장" : "자료 유형에 맞는 원본 파일" },
       { ready: accessLevel === "free" || saleStatus === "inquiry" || (saleStatus === "available" && price > 0 && state.workerReady), label: accessLevel === "free" ? "무료다운 설정" : "판매 상태와 가격" },
-      { ready: !state.pdfPreviewGenerating && previewFilesValid({ requireAudio: form.elements.type.value === "audio", requirePdf: form.elements.type.value === "pdf" }), label: form.elements.type.value === "audio" ? "공개 미리듣기 MP3 1개" : form.elements.type.value === "pdf" ? "PDF 1~3페이지 공개 미리보기" : "공개 미리보기 이미지 3장 이하" }
+      { ready: !state.pdfPreviewGenerating && previewFilesValid({ requireAudio: form.elements.type.value === "audio", requirePdf: form.elements.type.value === "pdf" }), label: form.elements.type.value === "audio" ? "공개 미리듣기 MP3 1개" : form.elements.type.value === "pdf" ? "PDF 1~4페이지 공개 미리보기" : "공개 미리보기 이미지 3장 이하" }
     ];
     root.innerHTML = checks.map((check) => `<p class="${check.ready ? "is-ready" : ""}">${check.ready ? "완료" : "확인 필요"} · ${escapeHtml(check.label)}</p>`).join("");
   }
@@ -742,6 +775,8 @@
     form.elements.priceAmount.disabled = !available;
     form.elements.priceAmount.required = available;
     if (!available) form.elements.priceAmount.value = "";
+    const isPdf = form.elements.type.value === "pdf";
+    document.querySelectorAll("[data-pdf-product-field]").forEach((field) => { field.hidden = !isPdf; });
     renderPublishChecklist();
   }
 
@@ -763,9 +798,9 @@
     if (accessLevel !== "free" && saleStatus === "available" && !state.workerReady) return "결제 Worker 연결이 확인된 뒤 온라인 구매 상태를 사용할 수 있습니다.";
     if (!previewFilesValid()) return form.elements.type.value === "audio"
       ? "공개 미리듣기는 15MB 이하 MP3 파일 1개로 등록해 주세요."
-      : "공개 미리보기는 파일당 5MB 이하 JPG, PNG, WEBP 이미지 3장 이하로 등록해 주세요.";
+      : `공개 미리보기는 파일당 5MB 이하 JPG, PNG, WEBP 이미지 ${form.elements.type.value === "pdf" ? PDF_PREVIEW_LIMIT : IMAGE_PREVIEW_LIMIT}장 이하로 등록해 주세요.`;
     if (publishing && form.elements.type.value === "audio" && !previewFilesValid({ requireAudio: true })) return "기도 오디오북을 공개하려면 15MB 이하 미리듣기 MP3 파일 1개를 등록해 주세요.";
-    if (publishing && form.elements.type.value === "pdf" && !previewFilesValid({ requirePdf: true })) return "기도문 PDF를 공개하려면 1~3페이지 공개 미리보기를 준비해 주세요.";
+    if (publishing && form.elements.type.value === "pdf" && !previewFilesValid({ requirePdf: true })) return "기도문 PDF를 공개하려면 앞 1~4페이지 공개 미리보기 4장을 준비해 주세요.";
     if (publishing && form.elements.type.value === "card" && !originalFilesValid()) return "기도카드는 이미지 10~12장을 등록해야 공개할 수 있습니다.";
     if (publishing && !originalFilesValid()) return "자료 유형에 맞는 원본 파일 구성을 확인해 주세요.";
     if (publishing && accessLevel !== "free" && saleStatus === "unavailable") return "판매 비노출 자료는 공개할 수 없습니다.";
@@ -775,7 +810,7 @@
   async function saveResource({ publishing = false } = {}) {
     if (!client || !state.user || state.loading) return;
     if (form.elements.type.value === "pdf" && !state.pdfPreviewGenerating && !previewFilesValid({ requirePdf: true })) {
-      setStatus(uploadStatus, "PDF 앞 1~3페이지 공개 미리보기를 준비하고 있습니다.");
+      setStatus(uploadStatus, "PDF 앞 1~4페이지 공개 미리보기를 준비하고 있습니다.");
       await generatePdfPagePreviews();
     }
     const validation = validateEditor({ publishing });
@@ -794,6 +829,11 @@
     const accessLevel = form.elements.accessLevel.value;
     const saleStatus = accessLevel === "free" ? "inquiry" : form.elements.saleStatus.value;
     const priceAmount = saleStatus === "available" ? Number(form.elements.priceAmount.value) : null;
+    const isPdf = type === "pdf";
+    const marketingDetails = isPdf ? marketingDetailsFromForm() : {};
+    const basePrintCopies = isPdf ? Number(form.elements.basePrintCopies.value || 20) : 1;
+    const printPackSize = isPdf ? Number(form.elements.printPackSize.value || 10) : 10;
+    const printPackPrice = isPdf ? Number(form.elements.printPackPrice.value || 3000) : 0;
     const currentResource = state.resources.find((item) => item.id === resourceId);
     setStatus(uploadStatus, "자료 정보를 저장하고 있습니다.");
     try {
@@ -845,7 +885,11 @@
         price_amount: priceAmount,
         currency: "KRW",
         purchasable: saleStatus === "available",
-        published: productPublished
+        published: productPublished,
+        marketing_details: marketingDetails,
+        base_print_copies: basePrintCopies,
+        print_pack_size: printPackSize,
+        print_pack_price: printPackPrice
       }, { onConflict: "id" }).select("preview_items").single();
       if (productError) throw productError;
       if (!previewItemsMatch(savedProduct?.preview_items, previewItems)) throw new Error("상품의 공개 자료 구성이 모두 저장되지 않았습니다. 입력 내용을 유지한 채 다시 시도해 주세요.");

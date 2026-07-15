@@ -81,6 +81,11 @@
     <priority>0.6</priority>
   </url>
   <url>
+    <loc>https://product-codex-90j.pages.dev/prayer-pdf-guide</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://product-codex-90j.pages.dev/privacy</loc>
     <changefreq>monthly</changefreq>
     <priority>0.4</priority>

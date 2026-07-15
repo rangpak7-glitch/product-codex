@@ -222,9 +222,32 @@ function canPurchaseProduct(product) {
   );
 }
 
+function printLicenseQuote(product, requestedValue) {
+  if (!canPurchaseProduct(product)) return null;
+  const isPdf = product.type === "pdf";
+  const base = isPdf ? Math.max(1, Number(product.base_print_copies || 20)) : 1;
+  const packSize = isPdf ? Math.max(1, Number(product.print_pack_size || 10)) : 1;
+  const packPrice = isPdf ? Math.max(0, Number(product.print_pack_price || 0)) : 0;
+  const requested = isPdf ? Number(requestedValue ?? base) : 1;
+  if (!Number.isInteger(requested) || requested < 1 || requested > 10000) return null;
+  const packs = Math.ceil(Math.max(0, requested - base) / packSize);
+  const surcharge = packs * packPrice;
+  return {
+    requested,
+    licensed: base + packs * packSize,
+    basePrice: Number(product.price_amount),
+    surcharge,
+    amount: Number(product.price_amount) + surcharge
+  };
+}
+
 function matchesCurrentOrderPolicy(product, order) {
-  return canPurchaseProduct(product)
-    && Number(product.price_amount) === Number(order.amount)
+  const quote = printLicenseQuote(product, order.requested_print_copies);
+  return Boolean(quote)
+    && quote.amount === Number(order.amount)
+    && quote.basePrice === Number(order.base_price_amount)
+    && quote.surcharge === Number(order.license_surcharge_amount)
+    && quote.licensed === Number(order.licensed_print_copies)
     && product.currency === order.currency;
 }
 
@@ -249,7 +272,7 @@ function isUniqueViolation(error) {
 async function getProduct(env, productId) {
   const rows = await rest(
     env,
-    `faith_products?id=eq.${encodeURIComponent(productId)}&select=id,resource_id,type,title,sale_status,price_amount,currency,purchasable,published`
+    `faith_products?id=eq.${encodeURIComponent(productId)}&select=id,resource_id,type,title,sale_status,price_amount,currency,purchasable,published,base_print_copies,print_pack_size,print_pack_price`
   );
   return rows?.[0] || null;
 }
@@ -284,6 +307,10 @@ function checkoutPayload(product, order, env, origin, reused = false) {
     amount: Number(order.amount),
     currency: order.currency,
     orderName: product.title,
+    requestedPrintCopies: Number(order.requested_print_copies || 1),
+    licensedPrintCopies: Number(order.licensed_print_copies || 1),
+    basePriceAmount: Number(order.base_price_amount || order.amount),
+    licenseSurchargeAmount: Number(order.license_surcharge_amount || 0),
     clientKey: env.TOSS_CLIENT_KEY,
     successUrl: `${origin}/account.html?order=success`,
     failUrl: `${origin}/account.html?order=fail`,
@@ -322,7 +349,7 @@ async function startOrder(request, env) {
   const [member, authError] = await requireMember(request, env);
   if (authError) return authError;
   requireEnv(env, ["TOSS_CLIENT_KEY", "SITE_ORIGIN"]);
-  const { productId } = await readJson(request);
+  const { productId, printCopies } = await readJson(request);
   if (!isSafeProductId(productId)) return json({ error: "상품 정보가 올바르지 않습니다." }, 400);
 
   const product = await getProduct(env, productId);
@@ -330,11 +357,13 @@ async function startOrder(request, env) {
   if (!canPurchaseProduct(product)) {
     return json({ error: "현재 온라인 결제를 제공하지 않는 자료입니다. 자료 문의하기를 이용해 주세요.", code: "inquiry_only" }, 409);
   }
+  const quote = printLicenseQuote(product, printCopies);
+  if (!quote) return json({ error: "인쇄 부수는 1부 이상 10,000부 이하의 정수로 입력해 주세요." }, 400);
 
   const origin = checkoutOrigin(request, env);
   const existing = await getActiveOrPaidOrderForProduct(env, member.id, product.id);
   if (existing?.status === "paid") return existingOrderResponse(product, existing, env, origin);
-  if (existing?.status === "ready" && !isOrderExpired(existing) && matchesCurrentOrderPolicy(product, existing)) {
+  if (existing?.status === "ready" && !isOrderExpired(existing) && matchesCurrentOrderPolicy(product, existing) && Number(existing.requested_print_copies) === quote.requested) {
     return existingOrderResponse(product, existing, env, origin);
   }
   if (existing?.status === "ready") {
@@ -352,7 +381,11 @@ async function startOrder(request, env) {
         product_id: product.id,
         resource_id: product.resource_id || null,
         order_id: orderId,
-        amount: product.price_amount,
+        amount: quote.amount,
+        base_price_amount: quote.basePrice,
+        license_surcharge_amount: quote.surcharge,
+        requested_print_copies: quote.requested,
+        licensed_print_copies: quote.licensed,
         currency: product.currency,
         status: "ready",
         expires_at: orderExpiresAt(env)
@@ -425,6 +458,10 @@ function publicOrder(order) {
     productId: order.product_id,
     resourceId: order.resource_id || null,
     status: order.status,
+    requestedPrintCopies: Number(order.requested_print_copies || 1),
+    licensedPrintCopies: Number(order.licensed_print_copies || 1),
+    basePriceAmount: Number(order.base_price_amount || order.amount),
+    licenseSurchargeAmount: Number(order.license_surcharge_amount || 0),
     paidAt: order.paid_at || null
   };
 }
@@ -736,6 +773,10 @@ function publicAdminOrder(order, product, email, downloadCount) {
     canceledAt: order.canceled_at || null,
     refundedAt: order.refunded_at || null,
     refundReason: order.refund_reason || "",
+    requestedPrintCopies: Number(order.requested_print_copies || 1),
+    licensedPrintCopies: Number(order.licensed_print_copies || 1),
+    basePriceAmount: Number(order.base_price_amount || order.amount),
+    licenseSurchargeAmount: Number(order.license_surcharge_amount || 0),
     downloadCount
   };
 }
@@ -746,7 +787,7 @@ async function getAdminOrders(request, env, url) {
 
   const orders = await rest(
     env,
-    "faith_orders?order=created_at.desc&limit=200&select=id,user_id,product_id,resource_id,order_id,amount,currency,status,created_at,paid_at,canceled_at,refunded_at,refund_reason"
+    "faith_orders?order=created_at.desc&limit=200&select=id,user_id,product_id,resource_id,order_id,amount,currency,status,created_at,paid_at,canceled_at,refunded_at,refund_reason,requested_print_copies,licensed_print_copies,base_price_amount,license_surcharge_amount"
   );
   const products = await rest(env, "faith_products?limit=1000&select=id,title,type");
   const downloads = await rest(env, "resource_downloads?order_id=not.is.null&limit=5000&select=order_id");

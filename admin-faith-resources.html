@@ -7,6 +7,7 @@
   <title>신앙자료 운영 대시보드 | 기도의샘물</title>
   <link rel="stylesheet" href="assets/css/style.css">
   <link rel="stylesheet" href="assets/css/editorial-redesign.css">
+  <link rel="stylesheet" href="assets/css/prayer-pdf-sales.css?v=20260715-pdf-sales1">
   <link rel="stylesheet" href="assets/css/admin-faith-resources.css">
 </head>
 <body class="admin-page">
@@ -83,6 +84,16 @@
         <label>짧은 요약<textarea name="summary" rows="3" minlength="2" maxlength="500" required placeholder="목록에서 먼저 보이는 소개를 입력합니다."></textarea></label>
         <label>자료 유형<select name="type" required><option value="pdf">기도문 PDF</option><option value="audio">기도 오디오북</option><option value="card">기도카드</option></select></label>
         <label>상세 설명<textarea name="description" rows="8" minlength="2" maxlength="10000" required placeholder="구매 후 확인할 수 있는 자료 구성과 사용 방법을 입력합니다."></textarea></label>
+        <div class="admin-marketing-fields" data-pdf-product-field>
+          <strong>기도문 PDF 판매 안내</strong>
+          <label>5초 핵심 문장<input type="text" name="marketingHook" maxlength="160" placeholder="예: 걱정을 말씀과 기록으로 바꾸는 14일"></label>
+          <label>대상 독자<textarea name="marketingAudiences" rows="3" maxlength="1000" placeholder="한 줄에 한 대상씩 입력합니다."></textarea></label>
+          <label>구매자가 얻는 도움<textarea name="marketingBenefits" rows="4" maxlength="1200" placeholder="한 줄에 한 가지씩 입력합니다."></textarea></label>
+          <label>활용 방식<textarea name="marketingUsageModes" rows="3" maxlength="1000" placeholder="개인 묵상, 가정예배, 소그룹 나눔처럼 한 줄에 하나씩 입력합니다."></textarea></label>
+          <label>기도 목표<textarea name="purchaseGoal" rows="3" maxlength="1000" placeholder="이 기도를 통해 세우려는 구체적인 기도 습관을 입력합니다."></textarea></label>
+          <div class="admin-inline-fields"><label>총 페이지<input type="number" name="pageCount" min="1" max="500" step="1"></label><label>기도 일수<input type="number" name="dayCount" min="1" max="365" step="1"></label></div>
+          <label>연관 자료 ID<input type="text" name="relatedResourceIds" maxlength="1000" placeholder="쉼표로 구분합니다."></label>
+        </div>
       </section>
 
       <section class="admin-editor-step" data-editor-panel="2" hidden>
@@ -112,6 +123,11 @@
         <p class="admin-worker-status" data-access-level-help>유료 판매는 판매 상태와 가격을 설정합니다. 무료다운은 로그인 회원이 결제 없이 내려받을 수 있습니다.</p>
         <label data-paid-sale-field>판매 상태<select name="saleStatus" required><option value="inquiry">문의 안내</option><option value="available">온라인 구매 가능</option><option value="unavailable">판매 비노출</option></select></label>
         <label data-paid-price-field>판매 가격(원)<input type="number" name="priceAmount" min="1" step="1" inputmode="numeric" placeholder="온라인 구매 가능일 때만 입력"></label>
+        <div class="admin-marketing-fields" data-pdf-product-field>
+          <strong>교회·기관 인쇄 라이선스</strong>
+          <p class="muted">기본 수량까지 상품 가격에 포함하고, 초과 수량은 묶음 단위로 자동 계산합니다.</p>
+          <div class="admin-inline-fields"><label>기본 포함 부수<input type="number" name="basePrintCopies" min="1" step="1" value="20"></label><label>추가 묶음 부수<input type="number" name="printPackSize" min="1" step="1" value="10"></label><label>묶음 추가금(원)<input type="number" name="printPackPrice" min="0" step="1" value="3000"></label></div>
+        </div>
         <div class="admin-publish-checklist" data-publish-checklist></div>
         <p class="admin-worker-status" data-worker-status></p>
       </section>
@@ -125,6 +141,6 @@
 </main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.1/dist/umd/supabase.js"></script>
 <script src="assets/js/supabase-config.js?v=20260715-worker1"></script>
-<script src="assets/js/admin-faith-resources.js?v=20260715-pdf-previews2"></script>
+<script src="assets/js/admin-faith-resources.js?v=20260715-pdf-sales1"></script>
 </body>
 </html>
