@@ -2,6 +2,7 @@
   const SUPABASE_SCRIPT = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.1/dist/umd/supabase.js";
   const TOSS_SCRIPT = "https://js.tosspayments.com/v2/standard";
   const ORDER_PENDING_KEY = "faithOrderPending";
+  const MEMBER_PURCHASE_GUIDANCE = "구매한 자료의 내역 확인과 다운로드 기능을 위해 회원 가입이 필요합니다";
   const state = {
     client: null,
     user: null,
@@ -100,6 +101,26 @@
     root.querySelector("[data-faith-reset-back]")?.addEventListener("click", () => setAuthMode("login"));
   }
 
+  function ensureDownloadModal() {
+    if (document.getElementById("faithDownloadModal")) return;
+    const root = document.createElement("div");
+    root.id = "faithDownloadModal";
+    root.className = "faith-download-modal";
+    root.hidden = true;
+    root.innerHTML = `
+      <div class="faith-download-backdrop" data-faith-download-close></div>
+      <section class="faith-download-dialog" role="dialog" aria-modal="true" aria-labelledby="faithDownloadTitle">
+        <button class="modal-close" type="button" data-faith-download-close aria-label="다운로드 창 닫기">×</button>
+        <p class="eyebrow">Purchased files</p>
+        <h2 id="faithDownloadTitle">구매 자료 다운로드</h2>
+        <p class="faith-download-guidance">아래 파일을 하나씩 눌러 모두 내려받아 주세요. 다운로드 링크는 잠시 후 만료됩니다.</p>
+        <div class="faith-download-list" data-faith-download-list></div>
+        <button class="button secondary" type="button" data-faith-download-close>닫기</button>
+      </section>`;
+    document.body.append(root);
+    root.querySelectorAll("[data-faith-download-close]").forEach((button) => button.addEventListener("click", closeDownloadModal));
+  }
+
   function setStatus(message, error = false) {
     const status = document.getElementById("faithAuthStatus");
     if (!status) return;
@@ -126,18 +147,26 @@
     setStatus("");
   }
 
-  function open(mode = "login") {
+  function open(mode = "login", message = "") {
     ensureModal();
     setAuthMode(mode);
     const root = document.getElementById("faithAuthModal");
     root.hidden = false;
     document.body.classList.add("modal-open");
+    if (message) setStatus(message);
     const focusSelector = mode === "signup" ? "#faithSignupForm [name='nickname']" : mode === "reset" ? "#faithResetForm [name='email']" : "#faithLoginForm [name='email']";
     window.setTimeout(() => root.querySelector(focusSelector)?.focus(), 0);
   }
 
   function close() {
     const root = document.getElementById("faithAuthModal");
+    if (!root) return;
+    root.hidden = true;
+    document.body.classList.remove("modal-open");
+  }
+
+  function closeDownloadModal() {
+    const root = document.getElementById("faithDownloadModal");
     if (!root) return;
     root.hidden = true;
     document.body.classList.remove("modal-open");
@@ -320,7 +349,7 @@
     const normalizedProductId = String(productId || "").trim();
     if (!normalizedProductId) throw new Error("구매할 자료 정보를 찾지 못했습니다.");
     if (!state.user) {
-      open("signup");
+      open("signup", MEMBER_PURCHASE_GUIDANCE);
       return { requiresLogin: true, productId: normalizedProductId };
     }
     if (!orderApiUrl()) return openPurchaseInquiry(normalizedProductId);
@@ -423,8 +452,8 @@
     const normalizedResourceId = String(resourceId || "").trim();
     if (!normalizedResourceId) throw new Error("다운로드할 자료 정보를 찾지 못했습니다.");
     if (!state.user) {
-      open("login");
-      throw new Error("로그인 후 구매한 자료를 다운로드할 수 있습니다.");
+      open("signup", MEMBER_PURCHASE_GUIDANCE);
+      throw new Error(MEMBER_PURCHASE_GUIDANCE);
     }
     if (orderApiUrl()) return orderRequest(`/resources/${encodeURIComponent(normalizedResourceId)}/download`);
 
@@ -455,6 +484,16 @@
   function startProtectedDownloads(download) {
     const files = downloadEntries(download);
     if (!files.length) throw new Error("다운로드 링크를 찾지 못했습니다.");
+    if (files.length > 1) {
+      ensureDownloadModal();
+      const root = document.getElementById("faithDownloadModal");
+      const list = root.querySelector("[data-faith-download-list]");
+      list.innerHTML = files.map((file, index) => `<a class="faith-download-file" href="${escapeHtml(file.url)}" download="${escapeHtml(file.fileName || "")}" rel="noopener"><span>${index + 1}</span><strong>${escapeHtml(file.fileName || `자료 파일 ${index + 1}`)}</strong><span aria-hidden="true">↓</span></a>`).join("");
+      root.hidden = false;
+      document.body.classList.add("modal-open");
+      window.setTimeout(() => list.querySelector("a")?.focus(), 0);
+      return files.length;
+    }
     files.forEach((file) => {
       const link = document.createElement("a");
       link.href = file.url;
@@ -668,7 +707,7 @@
         if (download?.requiresLogin) return;
         const count = startProtectedDownloads(download);
         trackOrderEvent("resource_download", { resource_id: button.dataset.ownedResourceDownload });
-        if (status) status.textContent = count > 1 ? `${count}개 파일의 다운로드를 시작했습니다.` : "다운로드를 시작했습니다.";
+        if (status) status.textContent = count > 1 ? `${count}개 파일의 다운로드 목록을 열었습니다.` : "다운로드를 시작했습니다.";
       } catch (error) {
         if (status) status.textContent = error.message;
       } finally {
@@ -898,6 +937,7 @@
     if (state.initialized) return;
     state.initialized = true;
     ensureModal();
+    renderAccountControl();
     state.client = await getClient();
     if (state.client) state.client.auth.onAuthStateChange(() => window.setTimeout(refreshSession, 0));
     await refreshSession();
@@ -909,6 +949,10 @@
   }
 
   window.FaithAuth = { open, close, getClient, refreshSession, getOrderForResource, hasPurchasedResource, requestPurchase, requestProtectedDownload, startProtectedDownloads };
-  document.addEventListener("keydown", (event) => { if (event.key === "Escape") close(); });
+  document.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape") return;
+    close();
+    closeDownloadModal();
+  });
   init().catch((error) => console.error("faith-member-init", error));
 })();

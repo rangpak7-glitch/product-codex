@@ -1481,6 +1481,48 @@ body[data-site-page="prayer-cards"] #faithResourceFilterStatus[hidden] { display
   border-top: 1px solid #d9d1c5;
   border-bottom: 1px solid #d9d1c5;
 }
+.resource-media-preview-pages .resource-public-preview-grid { margin-bottom: 0; }
+
+.faith-download-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 230;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+}
+.faith-download-modal[hidden] { display: none; }
+.faith-download-backdrop { position: absolute; inset: 0; background: rgba(9, 20, 16, .68); }
+.faith-download-dialog {
+  position: relative;
+  z-index: 1;
+  width: min(560px, 100%);
+  max-height: min(760px, calc(100dvh - 40px));
+  overflow: auto;
+  padding: 30px;
+  border: 1px solid #d9d1c5;
+  border-radius: 12px;
+  background: #fffefb;
+  box-shadow: 0 24px 70px rgba(9, 20, 16, .3);
+}
+.faith-download-dialog h2 { margin: 4px 44px 8px 0; }
+.faith-download-guidance { margin: 0 0 20px; color: #59645f; line-height: 1.7; }
+.faith-download-list { display: grid; gap: 10px; margin-bottom: 20px; }
+.faith-download-file {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) 24px;
+  align-items: center;
+  gap: 10px;
+  min-height: 52px;
+  padding: 10px 12px;
+  border: 1px solid #d9d1c5;
+  border-radius: 8px;
+  color: #20372f;
+  text-decoration: none;
+}
+.faith-download-file:hover,
+.faith-download-file:focus-visible { border-color: #826039; background: #f6f2ea; outline: none; }
+.faith-download-file strong { overflow-wrap: anywhere; }
 .resource-media-heading { margin-bottom: 14px; }
 .resource-media-heading .eyebrow { margin: 0 0 5px; }
 .resource-media-heading h3 { margin: 0; font-size: 1.18rem; }
@@ -1578,10 +1620,21 @@ body[data-site-page="prayer-cards"] #faithResourceFilterStatus[hidden] { display
 }
 
 @media (max-width: 560px) {
-  .site-header .brand strong { font-size: 1rem; }
-  .site-header .faith-account-control { gap: 4px; }
+  .site-header { grid-template-columns: minmax(0, 1fr) auto; column-gap: 6px; padding-inline: 10px; }
+  .site-header .brand { min-width: 0; }
+  .site-header .brand strong { overflow: hidden; font-size: .95rem; text-overflow: ellipsis; white-space: nowrap; }
+  .site-header .faith-account-control {
+    display: inline-flex !important;
+    visibility: visible;
+    opacity: 1;
+    gap: 4px;
+    min-width: max-content;
+    position: relative;
+    z-index: 5;
+  }
   .site-header .faith-account-control a,
-  .site-header .faith-account-control button { min-height: 36px; padding: 6px 8px; font-size: .75rem; }
+  .site-header .faith-account-control button { display: inline-flex !important; min-height: 36px; padding: 6px 8px; font-size: .75rem; }
+  .site-header .faith-account-control .account-signup { display: inline-flex !important; }
   .site-nav-primary a { font-size: clamp(.67rem, 2.5vw, .76rem); }
   .site-nav-secondary a { padding-inline: 9px; font-size: .72rem; }
   body[data-site-page] .page-hero { min-height: 220px; padding: 26px 22px; background-position: 62% center; }
@@ -1601,6 +1654,9 @@ body[data-site-page="prayer-cards"] #faithResourceFilterStatus[hidden] { display
   .resource-public-preview-grid { grid-template-columns: 1fr; }
   .resource-public-preview-grid.is-compact { grid-template-columns: minmax(0, 140px); }
   .resource-type-card .resource-inline-detail .resource-public-preview-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .resource-media-preview-pages .resource-public-preview-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+  .faith-download-modal { padding: 12px; }
+  .faith-download-dialog { max-height: calc(100dvh - 24px); padding: 24px 18px; }
   .resource-pdf-frame { width: 100%; }
   .resource-private-card-preview { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
   .resource-board-head.resource-benefit-head { margin-bottom: 10px; padding-bottom: 10px; }

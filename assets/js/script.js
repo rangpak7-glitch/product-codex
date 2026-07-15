@@ -5,7 +5,7 @@ const $ = (selector) => document.querySelector(selector);
   if (window.__faithMemberScriptLoaded) return;
   window.__faithMemberScriptLoaded = true;
   const script = document.createElement("script");
-  script.src = new URL("assets/js/faith-member.js?v=20260715-community-bbs", window.location.href).href;
+  script.src = new URL("assets/js/faith-member.js?v=20260715-paid-preview", window.location.href).href;
   script.async = true;
   document.head.append(script);
 })();
@@ -984,21 +984,47 @@ if (visualPrayerCards) {
     return (data || []).map(normalizeFaithProduct);
   }
 
+  const builtInPreviewFiles = {
+    "bdfbfab7-4798-4aa0-9a0b-617a36fd780c": [
+      { file_name: "page-1.png", mime_type: "image/png", alt_text: "가정을 품는 7일간의 기도 1페이지", url: new URL("assets/previews/bdfbfab7-4798-4aa0-9a0b-617a36fd780c/page-1.png", document.baseURI).href },
+      { file_name: "page-2.png", mime_type: "image/png", alt_text: "가정을 품는 7일간의 기도 2페이지", url: new URL("assets/previews/bdfbfab7-4798-4aa0-9a0b-617a36fd780c/page-2.png", document.baseURI).href },
+      { file_name: "page-3.png", mime_type: "image/png", alt_text: "가정을 품는 7일간의 기도 3페이지", url: new URL("assets/previews/bdfbfab7-4798-4aa0-9a0b-617a36fd780c/page-3.png", document.baseURI).href }
+    ],
+    "1a9ad9d3-8b81-42e5-aa2d-20c15d31eb46": [
+      { file_name: "preview-1.png", mime_type: "image/png", alt_text: "마음이 다친 자녀를 위한 위로기도 카드 미리보기 1", url: new URL("assets/previews/1a9ad9d3-8b81-42e5-aa2d-20c15d31eb46/preview-1.png", document.baseURI).href },
+      { file_name: "preview-2.png", mime_type: "image/png", alt_text: "마음이 다친 자녀를 위한 위로기도 카드 미리보기 2", url: new URL("assets/previews/1a9ad9d3-8b81-42e5-aa2d-20c15d31eb46/preview-2.png", document.baseURI).href }
+    ],
+    "e9fbe4a5-7419-4a43-8401-25e24d6e0278": [
+      { file_name: "preview-1.png", mime_type: "image/png", alt_text: "중요한 결정과 재정 부담 앞에 선 가정을 위한 지혜기도 카드 미리보기 1", url: new URL("assets/previews/e9fbe4a5-7419-4a43-8401-25e24d6e0278/preview-1.png", document.baseURI).href },
+      { file_name: "preview-2.png", mime_type: "image/png", alt_text: "중요한 결정과 재정 부담 앞에 선 가정을 위한 지혜기도 카드 미리보기 2", url: new URL("assets/previews/e9fbe4a5-7419-4a43-8401-25e24d6e0278/preview-2.png", document.baseURI).href }
+    ],
+    "6f0ba68d-4d6e-4093-8c68-025ee28db187": [
+      { file_name: "preview-90s.mp3", mime_type: "audio/mpeg", alt_text: "기도 오디오북 90초 미리듣기", url: new URL("assets/previews/6f0ba68d-4d6e-4093-8c68-025ee28db187/preview-90s.mp3", document.baseURI).href }
+    ]
+  };
+
+  function applyBuiltInPreviewFallback(previewMap = new Map()) {
+    Object.entries(builtInPreviewFiles).forEach(([resourceId, files]) => {
+      if ((previewMap.get(resourceId) || []).length) return;
+      previewMap.set(resourceId, files);
+    });
+    return previewMap;
+  }
   async function loadPublicPreviews() {
     const previewMap = new Map();
-    if (!client) return null;
+    if (!client) return applyBuiltInPreviewFallback(previewMap);
     const { data, error } = await client
       .from("resource_preview_files")
       .select("id,resource_id,bucket_id,object_path,file_name,mime_type,file_size,alt_text,sort_order")
       .order("sort_order", { ascending: true });
-    if (error) return null;
+    if (error) return applyBuiltInPreviewFallback(previewMap);
     (data || []).forEach((item) => {
       const { data: publicData } = client.storage.from(item.bucket_id).getPublicUrl(item.object_path);
       const list = previewMap.get(item.resource_id) || [];
       list.push({ ...item, url: publicData?.publicUrl || "" });
       previewMap.set(item.resource_id, list);
     });
-    return previewMap;
+    return applyBuiltInPreviewFallback(previewMap);
   }
 
   function resourcesByType() {
@@ -1061,11 +1087,17 @@ if (visualPrayerCards) {
   }
 
   function renderPublicPreviewGallery(resource, compact = false) {
-    if (compact && resource.type === "card") return "";
+    if (compact) return "";
     const previewLimit = compact ? 1 : resource.type === "card" ? 2 : 3;
     const previews = (resource.previews || []).filter((item) => item.url && (/^image\//.test(item.mime_type || "") || /\.(jpe?g|png|webp)$/i.test(item.file_name || item.object_path || ""))).slice(0, previewLimit);
-    if (!previews.length) return "";
-    return `<div class="resource-public-preview-grid${compact ? " is-compact" : ""}">${previews.map((item) => `<figure><img src="${escapeHtml(item.url)}" alt="${escapeHtml(item.alt_text || `${displayResourceTitle(resource)} 미리보기`)}" loading="lazy"><figcaption>${escapeHtml(item.alt_text || "공개 미리보기")}</figcaption></figure>`).join("")}</div>`;
+    if (!previews.length) {
+      return !compact && resource.type === "pdf"
+        ? `<section class="resource-media-preview resource-media-preview-pages" aria-label="PDF 공개 미리보기"><div class="resource-media-heading"><p class="eyebrow">PDF Preview</p><h3>1~3페이지 미리보기</h3><p>이 자료에는 현재 공개된 페이지 미리보기가 없습니다.</p></div></section>`
+        : "";
+    }
+    const gallery = `<div class="resource-public-preview-grid${compact ? " is-compact" : ""}">${previews.map((item, index) => `<figure><img src="${escapeHtml(item.url)}" alt="${escapeHtml(item.alt_text || `${displayResourceTitle(resource)} ${index + 1}페이지 미리보기`)}" loading="lazy"><figcaption>${escapeHtml(item.alt_text || `${index + 1}페이지`)}</figcaption></figure>`).join("")}</div>`;
+    if (compact || resource.type !== "pdf") return gallery;
+    return `<section class="resource-media-preview resource-media-preview-pages" aria-label="PDF 1페이지부터 3페이지 미리보기"><div class="resource-media-heading"><p class="eyebrow">PDF Preview</p><h3>1~3페이지 미리보기</h3><p>한 PDF의 앞 3페이지만 공개합니다.</p></div>${gallery}</section>`;
   }
 
   function publicAudioPreview(resource) {
@@ -1100,8 +1132,11 @@ if (visualPrayerCards) {
       return /^image\//.test(mime) || /\.(jpe?g|png|webp)$/i.test(name);
     };
     let selected = [];
-    if (resource.type === "pdf" && !publicImageCount) selected = files.filter((file) => matchesType(file, "pdf")).slice(0, 1);
-    if (resource.type === "audio" && !publicAudioPreview(resource)) selected = files.filter((file) => matchesType(file, "audio")).slice(0, 1);
+    if (resource.type === "pdf") selected = files.filter((file) => matchesType(file, "pdf")).slice(0, 1);
+    if (resource.type === "audio") {
+      const audioFiles = files.filter((file) => matchesType(file, "audio"));
+      selected = [audioFiles.find((file) => !/(preview|sample|미리)/i.test(file.file_name || "")) || audioFiles[0]].filter(Boolean);
+    }
     if (resource.type === "card" && publicImageCount < 2) selected = randomResourceFiles(files.filter((file) => matchesType(file, "card")), 2);
     const signed = await Promise.all(selected.map(async (file) => {
       const { data, error } = await client.storage.from(file.bucket_id || "faith-resources").createSignedUrl(file.object_path, 900);
@@ -1114,8 +1149,8 @@ if (visualPrayerCards) {
     if (!files.length) return "";
     if (resource.type === "pdf") {
       const file = files[0];
-      const source = `${file.url}#page=1&view=FitH&toolbar=0&navpanes=0`;
-      return `<section class="resource-media-preview resource-media-preview-pdf" aria-label="PDF 첫 페이지 미리보기"><div class="resource-media-heading"><p class="eyebrow">PDF Preview</p><h3>첫 페이지 미리보기</h3></div><div class="resource-pdf-frame"><iframe src="${escapeHtml(source)}" title="${escapeHtml(displayResourceTitle(resource))} 첫 페이지" loading="lazy"></iframe></div></section>`;
+      const source = `${file.url}#page=1&view=FitH`;
+      return `<section class="resource-media-preview resource-media-preview-pdf" aria-label="구매한 PDF 전체 미리보기"><div class="resource-media-heading"><p class="eyebrow">Purchased PDF</p><h3>구매 자료 전체 미리보기</h3><p>구매한 자료의 전체 페이지를 확인할 수 있습니다.</p></div><div class="resource-pdf-frame"><iframe src="${escapeHtml(source)}" title="${escapeHtml(displayResourceTitle(resource))} 전체 미리보기" loading="lazy"></iframe></div></section>`;
     }
     if (resource.type === "audio") {
       const file = files[0];
@@ -1276,8 +1311,8 @@ if (visualPrayerCards) {
 
     detail.innerHTML = `<div class="resource-detail-content">
         <p class="eyebrow">${escapeHtml((typeMeta[resource.type] || typeMeta.all).title)}</p>
-        ${resource.type === "card" && protectedMediaPreviews.length ? "" : renderPublicPreviewGallery(resource)}
-        ${renderPublicAudioPreview(resource)}
+        ${canReadOriginal && protectedMediaPreviews.length && ["pdf", "card"].includes(resource.type) ? "" : renderPublicPreviewGallery(resource)}
+        ${canReadOriginal && protectedMediaPreviews.length && resource.type === "audio" ? "" : renderPublicAudioPreview(resource)}
         ${renderProtectedMediaPreview(resource, protectedMediaPreviews)}
         <p class="resource-detail-description">${escapeHtml(privateDetail?.description || resource.summary)}</p>
         <h3>${canReadOriginal ? "구매 자료 구성" : "공개 미리보기"}</h3>
@@ -1318,7 +1353,7 @@ if (visualPrayerCards) {
       const download = await window.FaithAuth.requestProtectedDownload(resourceId);
       trackFaithEvent("resource_download", { resource_id: resourceId, product_id: product.id });
       const count = openProtectedDownloads(download);
-      setResourceActionStatus(count > 1 ? `${count}개 파일의 다운로드를 시작했습니다.` : "다운로드를 시작했습니다.");
+      setResourceActionStatus(count > 1 ? `${count}개 파일의 다운로드 목록을 열었습니다.` : "다운로드를 시작했습니다.");
     } catch (error) {
       setResourceActionStatus(error.message || "파일을 열 수 없습니다.");
     }
