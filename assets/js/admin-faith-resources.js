@@ -10,6 +10,7 @@
   const PDFJS_MODULE_URL = "https://cdn.jsdelivr.net/npm/pdfjs-dist@6.1.200/build/pdf.mjs";
   const PDFJS_WORKER_URL = "https://cdn.jsdelivr.net/npm/pdfjs-dist@6.1.200/build/pdf.worker.mjs";
   const PDF_PREVIEW_TARGET_WIDTH = 1200;
+  const PREVIEW_ITEMS_MAX_LENGTH = 3000;
   const TYPE_LABELS = { pdf: "기도문 PDF", audio: "기도 오디오북", card: "기도카드" };
   const STATUS_LABELS = { draft: "초안", published: "공개", archived: "보관" };
   const SALE_LABELS = { inquiry: "문의 안내", available: "온라인 구매", unavailable: "판매 비노출" };
@@ -46,6 +47,7 @@
   const editor = document.querySelector("[data-admin-editor]");
   const form = document.querySelector("[data-admin-resource-form]");
   const uploadStatus = document.querySelector("[data-admin-upload-status]");
+  const previewItemsCount = document.querySelector("[data-preview-items-count]");
   const originalInput = form?.elements.files;
   const previewInput = form?.elements.previewFiles;
 
@@ -97,7 +99,31 @@
   }
 
   function previewItemsFrom(value) {
-    return String(value || "").split(/\r?\n/).map((item) => item.trim()).filter(Boolean).slice(0, 6);
+    return String(value || "").split(/\r?\n/).map((item) => item.trim()).filter(Boolean);
+  }
+
+  function previewItemsMatch(savedItems, expectedItems) {
+    return JSON.stringify(Array.isArray(savedItems) ? savedItems : []) === JSON.stringify(expectedItems);
+  }
+
+  function syncPreviewItemsCount() {
+    if (!form || !previewItemsCount) return;
+    const length = form.elements.previewItems.value.length;
+    previewItemsCount.textContent = `${length.toLocaleString("ko-KR")} / ${PREVIEW_ITEMS_MAX_LENGTH.toLocaleString("ko-KR")}자 · 한 줄에 한 항목씩 저장됩니다.`;
+    previewItemsCount.classList.toggle("is-error", length > PREVIEW_ITEMS_MAX_LENGTH);
+  }
+
+  function preventOversizedPreviewItemsPaste(event) {
+    const field = event.currentTarget;
+    const pastedText = event.clipboardData?.getData("text") || "";
+    if (!pastedText) return;
+    const selectionStart = field.selectionStart ?? field.value.length;
+    const selectionEnd = field.selectionEnd ?? selectionStart;
+    const nextLength = field.value.length - (selectionEnd - selectionStart) + pastedText.length;
+    if (nextLength <= PREVIEW_ITEMS_MAX_LENGTH) return;
+    event.preventDefault();
+    setStatus(uploadStatus, `공개 자료 구성은 ${PREVIEW_ITEMS_MAX_LENGTH.toLocaleString("ko-KR")}자 이하로 입력해 주세요. 초과한 붙여넣기는 적용하지 않아 기존 내용을 유지했습니다.`, true);
+    syncPreviewItemsCount();
   }
 
   function resourceFiles(resourceId) {
@@ -354,6 +380,7 @@
     form.elements.description.value = details?.description || "";
     form.elements.tags.value = (resource?.tags || []).join(", ");
     form.elements.previewItems.value = (product?.preview_items || details?.preview_items || []).join("\n");
+    syncPreviewItemsCount();
     form.elements.saleStatus.value = product?.sale_status || "inquiry";
     form.elements.priceAmount.value = product?.price_amount || "";
     state.editorOriginals = (resource ? resourceFiles(resource.id) : []).map((item) => ({ ...item, source: "stored", status: "complete" }));
@@ -705,11 +732,13 @@
     const title = form.elements.title.value.trim();
     const summary = form.elements.summary.value.trim();
     const description = form.elements.description.value.trim();
+    const previewItemsText = form.elements.previewItems.value;
     const tags = tagsFrom(form.elements.tags.value);
     const saleStatus = form.elements.saleStatus.value;
     const price = Number(form.elements.priceAmount.value || 0);
     if (state.pdfPreviewGenerating) return "PDF 공개 미리보기가 준비될 때까지 기다려 주세요.";
     if (title.length < 2 || summary.length < 2 || description.length < 2) return "기본 정보와 상세 설명을 입력해 주세요.";
+    if (previewItemsText.length > PREVIEW_ITEMS_MAX_LENGTH) return `공개 자료 구성은 ${PREVIEW_ITEMS_MAX_LENGTH.toLocaleString("ko-KR")}자 이하로 입력해 주세요.`;
     if (!tags.length) return "키워드를 하나 이상 입력해 주세요.";
     if (tags.length > 12 || tags.some((tag) => tag.length > 40)) return "키워드는 12개 이하, 각 40자 이하로 입력해 주세요.";
     if (saleStatus === "available" && (!Number.isInteger(price) || price <= 0)) return "온라인 구매 자료의 가격을 입력해 주세요.";
@@ -771,21 +800,22 @@
         if (error) throw error;
       }
 
-      const { error: detailsError } = await client.from("faith_resource_private_details").upsert({
+      const { data: savedDetails, error: detailsError } = await client.from("faith_resource_private_details").upsert({
         resource_id: resourceId,
         description: form.elements.description.value.trim(),
         preview_items: previewItems,
         gallery_items: [],
         updated_at: new Date().toISOString()
-      }, { onConflict: "resource_id" });
+      }, { onConflict: "resource_id" }).select("preview_items").single();
       if (detailsError) throw detailsError;
+      if (!previewItemsMatch(savedDetails?.preview_items, previewItems)) throw new Error("공개 자료 구성이 모두 저장되지 않았습니다. 입력 내용을 유지한 채 다시 시도해 주세요.");
 
       const hasPendingOriginals = state.editorOriginals.some((item) => item.source === "pending");
       if (currentResource?.status === "published" && hasPendingOriginals) {
         await setResourceState(resourceId, "draft");
       }
       const productPublished = currentResource?.status === "published" && !hasPendingOriginals && saleStatus !== "unavailable";
-      const { error: productError } = await client.from("faith_products").upsert({
+      const { data: savedProduct, error: productError } = await client.from("faith_products").upsert({
         id: resourceId,
         resource_id: resourceId,
         type,
@@ -797,8 +827,9 @@
         currency: "KRW",
         purchasable: saleStatus === "available",
         published: productPublished
-      }, { onConflict: "id" });
+      }, { onConflict: "id" }).select("preview_items").single();
       if (productError) throw productError;
+      if (!previewItemsMatch(savedProduct?.preview_items, previewItems)) throw new Error("상품의 공개 자료 구성이 모두 저장되지 않았습니다. 입력 내용을 유지한 채 다시 시도해 주세요.");
 
       await uploadCollection("original", resourceId, state.editorOriginals, title);
       if (type === "card" && !state.editorPreviews.length && originalFilesValid()) {
@@ -1034,6 +1065,8 @@
   form?.elements.title.addEventListener("input", renderPublishChecklist);
   form?.elements.summary.addEventListener("input", renderPublishChecklist);
   form?.elements.description.addEventListener("input", renderPublishChecklist);
+  form?.elements.previewItems.addEventListener("input", syncPreviewItemsCount);
+  form?.elements.previewItems.addEventListener("paste", preventOversizedPreviewItemsPaste);
   form?.elements.type.addEventListener("change", syncPreviewUploadMode);
   form?.elements.saleStatus.addEventListener("change", syncPriceField);
   form?.elements.priceAmount.addEventListener("input", renderPublishChecklist);
