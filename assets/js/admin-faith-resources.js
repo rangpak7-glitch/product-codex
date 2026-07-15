@@ -727,6 +727,10 @@
 
   async function saveResource({ publishing = false } = {}) {
     if (!client || !state.user || state.loading) return;
+    if (form.elements.type.value === "pdf" && !state.pdfPreviewGenerating && !previewFilesValid({ requirePdf: true })) {
+      setStatus(uploadStatus, "PDF 앞 1~3페이지 공개 미리보기를 준비하고 있습니다.");
+      await generatePdfPagePreviews();
+    }
     const validation = validateEditor({ publishing });
     if (validation) {
       setStatus(uploadStatus, validation, true);
