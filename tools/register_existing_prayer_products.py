@@ -11,6 +11,7 @@ from datetime import datetime, timezone
 import getpass
 import json
 import mimetypes
+import os
 from pathlib import Path
 import re
 import sys
@@ -26,6 +27,7 @@ SITE_ROOT = Path(r"D:\codex\product-codex-prayer-pdf-sales")
 OUTPUT_ROOT = Path(r"D:\codex\sinang\prayPDF")
 CONFIG_PATH = SITE_ROOT / "assets" / "js" / "supabase-config.js"
 RESULT_PATH = OUTPUT_ROOT / "관리자_등록_결과.json"
+ADMIN_EMAIL_ENV = "PRAYER_ADMIN_EMAIL"
 PRICE_PATTERN = re.compile(r"판매가|[₩￦]\s*\d|(?:\d{1,3}(?:,\d{3})+|\d+)\s*원")
 
 
@@ -86,6 +88,20 @@ PRODUCTS = [
 
 class ApiError(RuntimeError):
     pass
+
+
+def read_stored_admin_email() -> str:
+    email = os.environ.get(ADMIN_EMAIL_ENV, "").strip()
+    if email or sys.platform != "win32":
+        return email
+    try:
+        import winreg
+
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Environment") as key:
+            value, _ = winreg.QueryValueEx(key, ADMIN_EMAIL_ENV)
+        return str(value).strip()
+    except (FileNotFoundError, OSError):
+        return ""
 
 
 def read_config() -> tuple[str, str]:
@@ -291,7 +307,11 @@ def main() -> None:
     prepared = [prepare_product(product) for product in PRODUCTS]
     print("Local validation passed for 3 products (PDF pages, 4 previews, upload copy, no price text).")
     base_url, api_key = read_config()
-    email = input("Admin email: ").strip()
+    email = read_stored_admin_email()
+    if email:
+        print(f"Using the administrator email stored in {ADMIN_EMAIL_ENV}.")
+    else:
+        email = input("Admin email: ").strip()
     password = getpass.getpass("Admin password: ")
     access_token = ""
     try:
