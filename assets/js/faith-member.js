@@ -53,52 +53,75 @@
   }
 
   function ensureModal() {
-    if (document.getElementById("faithAuthModal")) return;
-    const root = document.createElement("div");
-    root.id = "faithAuthModal";
-    root.className = "faith-auth-modal";
-    root.hidden = true;
-    root.innerHTML = `
-      <div class="faith-auth-backdrop" data-faith-auth-close></div>
-      <section class="faith-auth-dialog" role="dialog" aria-modal="true" aria-labelledby="faithAuthTitle">
-        <button class="modal-close" type="button" data-faith-auth-close aria-label="회원 창 닫기">×</button>
-        <p class="eyebrow">Member</p>
-        <h2 id="faithAuthTitle">기도의샘물 회원</h2>
-        <div class="faith-auth-tabs" role="tablist" aria-label="회원 메뉴">
-          <button type="button" role="tab" data-faith-auth-tab="login" aria-selected="true">로그인</button>
-          <button type="button" role="tab" data-faith-auth-tab="signup" aria-selected="false">회원가입</button>
-        </div>
-        <form id="faithLoginForm" class="faith-auth-form" novalidate>
-          <label>이메일<input type="email" name="email" autocomplete="email" required placeholder="example@email.com"></label>
-          <label>비밀번호<input type="password" name="password" autocomplete="current-password" required placeholder="비밀번호"></label>
-          <button class="button primary" type="submit">로그인</button>
-          <button class="text-button" type="button" data-faith-password-reset>비밀번호를 잊으셨나요?</button>
-        </form>
-        <form id="faithSignupForm" class="faith-auth-form" novalidate hidden>
-          <label>닉네임<input type="text" name="nickname" autocomplete="nickname" minlength="2" maxlength="16" required placeholder="2~16자, 게시글에만 표시"></label>
-          <label>이메일<input type="email" name="email" autocomplete="email" required placeholder="example@email.com"></label>
-          <label>비밀번호<input type="password" name="password" autocomplete="new-password" minlength="8" required placeholder="8자 이상"></label>
-          <label class="faith-consent"><input type="checkbox" name="consent" required> <span><a href="terms.html" target="_blank" rel="noopener">이용약관</a>과 <a href="privacy.html" target="_blank" rel="noopener">개인정보처리방침</a>에 동의합니다.</span></label>
-          <button class="button primary" type="submit">인증 메일 받고 가입하기</button>
-          <p class="form-message">이메일은 공개되지 않으며, 게시판에는 닉네임만 표시됩니다.</p>
-        </form>
-        <form id="faithResetForm" class="faith-auth-form faith-reset-form" novalidate hidden>
-          <p class="faith-auth-guidance">가입한 이메일을 입력하면 새 비밀번호를 설정할 수 있는 링크를 보내드립니다.</p>
-          <label>가입 이메일<input type="email" name="email" autocomplete="email" required placeholder="example@email.com"></label>
-          <button class="button primary" type="submit">재설정 메일 보내기</button>
-          <button class="text-button" type="button" data-faith-reset-back>로그인으로 돌아가기</button>
-        </form>
-        <p class="form-message" id="faithAuthStatus" role="status" aria-live="polite"></p>
-      </section>`;
-    document.body.append(root);
+    if (document.getElementById("faithLoginModal")) return;
+    const authMarkup = `
+      <div id="faithLoginModal" class="faith-auth-modal" data-faith-auth-modal="login" hidden>
+        <div class="faith-auth-backdrop" data-faith-auth-close></div>
+        <section class="faith-auth-dialog" role="dialog" aria-modal="true" aria-labelledby="faithLoginTitle">
+          <button class="modal-close" type="button" data-faith-auth-close aria-label="로그인 창 닫기">×</button>
+          <p class="eyebrow">Member Login</p>
+          <h2 id="faithLoginTitle">기도의샘물 로그인</h2>
+          <form id="faithLoginForm" class="faith-auth-form" novalidate>
+            <label>이메일<input type="email" name="email" autocomplete="email" required placeholder="example@email.com"></label>
+            <label>비밀번호<input type="password" name="password" autocomplete="current-password" required placeholder="비밀번호"></label>
+            <button class="button primary" type="submit">로그인</button>
+            <button class="text-button" type="button" data-faith-password-reset>비밀번호를 잊으셨나요?</button>
+          </form>
+          <p class="form-message" data-faith-auth-status role="status" aria-live="polite"></p>
+          <div class="faith-auth-switch"><span>아직 회원이 아니신가요?</span><button class="text-button" type="button" data-faith-switch="signup">회원가입</button></div>
+        </section>
+      </div>
+      <div id="faithSignupModal" class="faith-auth-modal" data-faith-auth-modal="signup" hidden>
+        <div class="faith-auth-backdrop" data-faith-auth-close></div>
+        <section class="faith-auth-dialog" role="dialog" aria-modal="true" aria-labelledby="faithSignupTitle">
+          <button class="modal-close" type="button" data-faith-auth-close aria-label="회원가입 창 닫기">×</button>
+          <p class="eyebrow">Create Account</p>
+          <h2 id="faithSignupTitle">기도의샘물 회원가입</h2>
+          <form id="faithSignupForm" class="faith-auth-form" novalidate>
+            <label>닉네임<input type="text" name="nickname" autocomplete="nickname" minlength="2" maxlength="16" required placeholder="2~16자, 게시글에만 표시"></label>
+            <label>이메일<input type="email" name="email" autocomplete="email" required placeholder="example@email.com"></label>
+            <label>비밀번호<input type="password" name="password" autocomplete="new-password" minlength="8" required placeholder="8자 이상"></label>
+            <label class="faith-consent"><input type="checkbox" name="consent" required> <span><a href="terms.html" target="_blank" rel="noopener">이용약관</a>과 <a href="privacy.html" target="_blank" rel="noopener">개인정보처리방침</a>에 동의합니다.</span></label>
+            <button class="button primary" type="submit">인증 메일 받고 가입하기</button>
+            <p class="form-message">이메일은 공개되지 않으며, 게시판에는 닉네임만 표시됩니다.</p>
+          </form>
+          <p class="form-message" data-faith-auth-status role="status" aria-live="polite"></p>
+          <div class="faith-auth-switch"><span>이미 가입하셨나요?</span><button class="text-button" type="button" data-faith-switch="login">로그인</button></div>
+        </section>
+      </div>
+      <div id="faithResetModal" class="faith-auth-modal" data-faith-auth-modal="reset" hidden>
+        <div class="faith-auth-backdrop" data-faith-auth-close></div>
+        <section class="faith-auth-dialog" role="dialog" aria-modal="true" aria-labelledby="faithResetTitle">
+          <button class="modal-close" type="button" data-faith-auth-close aria-label="비밀번호 재설정 창 닫기">×</button>
+          <p class="eyebrow">Password Reset</p>
+          <h2 id="faithResetTitle">비밀번호 재설정</h2>
+          <form id="faithResetForm" class="faith-auth-form faith-reset-form" novalidate>
+            <p class="faith-auth-guidance">가입한 이메일을 입력하면 새 비밀번호를 설정할 수 있는 링크를 보내드립니다.</p>
+            <label>가입 이메일<input type="email" name="email" autocomplete="email" required placeholder="example@email.com"></label>
+            <button class="button primary" type="submit">재설정 메일 보내기</button>
+            <button class="text-button" type="button" data-faith-switch="login">로그인으로 돌아가기</button>
+          </form>
+          <p class="form-message" data-faith-auth-status role="status" aria-live="polite"></p>
+        </section>
+      </div>
+      <div id="faithAuthNoticeModal" class="faith-auth-notice-modal" hidden>
+        <div class="faith-auth-notice-backdrop"></div>
+        <section class="faith-auth-notice-dialog" role="alertdialog" aria-modal="true" aria-labelledby="faithAuthNoticeTitle" aria-describedby="faithAuthNoticeMessage">
+          <p class="eyebrow" data-faith-notice-eyebrow>Account</p>
+          <h2 id="faithAuthNoticeTitle">알림</h2>
+          <p id="faithAuthNoticeMessage"></p>
+          <button class="button primary" type="button" data-faith-notice-close>확인</button>
+        </section>
+      </div>`;
+    document.body.insertAdjacentHTML("beforeend", authMarkup);
 
-    root.querySelectorAll("[data-faith-auth-close]").forEach((button) => button.addEventListener("click", close));
-    root.querySelectorAll("[data-faith-auth-tab]").forEach((button) => button.addEventListener("click", () => setAuthMode(button.dataset.faithAuthTab)));
-    root.querySelector("#faithLoginForm")?.addEventListener("submit", submitLogin);
-    root.querySelector("#faithSignupForm")?.addEventListener("submit", submitSignup);
-    root.querySelector("#faithResetForm")?.addEventListener("submit", requestPasswordReset);
-    root.querySelector("[data-faith-password-reset]")?.addEventListener("click", openPasswordReset);
-    root.querySelector("[data-faith-reset-back]")?.addEventListener("click", () => setAuthMode("login"));
+    document.querySelectorAll("[data-faith-auth-close]").forEach((button) => button.addEventListener("click", close));
+    document.querySelectorAll("[data-faith-switch]").forEach((button) => button.addEventListener("click", () => open(button.dataset.faithSwitch)));
+    document.querySelector("#faithLoginForm")?.addEventListener("submit", submitLogin);
+    document.querySelector("#faithSignupForm")?.addEventListener("submit", submitSignup);
+    document.querySelector("#faithResetForm")?.addEventListener("submit", requestPasswordReset);
+    document.querySelector("[data-faith-password-reset]")?.addEventListener("click", openPasswordReset);
+    document.querySelector("[data-faith-notice-close]")?.addEventListener("click", closeNotice);
   }
 
   function ensureDownloadModal() {
@@ -121,55 +144,97 @@
     root.querySelectorAll("[data-faith-download-close]").forEach((button) => button.addEventListener("click", closeDownloadModal));
   }
 
-  function setStatus(message, error = false) {
-    const status = document.getElementById("faithAuthStatus");
+  function getAuthModal(mode) {
+    return document.querySelector(`[data-faith-auth-modal="${mode}"]`);
+  }
+
+  function getOpenAuthModal() {
+    return [...document.querySelectorAll("[data-faith-auth-modal]")].find((modal) => !modal.hidden) || null;
+  }
+
+  function syncModalOpenState() {
+    const selector = ".faith-auth-modal:not([hidden]), .faith-auth-notice-modal:not([hidden]), .faith-download-modal:not([hidden])";
+    document.body.classList.toggle("modal-open", Boolean(document.querySelector(selector)));
+  }
+
+  function setStatus(message, error = false, mode = "") {
+    const root = mode ? getAuthModal(mode) : getOpenAuthModal();
+    const status = root?.querySelector("[data-faith-auth-status]");
     if (!status) return;
     status.textContent = message;
     status.classList.toggle("is-error", error);
   }
 
-  function setAuthMode(mode = "login") {
+  function showNotice({ title, message, tone = "info", eyebrow = "Account" }) {
     ensureModal();
-    const normalizedMode = ["login", "signup", "reset"].includes(mode) ? mode : "login";
-    document.querySelector("#faithLoginForm").hidden = normalizedMode !== "login";
-    document.querySelector("#faithSignupForm").hidden = normalizedMode !== "signup";
-    document.querySelector("#faithResetForm").hidden = normalizedMode !== "reset";
-    document.querySelectorAll("[data-faith-auth-tab]").forEach((button) => {
-      const selected = button.dataset.faithAuthTab === normalizedMode;
-      button.setAttribute("aria-selected", String(selected));
-      button.classList.toggle("is-active", selected);
-    });
-    document.getElementById("faithAuthTitle").textContent = normalizedMode === "signup"
-      ? "기도의샘물 회원가입"
-      : normalizedMode === "reset"
-        ? "비밀번호 재설정"
-        : "기도의샘물 로그인";
-    setStatus("");
+    const root = document.getElementById("faithAuthNoticeModal");
+    root.dataset.tone = tone;
+    root.querySelector("[data-faith-notice-eyebrow]").textContent = eyebrow;
+    root.querySelector("#faithAuthNoticeTitle").textContent = title;
+    root.querySelector("#faithAuthNoticeMessage").textContent = message;
+    root.hidden = false;
+    syncModalOpenState();
+    window.setTimeout(() => root.querySelector("[data-faith-notice-close]")?.focus(), 0);
+  }
+
+  function closeNotice() {
+    const root = document.getElementById("faithAuthNoticeModal");
+    if (!root) return;
+    root.hidden = true;
+    syncModalOpenState();
+    const authModal = getOpenAuthModal();
+    window.setTimeout(() => authModal?.querySelector("input, button")?.focus(), 0);
   }
 
   function open(mode = "login", message = "") {
     ensureModal();
-    setAuthMode(mode);
-    const root = document.getElementById("faithAuthModal");
+    const normalizedMode = ["login", "signup", "reset"].includes(mode) ? mode : "login";
+    closeNotice();
+    document.querySelectorAll("[data-faith-auth-modal]").forEach((modal) => {
+      modal.hidden = modal.dataset.faithAuthModal !== normalizedMode;
+      const status = modal.querySelector("[data-faith-auth-status]");
+      if (status) {
+        status.textContent = "";
+        status.classList.remove("is-error");
+      }
+    });
+    const root = getAuthModal(normalizedMode);
     root.hidden = false;
-    document.body.classList.add("modal-open");
-    if (message) setStatus(message);
-    const focusSelector = mode === "signup" ? "#faithSignupForm [name='nickname']" : mode === "reset" ? "#faithResetForm [name='email']" : "#faithLoginForm [name='email']";
+    if (message) setStatus(message, false, normalizedMode);
+    syncModalOpenState();
+    const focusSelector = normalizedMode === "signup" ? "[name='nickname']" : "[name='email']";
     window.setTimeout(() => root.querySelector(focusSelector)?.focus(), 0);
   }
 
-  function close() {
-    const root = document.getElementById("faithAuthModal");
-    if (!root) return;
-    root.hidden = true;
-    document.body.classList.remove("modal-open");
+  function close(mode) {
+    const normalizedMode = typeof mode === "string" && ["login", "signup", "reset"].includes(mode) ? mode : "";
+    if (normalizedMode) {
+      const root = getAuthModal(normalizedMode);
+      if (root) root.hidden = true;
+    } else {
+      document.querySelectorAll("[data-faith-auth-modal]").forEach((modal) => { modal.hidden = true; });
+    }
+    syncModalOpenState();
   }
 
   function closeDownloadModal() {
     const root = document.getElementById("faithDownloadModal");
     if (!root) return;
     root.hidden = true;
-    document.body.classList.remove("modal-open");
+    syncModalOpenState();
+  }
+
+  function setFormPending(form, pending, pendingLabel) {
+    const submitButton = form?.querySelector("button[type='submit']");
+    if (!submitButton) return;
+    if (!submitButton.dataset.defaultLabel) submitButton.dataset.defaultLabel = submitButton.textContent;
+    submitButton.disabled = pending;
+    submitButton.textContent = pending ? pendingLabel : submitButton.dataset.defaultLabel;
+    form.toggleAttribute("aria-busy", pending);
+  }
+
+  function isEmailRateLimit(error) {
+    return error?.status === 429 || error?.code === "over_email_send_rate_limit" || /rate limit|only request this after/i.test(error?.message || "");
   }
 
   async function submitSignup(event) {
@@ -178,38 +243,98 @@
     const nickname = String(form.elements.nickname.value || "").trim();
     const email = String(form.elements.email.value || "").trim();
     const password = String(form.elements.password.value || "");
-    if (nickname.length < 2 || nickname.length > 16) return setStatus("닉네임은 2자 이상 16자 이하로 입력해 주세요.", true);
-    if (password.length < 8) return setStatus("비밀번호는 8자 이상으로 입력해 주세요.", true);
-    if (!form.elements.consent.checked) return setStatus("이용약관과 개인정보처리방침 동의가 필요합니다.", true);
+    if (nickname.length < 2 || nickname.length > 16) {
+      return showNotice({ title: "닉네임을 확인해 주세요", message: "닉네임은 2자 이상 16자 이하로 입력해 주세요.", tone: "error" });
+    }
+    if (!form.elements.email.validity.valid) {
+      return showNotice({ title: "이메일을 확인해 주세요", message: "인증 메일을 받을 수 있는 이메일 주소를 입력해 주세요.", tone: "error" });
+    }
+    if (password.length < 8) {
+      return showNotice({ title: "비밀번호를 확인해 주세요", message: "비밀번호는 8자 이상으로 입력해 주세요.", tone: "error" });
+    }
+    if (!form.elements.consent.checked) {
+      return showNotice({ title: "동의가 필요합니다", message: "회원가입을 위해 이용약관과 개인정보처리방침에 동의해 주세요.", tone: "error" });
+    }
     const client = await getClient();
-    if (!client) return setStatus("회원 서비스를 연결하지 못했습니다.", true);
-    setStatus("인증 메일을 보내고 있습니다.");
-    const emailRedirectTo = new URL("account.html", window.location.href).href;
-    const { data, error } = await client.auth.signUp({ email, password, options: { data: { nickname }, emailRedirectTo } });
-    if (error) {
-      const duplicate = /duplicate|unique|nickname/i.test(error.message);
-      return setStatus(duplicate ? "이미 사용 중인 닉네임입니다. 다른 닉네임을 입력해 주세요." : "회원가입을 완료하지 못했습니다. 입력 내용을 확인해 주세요.", true);
+    if (!client) {
+      return showNotice({ title: "회원 서비스를 연결하지 못했습니다", message: "네트워크 상태를 확인한 뒤 다시 시도해 주세요.", tone: "error" });
     }
-    if (data.session) {
-      await refreshSession();
-      close();
-      return;
+
+    setFormPending(form, true, "인증 메일 보내는 중");
+    setStatus("인증 메일을 보내고 있습니다.", false, "signup");
+    try {
+      const emailRedirectTo = new URL("account.html", window.location.href).href;
+      const { data, error } = await client.auth.signUp({ email, password, options: { data: { nickname }, emailRedirectTo } });
+      if (error) {
+        if (isEmailRateLimit(error)) {
+          close("signup");
+          return showNotice({
+            title: "인증 메일을 이미 요청했습니다",
+            message: "받은편지함과 스팸함을 먼저 확인해 주세요. 메일이 없으면 1분 후 다시 요청할 수 있습니다.",
+            tone: "info"
+          });
+        }
+        const duplicate = error.code === "user_already_exists" || /duplicate|unique|nickname/i.test(error.message || "");
+        return showNotice({
+          title: "회원가입을 완료하지 못했습니다",
+          message: duplicate ? "이미 사용 중인 정보가 있습니다. 닉네임 또는 이메일을 확인해 주세요." : "입력 내용을 확인한 뒤 다시 시도해 주세요.",
+          tone: "error"
+        });
+      }
+
+      form.reset();
+      close("signup");
+      if (data.session) {
+        await refreshSession();
+        return showNotice({ title: "회원가입이 완료되었습니다", message: "기도의샘물 회원으로 로그인되었습니다.", tone: "success" });
+      }
+      showNotice({
+        title: "인증 메일을 보냈습니다",
+        message: `${email} 받은편지함에서 인증 링크를 눌러 회원가입을 완료해 주세요. 메일이 보이지 않으면 스팸함도 확인해 주세요.`,
+        tone: "success"
+      });
+    } catch {
+      showNotice({ title: "회원가입 요청을 처리하지 못했습니다", message: "네트워크 상태를 확인한 뒤 다시 시도해 주세요.", tone: "error" });
+    } finally {
+      setFormPending(form, false, "");
     }
-    setStatus("인증 메일을 보냈습니다. 메일의 인증 링크를 완료한 뒤 로그인해 주세요.");
   }
 
   async function submitLogin(event) {
     event.preventDefault();
     const form = event.currentTarget;
+    const email = String(form.elements.email.value || "").trim();
+    const password = String(form.elements.password.value || "");
+    if (!form.elements.email.validity.valid || !password) {
+      return showNotice({ title: "로그인 정보를 확인해 주세요", message: "이메일과 비밀번호를 모두 정확히 입력해 주세요.", tone: "error" });
+    }
     const client = await getClient();
-    if (!client) return setStatus("회원 서비스를 연결하지 못했습니다.", true);
-    const { error } = await client.auth.signInWithPassword({
-      email: String(form.elements.email.value || "").trim(),
-      password: String(form.elements.password.value || "")
-    });
-    if (error) return setStatus("이메일 또는 비밀번호를 확인해 주세요.", true);
-    await refreshSession();
-    close();
+    if (!client) {
+      return showNotice({ title: "회원 서비스를 연결하지 못했습니다", message: "네트워크 상태를 확인한 뒤 다시 시도해 주세요.", tone: "error" });
+    }
+
+    setFormPending(form, true, "로그인 확인 중");
+    setStatus("로그인 정보를 확인하고 있습니다.", false, "login");
+    try {
+      const { error } = await client.auth.signInWithPassword({ email, password });
+      if (error) {
+        if (error.code === "email_not_confirmed") {
+          return showNotice({ title: "이메일 인증이 필요합니다", message: "회원가입 때 받은 인증 메일의 링크를 먼저 눌러 주세요.", tone: "error" });
+        }
+        if (error.status === 429 || /rate limit|too many/i.test(error.message || "")) {
+          return showNotice({ title: "로그인 요청이 너무 많습니다", message: "잠시 후 다시 시도해 주세요.", tone: "error" });
+        }
+        return showNotice({ title: "로그인하지 못했습니다", message: "이메일 또는 비밀번호가 일치하지 않습니다.", tone: "error" });
+      }
+      await refreshSession();
+      form.reset();
+      close("login");
+      showNotice({ title: "로그인되었습니다", message: "기도의샘물 회원 서비스에 로그인되었습니다.", tone: "success" });
+    } catch {
+      showNotice({ title: "로그인 요청을 처리하지 못했습니다", message: "네트워크 상태를 확인한 뒤 다시 시도해 주세요.", tone: "error" });
+    } finally {
+      setFormPending(form, false, "");
+    }
   }
 
   function openPasswordReset() {
@@ -217,25 +342,45 @@
     const resetForm = document.getElementById("faithResetForm");
     const email = String(loginForm?.elements.email.value || "").trim();
     if (resetForm && email) resetForm.elements.email.value = email;
-    setAuthMode("reset");
-    window.setTimeout(() => resetForm?.elements.email.focus(), 0);
+    open("reset");
   }
 
   async function requestPasswordReset(event) {
     event?.preventDefault();
     const form = event?.currentTarget || document.getElementById("faithResetForm");
     const email = String(form?.elements.email.value || "").trim();
-    if (!email) return setStatus("가입한 이메일 주소를 입력해 주세요.", true);
+    if (!form?.elements.email.validity.valid) {
+      return showNotice({ title: "가입 이메일을 확인해 주세요", message: "비밀번호 재설정 메일을 받을 이메일 주소를 입력해 주세요.", tone: "error" });
+    }
     const client = await getClient();
-    if (!client) return setStatus("회원 서비스를 연결하지 못했습니다.", true);
-    const submitButton = form?.querySelector("button[type='submit']");
-    if (submitButton) submitButton.disabled = true;
-    setStatus("비밀번호 재설정 메일을 보내고 있습니다.");
-    const redirectTo = new URL("reset-password.html", window.location.href).href;
-    const { error } = await client.auth.resetPasswordForEmail(email, { redirectTo });
-    if (submitButton) submitButton.disabled = false;
-    if (error) return setStatus("재설정 메일을 보내지 못했습니다. 잠시 후 다시 시도해 주세요.", true);
-    setStatus("입력한 이메일이 회원 계정과 일치하면 재설정 링크가 발송됩니다. 메일함을 확인해 주세요.");
+    if (!client) {
+      return showNotice({ title: "회원 서비스를 연결하지 못했습니다", message: "네트워크 상태를 확인한 뒤 다시 시도해 주세요.", tone: "error" });
+    }
+
+    setFormPending(form, true, "재설정 메일 보내는 중");
+    setStatus("비밀번호 재설정 메일을 보내고 있습니다.", false, "reset");
+    try {
+      const redirectTo = new URL("reset-password.html", window.location.href).href;
+      const { error } = await client.auth.resetPasswordForEmail(email, { redirectTo });
+      if (error) {
+        if (isEmailRateLimit(error)) {
+          close("reset");
+          return showNotice({ title: "재설정 메일을 이미 요청했습니다", message: "받은편지함과 스팸함을 확인하고, 메일이 없으면 1분 후 다시 요청해 주세요.", tone: "info" });
+        }
+        return showNotice({ title: "재설정 메일을 보내지 못했습니다", message: "잠시 후 다시 시도해 주세요.", tone: "error" });
+      }
+      form.reset();
+      close("reset");
+      showNotice({
+        title: "재설정 메일 요청을 완료했습니다",
+        message: "입력한 이메일이 회원 계정과 일치하면 비밀번호 재설정 링크가 발송됩니다. 받은편지함과 스팸함을 확인해 주세요.",
+        tone: "success"
+      });
+    } catch {
+      showNotice({ title: "재설정 요청을 처리하지 못했습니다", message: "네트워크 상태를 확인한 뒤 다시 시도해 주세요.", tone: "error" });
+    } finally {
+      setFormPending(form, false, "");
+    }
   }
 
   async function refreshSession() {
@@ -937,6 +1082,11 @@
   window.FaithAuth = { open, close, getClient, refreshSession, getOrderForResource, hasPurchasedResource, requestPurchase, requestProtectedDownload, startProtectedDownloads };
   document.addEventListener("keydown", (event) => {
     if (event.key !== "Escape") return;
+    const notice = document.getElementById("faithAuthNoticeModal");
+    if (notice && !notice.hidden) {
+      closeNotice();
+      return;
+    }
     close();
     closeDownloadModal();
   });

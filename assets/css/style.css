@@ -2000,23 +2000,33 @@ label { font-weight: 700; }
 .account-signup { background: var(--navy); color: var(--color-surface); }
 .account-signup:hover { background: var(--gold); color: var(--navy-deep); }
 .faith-auth-modal { position: fixed; inset: 0; z-index: 200; display: grid; place-items: center; padding: 20px; }
-.faith-auth-modal[hidden] { display: none; }
+.faith-auth-modal[hidden],
+.faith-auth-notice-modal[hidden],
+.faith-auth-form[hidden] { display: none; }
 .faith-auth-backdrop { position: absolute; inset: 0; background: rgba(11,20,48,.55); backdrop-filter: blur(4px); }
 .faith-auth-dialog { position: relative; z-index: 1; width: min(470px, 100%); max-height: min(760px, calc(100vh - 40px)); overflow-y: auto; padding: clamp(28px, 5vw, 42px); border: 1px solid rgba(255,255,255,.6); border-radius: 22px; background: var(--color-surface); box-shadow: 0 32px 90px rgba(11,20,48,.38); }
 .modal-close { position: absolute; top: 14px; right: 16px; width: 40px; height: 40px; border: 0; border-radius: 50%; background: rgba(180,217,230,.42); color: var(--navy); font-size: 1.7rem; line-height: 1; cursor: pointer; }
 .faith-auth-dialog h2 { margin-bottom: 20px; font-size: clamp(1.8rem, 5vw, 2.25rem); }
-.faith-auth-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 0 0 22px; padding: 5px; border-radius: 14px; background: rgba(180,217,230,.28); }
-.faith-auth-tabs button { min-height: 44px; border: 0; border-radius: 10px; background: transparent; color: var(--muted); font: inherit; font-weight: 700; cursor: pointer; }
-.faith-auth-tabs button.is-active { background: var(--color-surface); color: var(--navy); box-shadow: 0 4px 12px rgba(17,27,51,.09); }
 .faith-auth-form { display: grid; gap: 14px; }
 .faith-auth-form label { display: grid; gap: 7px; color: var(--navy); font-weight: 700; }
 .faith-auth-form input, .faith-auth-form textarea, .faith-auth-form select, .community-compose-form input, .community-compose-form textarea, .community-compose-form select { width: 100%; min-height: 50px; padding: 12px 14px; border: 1px solid rgba(167,124,53,.28); border-radius: 12px; background: rgba(255,253,243,.9); color: var(--navy); font: inherit; }
 .faith-auth-form textarea, .community-compose-form textarea { min-height: 150px; resize: vertical; }
+.faith-auth-form button:disabled { opacity: .62; cursor: wait; }
 .faith-consent { grid-template-columns: auto 1fr; align-items: start; font-size: .9rem; line-height: 1.55; }
 .faith-consent input { width: 18px; min-height: 18px; margin-top: 3px; }
 .faith-consent a { color: var(--navy); }
+.faith-auth-switch { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px; margin-top: 18px; padding-top: 18px; border-top: 1px solid rgba(167,124,53,.2); color: var(--muted); font-size: .92rem; font-weight: 700; }
+.faith-auth-switch .text-button { min-height: 36px; }
 .form-message { margin: 0; color: var(--muted); font-size: .9rem; font-weight: 700; line-height: 1.55; }
 .form-message.is-error { color: #9b3d3d; }
+.faith-auth-notice-modal { position: fixed; inset: 0; z-index: 260; display: grid; place-items: center; padding: 20px; }
+.faith-auth-notice-backdrop { position: absolute; inset: 0; background: rgba(11,20,48,.42); backdrop-filter: blur(2px); }
+.faith-auth-notice-dialog { position: relative; z-index: 1; width: min(390px, 100%); padding: 28px; border: 1px solid rgba(167,124,53,.32); border-top: 4px solid var(--gold-deep); border-radius: 8px; background: var(--color-surface); box-shadow: 0 24px 70px rgba(11,20,48,.42); color: var(--navy); text-align: center; word-break: keep-all; }
+.faith-auth-notice-dialog h2 { margin: 0 0 12px; font-size: 1.45rem; }
+.faith-auth-notice-dialog > p:not(.eyebrow) { margin: 0 0 22px; color: var(--muted); line-height: 1.7; }
+.faith-auth-notice-dialog .button { width: 100%; }
+.faith-auth-notice-modal[data-tone="success"] .faith-auth-notice-dialog { border-top-color: #4d7b62; }
+.faith-auth-notice-modal[data-tone="error"] .faith-auth-notice-dialog { border-top-color: #9b3d3d; }
 body.modal-open { overflow: hidden; }
 
 .community-hero, .account-hero { display: block; }
