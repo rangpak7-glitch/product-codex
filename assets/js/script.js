@@ -1087,6 +1087,50 @@ if (visualPrayerCards) {
     return String(resource?.title || "").replace(/^\(샘플\)\s*/, "");
   }
 
+  let resourcePreviewReturnTarget = null;
+
+  function ensureResourcePreviewDialog() {
+    let dialog = document.getElementById("resourcePreviewDialog");
+    if (dialog) return dialog;
+    dialog = document.createElement("dialog");
+    dialog.id = "resourcePreviewDialog";
+    dialog.className = "resource-preview-dialog";
+    dialog.setAttribute("aria-labelledby", "resourcePreviewCaption");
+    dialog.innerHTML = `<div class="resource-preview-dialog-inner">
+      <img data-resource-preview-dialog-image alt="">
+      <p id="resourcePreviewCaption" data-resource-preview-dialog-caption></p>
+      <button class="resource-preview-dialog-close" type="button" data-resource-preview-close aria-label="미리보기 닫기">×</button>
+    </div>`;
+    document.body.append(dialog);
+    const close = () => dialog.close();
+    dialog.querySelector("[data-resource-preview-close]")?.addEventListener("click", close);
+    dialog.addEventListener("click", (event) => {
+      if (event.target === dialog) close();
+    });
+    dialog.addEventListener("close", () => {
+      const image = dialog.querySelector("[data-resource-preview-dialog-image]");
+      if (image) image.removeAttribute("src");
+      resourcePreviewReturnTarget?.focus();
+      resourcePreviewReturnTarget = null;
+    });
+    return dialog;
+  }
+
+  function openResourcePreviewDialog(trigger) {
+    const dialog = ensureResourcePreviewDialog();
+    const image = dialog.querySelector("[data-resource-preview-dialog-image]");
+    const caption = dialog.querySelector("[data-resource-preview-dialog-caption]");
+    const source = trigger.dataset.resourcePreviewUrl || "";
+    const alt = trigger.dataset.resourcePreviewAlt || "PDF 페이지 미리보기";
+    if (!image || !caption || !source) return;
+    resourcePreviewReturnTarget = trigger;
+    image.src = source;
+    image.alt = alt;
+    caption.textContent = alt;
+    dialog.showModal();
+    dialog.querySelector("[data-resource-preview-close]")?.focus();
+  }
+
   function renderPublicPreviewGallery(resource, compact = false) {
     if (compact) return "";
     const previewLimit = compact ? 1 : resource.type === "card" ? 2 : 3;
@@ -1096,7 +1140,10 @@ if (visualPrayerCards) {
         ? `<section class="resource-media-preview resource-media-preview-pages" aria-label="PDF 공개 미리보기"><div class="resource-media-heading"><p class="eyebrow">PDF Preview</p><h3>1~3페이지 미리보기</h3><p>이 자료에는 현재 공개된 페이지 미리보기가 없습니다.</p></div></section>`
         : "";
     }
-    const gallery = `<div class="resource-public-preview-grid${compact ? " is-compact" : ""}">${previews.map((item, index) => `<figure><img src="${escapeHtml(item.url)}" alt="${escapeHtml(item.alt_text || `${displayResourceTitle(resource)} ${index + 1}페이지 미리보기`)}" loading="lazy"><figcaption>${escapeHtml(item.alt_text || `${index + 1}페이지`)}</figcaption></figure>`).join("")}</div>`;
+    const gallery = `<div class="resource-public-preview-grid${compact ? " is-compact" : ""}">${previews.map((item, index) => {
+      const alt = item.alt_text || `${displayResourceTitle(resource)} ${index + 1}페이지 미리보기`;
+      return `<figure><button class="resource-preview-open" type="button" data-resource-preview-url="${escapeHtml(item.url)}" data-resource-preview-alt="${escapeHtml(alt)}" aria-label="${escapeHtml(`${alt} 크게 보기`)}" title="미리보기 크게 보기"><img src="${escapeHtml(item.url)}" alt="${escapeHtml(alt)}" loading="lazy"></button><figcaption>${escapeHtml(alt)}</figcaption></figure>`;
+    }).join("")}</div>`;
     if (compact || resource.type !== "pdf") return gallery;
     return `<section class="resource-media-preview resource-media-preview-pages" aria-label="PDF 1페이지부터 3페이지 미리보기"><div class="resource-media-heading"><p class="eyebrow">PDF Preview</p><h3>1~3페이지 미리보기</h3><p>한 PDF의 앞 3페이지만 공개합니다.</p></div>${gallery}</section>`;
   }
@@ -1405,6 +1452,11 @@ if (visualPrayerCards) {
   });
 
   listRoot.addEventListener("click", (event) => {
+    const previewButton = event.target.closest("[data-resource-preview-url]");
+    if (previewButton) {
+      openResourcePreviewDialog(previewButton);
+      return;
+    }
     if (event.target.closest("[data-reset-resource-search]")) {
       activeTags.clear();
       searchQuery = "";
