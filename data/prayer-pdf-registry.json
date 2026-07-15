@@ -1,0 +1,210 @@
+{
+  "schema_version": 2,
+  "policy": {
+    "weekly_product_count": 2,
+    "schedule_local_time": "Tuesday 23:00",
+    "timezone": "Asia/Seoul",
+    "price_location": "sales channel only",
+    "price_in_pdf": false,
+    "default_format": "7-day paid prayer journal",
+    "paid_pages": 21,
+    "preview_pages": 4,
+    "included_nonprofit_print_copies": 20,
+    "additional_print_pack_size": 10,
+    "additional_print_pack_price_krw": 3000
+  },
+  "products": [
+    {
+      "title": "가정을 품는 7일간의 기도",
+      "product_theme": "자녀와 가정, 지친 마음을 품는 입문 기도",
+      "created_on": "2026-07-15",
+      "output_dir": "D:\\codex\\sinang\\prayPDF\\가정을_품는_7일_기도(샘플)",
+      "days": [
+        {
+          "topic": "자녀의 믿음",
+          "reference": "신명기 6:6-7",
+          "focus": "자녀가 말씀 안에서 믿음의 뿌리를 내리기",
+          "practice_key": "축복 문장 전하기"
+        },
+        {
+          "topic": "자녀의 하루",
+          "reference": "잠언 3:5-6",
+          "focus": "자녀의 평범한 일상을 하나님께 맡기기",
+          "practice_key": "하루 안부 묻기"
+        },
+        {
+          "topic": "가정의 화목",
+          "reference": "골로새서 3:13-14",
+          "focus": "가족이 서로를 존중하고 평화를 이루기",
+          "practice_key": "먼저 부드럽게 말하기"
+        },
+        {
+          "topic": "가정의 쉼",
+          "reference": "마태복음 11:28",
+          "focus": "가정에 멈춤과 회복의 리듬 세우기",
+          "practice_key": "함께 쉬는 시간 정하기"
+        },
+        {
+          "topic": "지친 마음의 위로",
+          "reference": "시편 34:18",
+          "focus": "지친 감정을 숨기지 않고 하나님께 아뢰기",
+          "practice_key": "위로의 연락 전하기"
+        },
+        {
+          "topic": "감사",
+          "reference": "데살로니가전서 5:18",
+          "focus": "가정 안의 작은 은혜를 발견하기",
+          "practice_key": "감사 한 가지 기록하기"
+        },
+        {
+          "topic": "하나님께 맡기는 기도",
+          "reference": "베드로전서 5:7",
+          "focus": "통제할 수 없는 일을 하나님께 맡기기",
+          "practice_key": "걱정 한 문장 내려놓기"
+        }
+      ]
+    },
+    {
+      "title": "가정을 품는 14일 기도",
+      "product_theme": "가정과 자녀를 품는 기도",
+      "created_on": "2026-07-15",
+      "output_dir": "D:\\codex\\sinang\\prayPDF\\가정을_품는_14일_기도_유료본",
+      "days": [
+        {
+          "topic": "자녀의 믿음",
+          "reference": "신명기 6:6-7",
+          "focus": "말씀을 마음에 새기는 믿음",
+          "practice_key": "축복의 말"
+        },
+        {
+          "topic": "자녀의 관계",
+          "reference": "로마서 12:18",
+          "focus": "친구와 타인을 존중하는 관계",
+          "practice_key": "이야기 경청"
+        },
+        {
+          "topic": "자녀의 건강",
+          "reference": "요한3서 1:2",
+          "focus": "몸과 마음을 돌보는 생활",
+          "practice_key": "컨디션 나눔"
+        },
+        {
+          "topic": "자녀의 진로",
+          "reference": "잠언 3:5-6",
+          "focus": "자신의 길을 분별하는 과정",
+          "practice_key": "노력 칭찬"
+        },
+        {
+          "topic": "자녀의 안전",
+          "reference": "시편 121:7-8",
+          "focus": "일상과 출입에서의 보호",
+          "practice_key": "연락 약속"
+        },
+        {
+          "topic": "가정의 대화",
+          "reference": "잠언 15:1",
+          "focus": "말투와 경청을 바꾸는 대화",
+          "practice_key": "끝까지 듣기"
+        },
+        {
+          "topic": "가정의 용서",
+          "reference": "에베소서 4:31-32",
+          "focus": "상처를 하나님께 내어놓는 용서",
+          "practice_key": "감정 기도"
+        },
+        {
+          "topic": "가정의 쉼",
+          "reference": "마태복음 11:28-30",
+          "focus": "멈추고 회복하는 생활 리듬",
+          "practice_key": "화면 내려놓기"
+        },
+        {
+          "topic": "부모의 지혜",
+          "reference": "야고보서 1:5",
+          "focus": "부모 역할에서의 분별",
+          "practice_key": "열 초 멈춤"
+        },
+        {
+          "topic": "가정예배",
+          "reference": "여호수아 24:15",
+          "focus": "함께 드리는 작은 예배 습관",
+          "practice_key": "삼 분 예배"
+        },
+        {
+          "topic": "불안",
+          "reference": "빌립보서 4:6-7",
+          "focus": "해결되지 않은 일을 기도로 아뢰기",
+          "practice_key": "걱정 나누기"
+        },
+        {
+          "topic": "위로",
+          "reference": "이사야 41:10",
+          "focus": "슬픔과 외로움 속의 동행",
+          "practice_key": "안부 전하기"
+        },
+        {
+          "topic": "감사",
+          "reference": "데살로니가전서 5:16-18",
+          "focus": "이미 받은 은혜를 발견하기",
+          "practice_key": "구체적 감사"
+        },
+        {
+          "topic": "결심",
+          "reference": "야고보서 1:22",
+          "focus": "말씀을 삶으로 이어 가는 다음 걸음",
+          "practice_key": "실천 날짜 정하기"
+        }
+      ]
+    },
+    {
+      "title": "일터와 생업을 위한 7일 기도",
+      "product_theme": "일터와 생업의 태도를 세우는 기도",
+      "created_on": "2026-07-15",
+      "output_dir": "D:\\codex\\sinang\\prayPDF\\일터와_생업을_위한_7일_기도_유료본",
+      "days": [
+        {
+          "topic": "맡겨진 일의 성실",
+          "reference": "골로새서 3:23-24",
+          "focus": "사람의 시선보다 맡은 일을 온 마음으로 행하기",
+          "practice_key": "핵심 업무 완결"
+        },
+        {
+          "topic": "정직한 선택",
+          "reference": "잠언 11:3",
+          "focus": "당장의 이익보다 바른 기준을 따르기",
+          "practice_key": "사실 원칙 영향 점검"
+        },
+        {
+          "topic": "시간의 청지기",
+          "reference": "에베소서 5:15-16",
+          "focus": "분주함에서 벗어나 중요한 일에 시간을 배치하기",
+          "practice_key": "첫 일정 예약"
+        },
+        {
+          "topic": "실수 뒤의 회복",
+          "reference": "잠언 24:16",
+          "focus": "실수를 숨기지 않고 책임과 배움으로 다시 일어서기",
+          "practice_key": "수정 행동 완료"
+        },
+        {
+          "topic": "공의를 지키는 용기",
+          "reference": "미가 6:8",
+          "focus": "부당함에 휩쓸리지 않고 바른 절차와 태도를 선택하기",
+          "practice_key": "사실 중심 정리"
+        },
+        {
+          "topic": "수고의 열매",
+          "reference": "시편 90:17",
+          "focus": "조급함을 내려놓고 손의 수고가 견고해지기를 구하기",
+          "practice_key": "완료와 다음 단계 기록"
+        },
+        {
+          "topic": "일에서 누리는 기쁨",
+          "reference": "전도서 3:12-13",
+          "focus": "성과만 좇지 않고 수고 속의 선한 보람을 누리기",
+          "practice_key": "보람의 순간 기록"
+        }
+      ]
+    }
+  ]
+}
