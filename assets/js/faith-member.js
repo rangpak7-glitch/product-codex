@@ -15,6 +15,7 @@
     ordersUserId: null,
     initialized: false
   };
+  let modalDownloadFiles = [];
 
   const escapeHtml = (value = "") => String(value)
     .replaceAll("&", "&amp;")
@@ -48,7 +49,7 @@
   async function getClient() {
     if (window.FaithSupabase) return window.FaithSupabase;
     if (!window.supabase?.createClient) await loadScript(SUPABASE_SCRIPT);
-    if (!window.FaithSupabase) await loadScript(new URL("assets/js/supabase-config.js", window.location.href).href);
+    if (!window.FaithSupabase) await loadScript(new URL("assets/js/supabase-config.js?v=20260715-worker1", window.location.href).href);
     return window.FaithSupabase || null;
   }
 
@@ -136,12 +137,35 @@
         <button class="modal-close" type="button" data-faith-download-close aria-label="다운로드 창 닫기">×</button>
         <p class="eyebrow">Purchased files</p>
         <h2 id="faithDownloadTitle">구매 자료 다운로드</h2>
-        <p class="faith-download-guidance">아래 파일을 하나씩 눌러 모두 내려받아 주세요. 다운로드 링크는 잠시 후 만료됩니다.</p>
+        <p class="faith-download-guidance">각 파일 오른쪽의 아래 화살표를 누르면 바로 다운로드됩니다. 다운로드 링크는 잠시 후 만료됩니다.</p>
         <div class="faith-download-list" data-faith-download-list></div>
+        <p class="faith-download-status" data-faith-download-status role="status" aria-live="polite"></p>
         <button class="button secondary" type="button" data-faith-download-close>닫기</button>
       </section>`;
     document.body.append(root);
     root.querySelectorAll("[data-faith-download-close]").forEach((button) => button.addEventListener("click", closeDownloadModal));
+    root.querySelector("[data-faith-download-list]")?.addEventListener("click", async (event) => {
+      const button = event.target.closest("[data-faith-download-index]");
+      if (!button || button.disabled) return;
+      const file = modalDownloadFiles[Number(button.dataset.faithDownloadIndex)];
+      const status = root.querySelector("[data-faith-download-status]");
+      const icon = button.querySelector("[data-faith-download-icon]");
+      button.disabled = true;
+      button.setAttribute("aria-busy", "true");
+      if (icon) icon.textContent = "…";
+      if (status) status.textContent = `${file?.fileName || "자료 파일"}을 내려받고 있습니다.`;
+      try {
+        await saveProtectedFile(file);
+        if (icon) icon.textContent = "✓";
+        if (status) status.textContent = `${file.fileName || "자료 파일"} 다운로드를 시작했습니다.`;
+      } catch (error) {
+        if (icon) icon.textContent = "!";
+        if (status) status.textContent = error.message;
+      } finally {
+        button.disabled = false;
+        button.removeAttribute("aria-busy");
+      }
+    });
   }
 
   function getAuthModal(mode) {
@@ -221,6 +245,7 @@
     const root = document.getElementById("faithDownloadModal");
     if (!root) return;
     root.hidden = true;
+    modalDownloadFiles = [];
     syncModalOpenState();
   }
 
@@ -611,29 +636,45 @@
     return files.filter((file) => file?.url);
   }
 
-  function startProtectedDownloads(download) {
+  function safeDownloadName(value = "") {
+    return String(value || "faith-resource-download")
+      .replace(/[\\/:*?"<>|]/g, "-")
+      .trim() || "faith-resource-download";
+  }
+
+  async function saveProtectedFile(file) {
+    if (!file?.url) throw new Error("다운로드 링크를 찾지 못했습니다.");
+    const response = await fetch(file.url, { credentials: "omit" });
+    if (!response.ok) throw new Error("파일을 내려받지 못했습니다. 다운로드 목록을 다시 열어 주세요.");
+    const blob = await response.blob();
+    const objectUrl = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = objectUrl;
+    link.download = safeDownloadName(file.fileName);
+    link.style.display = "none";
+    document.body.append(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000);
+  }
+
+  async function startProtectedDownloads(download) {
     const files = downloadEntries(download);
     if (!files.length) throw new Error("다운로드 링크를 찾지 못했습니다.");
     if (files.length > 1) {
       ensureDownloadModal();
       const root = document.getElementById("faithDownloadModal");
       const list = root.querySelector("[data-faith-download-list]");
-      list.innerHTML = files.map((file, index) => `<a class="faith-download-file" href="${escapeHtml(file.url)}" download="${escapeHtml(file.fileName || "")}" rel="noopener"><span>${index + 1}</span><strong>${escapeHtml(file.fileName || `자료 파일 ${index + 1}`)}</strong><span aria-hidden="true">↓</span></a>`).join("");
+      const status = root.querySelector("[data-faith-download-status]");
+      modalDownloadFiles = files;
+      list.innerHTML = files.map((file, index) => `<button class="faith-download-file" type="button" data-faith-download-index="${index}" aria-label="${escapeHtml(`${file.fileName || `자료 파일 ${index + 1}`} 다운로드`)}"><span>${index + 1}</span><strong>${escapeHtml(file.fileName || `자료 파일 ${index + 1}`)}</strong><span data-faith-download-icon aria-hidden="true">↓</span></button>`).join("");
+      if (status) status.textContent = "";
       root.hidden = false;
       document.body.classList.add("modal-open");
-      window.setTimeout(() => list.querySelector("a")?.focus(), 0);
+      window.setTimeout(() => list.querySelector("button")?.focus(), 0);
       return files.length;
     }
-    files.forEach((file) => {
-      const link = document.createElement("a");
-      link.href = file.url;
-      link.download = file.fileName || "";
-      link.rel = "noopener";
-      link.style.display = "none";
-      document.body.append(link);
-      link.click();
-      link.remove();
-    });
+    await saveProtectedFile(files[0]);
     return files.length;
   }
 
@@ -836,7 +877,7 @@
       try {
         const download = await requestProtectedDownload(button.dataset.ownedResourceDownload);
         if (download?.requiresLogin) return;
-        const count = startProtectedDownloads(download);
+        const count = await startProtectedDownloads(download);
         trackOrderEvent("resource_download", { resource_id: button.dataset.ownedResourceDownload });
         if (status) status.textContent = count > 1 ? `${count}개 파일의 다운로드 목록을 열었습니다.` : "다운로드를 시작했습니다.";
       } catch (error) {

@@ -5,7 +5,7 @@ const $ = (selector) => document.querySelector(selector);
   if (window.__faithMemberScriptLoaded) return;
   window.__faithMemberScriptLoaded = true;
   const script = document.createElement("script");
-  script.src = new URL("assets/js/faith-member.js?v=20260715-paid-preview", window.location.href).href;
+  script.src = new URL("assets/js/faith-member.js?v=20260715-download1", window.location.href).href;
   script.async = true;
   document.head.append(script);
 })();
@@ -357,14 +357,25 @@ async function startProductPurchase(productId) {
   }
   const download = await window.FaithAuth.requestProtectedDownload(result.resourceId);
   trackFaithEvent("resource_download", { resource_id: result.resourceId, product_id: productId, repeat: true });
-  openProtectedDownloads(download);
+  await openProtectedDownloads(download);
   return result;
 }
 
-function openProtectedDownloads(download) {
+async function openProtectedDownloads(download) {
   if (window.FaithAuth?.startProtectedDownloads) return window.FaithAuth.startProtectedDownloads(download);
-  if (!download?.url) throw new Error("다운로드 링크를 찾지 못했습니다.");
-  window.location.assign(download.url);
+  const file = download?.downloads?.[0] || download;
+  if (!file?.url) throw new Error("다운로드 링크를 찾지 못했습니다.");
+  const response = await fetch(file.url, { credentials: "omit" });
+  if (!response.ok) throw new Error("파일을 내려받지 못했습니다. 잠시 후 다시 시도해 주세요.");
+  const objectUrl = URL.createObjectURL(await response.blob());
+  const link = document.createElement("a");
+  link.href = objectUrl;
+  link.download = String(file.fileName || "faith-resource-download").replace(/[\\/:*?"<>|]/g, "-");
+  link.style.display = "none";
+  document.body.append(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000);
   return 1;
 }
 
@@ -1412,7 +1423,7 @@ if (visualPrayerCards) {
       if (!window.FaithAuth?.requestProtectedDownload) throw new Error("회원 서비스를 불러오는 중입니다. 잠시 후 다시 시도해 주세요.");
       const download = await window.FaithAuth.requestProtectedDownload(resourceId);
       trackFaithEvent("resource_download", { resource_id: resourceId, product_id: product.id });
-      const count = openProtectedDownloads(download);
+      const count = await openProtectedDownloads(download);
       setResourceActionStatus(count > 1 ? `${count}개 파일의 다운로드 목록을 열었습니다.` : "다운로드를 시작했습니다.");
     } catch (error) {
       setResourceActionStatus(error.message || "파일을 열 수 없습니다.");

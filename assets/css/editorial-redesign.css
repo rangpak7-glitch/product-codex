@@ -1598,15 +1598,23 @@ body[data-site-page="prayer-cards"] #faithResourceFilterStatus[hidden] { display
   align-items: center;
   gap: 10px;
   min-height: 52px;
+  width: 100%;
   padding: 10px 12px;
   border: 1px solid #d9d1c5;
   border-radius: 8px;
+  background: #fffefb;
   color: #20372f;
+  font: inherit;
+  text-align: left;
   text-decoration: none;
+  cursor: pointer;
 }
 .faith-download-file:hover,
 .faith-download-file:focus-visible { border-color: #826039; background: #f6f2ea; outline: none; }
 .faith-download-file strong { overflow-wrap: anywhere; }
+.faith-download-file > span:last-child { font-size: 1.25rem; font-weight: 800; text-align: center; }
+.faith-download-file[disabled] { cursor: wait; opacity: .72; }
+.faith-download-status { min-height: 1.5em; margin: -6px 0 18px; color: #315b4c; font-size: .9rem; font-weight: 700; }
 .resource-media-heading { margin-bottom: 14px; }
 .resource-media-heading .eyebrow { margin: 0 0 5px; }
 .resource-media-heading h3 { margin: 0; font-size: 1.18rem; }
