@@ -1,5 +1,87 @@
 window.VIDEOS = [
   {
+    "id": "youtube-dUodDL2-31c",
+    "videoId": "dUodDL2-31c",
+    "title": "오늘 무엇이 옳은지 망설이는 아침｜미가 6:8",
+    "theme": "아침기도",
+    "scripture": "미가 6장 8절",
+    "description": "🌿 기도의샘물 웹페이지: https://product-codex-90j.pages.dev/",
+    "tags": [
+      "Shorts",
+      "아침기도",
+      "회복",
+      "선택",
+      "기도"
+    ],
+    "publishedDate": "2026-07-15",
+    "publishedAt": "2026-07-15T20:15:22+00:00",
+    "isShort": true,
+    "shortsPlaylists": [
+      "아침기도"
+    ]
+  },
+  {
+    "id": "youtube--5NagHqLnxc",
+    "videoId": "-5NagHqLnxc",
+    "title": "갑자기 일이 몰려 감당하기 어려울 때｜시편 46:1",
+    "theme": "아침기도",
+    "scripture": "시편 46편 1절",
+    "description": "🌿 기도의샘물 웹페이지: https://product-codex-90j.pages.dev/",
+    "tags": [
+      "Shorts",
+      "아침기도",
+      "회복",
+      "기도",
+      "말씀"
+    ],
+    "publishedDate": "2026-07-15",
+    "publishedAt": "2026-07-15T14:45:33+00:00",
+    "isShort": true,
+    "shortsPlaylists": [
+      "하루 한 말씀, 인생 회복"
+    ]
+  },
+  {
+    "id": "youtube-n2ewauRHfF8",
+    "videoId": "n2ewauRHfF8",
+    "title": "두려운 소식을 들은 밤｜시편 56:3",
+    "theme": "아침기도",
+    "scripture": "시편 56편 3절",
+    "description": "🌿 기도의샘물 웹페이지: https://product-codex-90j.pages.dev/",
+    "tags": [
+      "Shorts",
+      "아침기도",
+      "회복",
+      "지혜",
+      "기도"
+    ],
+    "publishedDate": "2026-07-15",
+    "publishedAt": "2026-07-15T14:15:25+00:00",
+    "isShort": true,
+    "shortsPlaylists": [
+      "저녁기도"
+    ]
+  },
+  {
+    "id": "youtube-26ljH3fIB2g",
+    "videoId": "26ljH3fIB2g",
+    "title": "실패했어도 다시 부르십니다ㅣ베드로를 다시 찾아오신 예수님ㅣ요한복음 21장 말씀기도",
+    "theme": "아침기도",
+    "scripture": "요한복음 21장",
+    "description": "실패가 내 이름처럼 느껴지고 다시 시작할 용기가 나지 않는 밤,",
+    "tags": [
+      "아침기도",
+      "불안",
+      "회복",
+      "기도",
+      "말씀"
+    ],
+    "publishedDate": "2026-07-15",
+    "publishedAt": "2026-07-15T14:15:23+00:00",
+    "isShort": false,
+    "shortsPlaylists": []
+  },
+  {
     "id": "youtube-3ooYlQWYsck",
     "videoId": "3ooYlQWYsck",
     "title": "어제의 실패가 무거운 아침｜예레미야애가 3:22-23",
