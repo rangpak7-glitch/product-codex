@@ -12,7 +12,7 @@
   const PDF_PREVIEW_TARGET_WIDTH = 1200;
   const TYPE_LABELS = { pdf: "기도문 PDF", audio: "기도 오디오북", card: "기도카드" };
   const STATUS_LABELS = { draft: "초안", published: "공개", archived: "보관" };
-  const SALE_LABELS = { inquiry: "문의 안내", available: "온라인 구매", unavailable: "판매 비노출" };
+  const SALE_LABELS = { free: "무료다운", inquiry: "문의 안내", available: "온라인 구매", unavailable: "판매 비노출" };
 
   const state = {
     user: null,
@@ -110,6 +110,10 @@
 
   function resourceProduct(resourceId) {
     return state.products.get(resourceId) || null;
+  }
+
+  function resourceSaleStatus(resource) {
+    return resource?.access_level === "free" ? "free" : resourceProduct(resource?.id)?.sale_status || "inquiry";
   }
 
   function isIncomplete(resource) {
@@ -218,8 +222,7 @@
       if (Object.hasOwn(TYPE_LABELS, state.activeView) && resource.type !== state.activeView) return false;
       if (canReorder && resource.status === "archived") return false;
       if (state.statusFilter !== "all" && resource.status !== state.statusFilter) return false;
-      const product = resourceProduct(resource.id);
-      if (state.saleFilter !== "all" && product?.sale_status !== state.saleFilter) return false;
+      if (state.saleFilter !== "all" && resourceSaleStatus(resource) !== state.saleFilter) return false;
       if (!normalized) return true;
       return [resource.title, resource.summary, ...(resource.tags || [])].join(" ").toLowerCase().includes(normalized);
     }).sort((a, b) => a.display_order - b.display_order || new Date(b.created_at) - new Date(a.created_at));
@@ -285,6 +288,7 @@
     </div>`;
     resourceList.innerHTML = boardHead + rows.map((resource, index) => {
       const product = resourceProduct(resource.id) || { sale_status: "inquiry", price_amount: null };
+      const saleStatus = resourceSaleStatus(resource);
       const incomplete = isIncomplete(resource);
       const badgeClass = incomplete ? "incomplete" : resource.status;
       const badgeText = incomplete ? "업로드 미완료" : STATUS_LABELS[resource.status] || resource.status;
@@ -307,7 +311,7 @@
           <dl class="admin-resource-detail-meta">
             <div><dt>파일</dt><dd>원본 ${resourceFiles(resource.id).length}개 · 미리보기 ${resourcePreviews(resource.id).length}개</dd></div>
             <div><dt>최근 수정</dt><dd>${escapeHtml(formatDate(resource.updated_at))}</dd></div>
-            <div><dt>판매 상태</dt><dd>${escapeHtml(SALE_LABELS[product.sale_status] || "문의 안내")} · ${escapeHtml(formatPrice(product.price_amount))}</dd></div>
+            <div><dt>판매 상태</dt><dd>${escapeHtml(SALE_LABELS[saleStatus] || "문의 안내")} · ${escapeHtml(saleStatus === "free" ? "결제 없음" : formatPrice(product.price_amount))}</dd></div>
           </dl>
           <div class="admin-resource-management">
             <div class="admin-order-controls" aria-label="노출 순서 변경"><button type="button" data-move="up" aria-label="${escapeHtml(resource.title)} 위로 이동" ${!canReorder || index === 0 ? "disabled" : ""}>↑</button><button type="button" data-move="down" aria-label="${escapeHtml(resource.title)} 아래로 이동" ${!canReorder || index === rows.length - 1 ? "disabled" : ""}>↓</button></div>
@@ -354,6 +358,7 @@
     form.elements.description.value = details?.description || "";
     form.elements.tags.value = (resource?.tags || []).join(", ");
     form.elements.previewItems.value = (product?.preview_items || details?.preview_items || []).join("\n");
+    form.elements.accessLevel.value = resource?.access_level || "paid";
     form.elements.saleStatus.value = product?.sale_status || "inquiry";
     form.elements.priceAmount.value = product?.price_amount || "";
     state.editorOriginals = (resource ? resourceFiles(resource.id) : []).map((item) => ({ ...item, source: "stored", status: "complete" }));
@@ -365,7 +370,7 @@
     if (title) title.textContent = resource ? "자료 수정" : "새 자료 등록";
     setStatus(uploadStatus, "");
     setEditorStep(1);
-    syncPriceField();
+    syncAccessFields();
     syncPreviewUploadMode();
     renderTagSuggestions();
     renderEditorFiles();
@@ -681,20 +686,32 @@
     const root = document.querySelector("[data-publish-checklist]");
     if (!root || !form) return;
     const tags = tagsFrom(form.elements.tags.value);
-    const saleStatus = form.elements.saleStatus.value;
+    const accessLevel = form.elements.accessLevel.value;
+    const saleStatus = accessLevel === "free" ? "inquiry" : form.elements.saleStatus.value;
     const price = Number(form.elements.priceAmount.value || 0);
     const checks = [
       { ready: form.elements.title.value.trim().length >= 2 && form.elements.summary.value.trim().length >= 2 && form.elements.description.value.trim().length >= 2, label: "기본 정보와 상세 설명" },
       { ready: tags.length > 0, label: "키워드 1개 이상" },
       { ready: originalFilesValid(), label: form.elements.type.value === "card" ? "기도카드 이미지 10~12장" : "자료 유형에 맞는 원본 파일" },
-      { ready: saleStatus === "inquiry" || (saleStatus === "available" && price > 0 && state.workerReady), label: "판매 상태와 가격" },
+      { ready: accessLevel === "free" || saleStatus === "inquiry" || (saleStatus === "available" && price > 0 && state.workerReady), label: accessLevel === "free" ? "무료다운 설정" : "판매 상태와 가격" },
       { ready: !state.pdfPreviewGenerating && previewFilesValid({ requireAudio: form.elements.type.value === "audio", requirePdf: form.elements.type.value === "pdf" }), label: form.elements.type.value === "audio" ? "공개 미리듣기 MP3 1개" : form.elements.type.value === "pdf" ? "PDF 1~3페이지 공개 미리보기" : "공개 미리보기 이미지 3장 이하" }
     ];
     root.innerHTML = checks.map((check) => `<p class="${check.ready ? "is-ready" : ""}">${check.ready ? "완료" : "확인 필요"} · ${escapeHtml(check.label)}</p>`).join("");
   }
 
-  function syncPriceField() {
-    const available = form.elements.saleStatus.value === "available";
+  function syncAccessFields() {
+    const free = form.elements.accessLevel.value === "free";
+    const saleField = document.querySelector("[data-paid-sale-field]");
+    const priceField = document.querySelector("[data-paid-price-field]");
+    const help = document.querySelector("[data-access-level-help]");
+    if (free) form.elements.saleStatus.value = "inquiry";
+    form.elements.saleStatus.disabled = free;
+    if (saleField) saleField.hidden = free;
+    if (priceField) priceField.hidden = free;
+    if (help) help.textContent = free
+      ? "로그인 회원이 결제 없이 원본 자료를 내려받을 수 있습니다. 비회원에게는 회원가입 안내가 표시됩니다."
+      : "유료 판매는 판매 상태와 가격을 설정합니다.";
+    const available = !free && form.elements.saleStatus.value === "available";
     form.elements.priceAmount.disabled = !available;
     form.elements.priceAmount.required = available;
     if (!available) form.elements.priceAmount.value = "";
@@ -706,14 +723,15 @@
     const summary = form.elements.summary.value.trim();
     const description = form.elements.description.value.trim();
     const tags = tagsFrom(form.elements.tags.value);
-    const saleStatus = form.elements.saleStatus.value;
+    const accessLevel = form.elements.accessLevel.value;
+    const saleStatus = accessLevel === "free" ? "inquiry" : form.elements.saleStatus.value;
     const price = Number(form.elements.priceAmount.value || 0);
     if (state.pdfPreviewGenerating) return "PDF 공개 미리보기가 준비될 때까지 기다려 주세요.";
     if (title.length < 2 || summary.length < 2 || description.length < 2) return "기본 정보와 상세 설명을 입력해 주세요.";
     if (!tags.length) return "키워드를 하나 이상 입력해 주세요.";
     if (tags.length > 12 || tags.some((tag) => tag.length > 40)) return "키워드는 12개 이하, 각 40자 이하로 입력해 주세요.";
-    if (saleStatus === "available" && (!Number.isInteger(price) || price <= 0)) return "온라인 구매 자료의 가격을 입력해 주세요.";
-    if (saleStatus === "available" && !state.workerReady) return "결제 Worker 연결이 확인된 뒤 온라인 구매 상태를 사용할 수 있습니다.";
+    if (accessLevel !== "free" && saleStatus === "available" && (!Number.isInteger(price) || price <= 0)) return "온라인 구매 자료의 가격을 입력해 주세요.";
+    if (accessLevel !== "free" && saleStatus === "available" && !state.workerReady) return "결제 Worker 연결이 확인된 뒤 온라인 구매 상태를 사용할 수 있습니다.";
     if (!previewFilesValid()) return form.elements.type.value === "audio"
       ? "공개 미리듣기는 15MB 이하 MP3 파일 1개로 등록해 주세요."
       : "공개 미리보기는 파일당 5MB 이하 JPG, PNG, WEBP 이미지 3장 이하로 등록해 주세요.";
@@ -721,7 +739,7 @@
     if (publishing && form.elements.type.value === "pdf" && !previewFilesValid({ requirePdf: true })) return "기도문 PDF를 공개하려면 1~3페이지 공개 미리보기를 준비해 주세요.";
     if (publishing && form.elements.type.value === "card" && !originalFilesValid()) return "기도카드는 이미지 10~12장을 등록해야 공개할 수 있습니다.";
     if (publishing && !originalFilesValid()) return "자료 유형에 맞는 원본 파일 구성을 확인해 주세요.";
-    if (publishing && saleStatus === "unavailable") return "판매 비노출 자료는 공개할 수 없습니다.";
+    if (publishing && accessLevel !== "free" && saleStatus === "unavailable") return "판매 비노출 자료는 공개할 수 없습니다.";
     return "";
   }
 
@@ -744,7 +762,8 @@
     const type = form.elements.type.value;
     const tags = tagsFrom(form.elements.tags.value);
     const previewItems = previewItemsFrom(form.elements.previewItems.value);
-    const saleStatus = form.elements.saleStatus.value;
+    const accessLevel = form.elements.accessLevel.value;
+    const saleStatus = accessLevel === "free" ? "inquiry" : form.elements.saleStatus.value;
     const priceAmount = saleStatus === "available" ? Number(form.elements.priceAmount.value) : null;
     const currentResource = state.resources.find((item) => item.id === resourceId);
     setStatus(uploadStatus, "자료 정보를 저장하고 있습니다.");
@@ -756,7 +775,7 @@
           title,
           summary,
           tags,
-          access_level: "paid",
+          access_level: accessLevel,
           status: "draft",
           published: false,
           display_order: maxOrder + 1,
@@ -767,7 +786,7 @@
         resourceId = data.id;
         resourceIdInput.value = resourceId;
       } else {
-        const { error } = await client.from("faith_resources").update({ title, summary, tags, updated_by: state.user.id }).eq("id", resourceId);
+        const { error } = await client.from("faith_resources").update({ title, summary, tags, access_level: accessLevel, updated_by: state.user.id }).eq("id", resourceId);
         if (error) throw error;
       }
 
@@ -1035,7 +1054,8 @@
   form?.elements.summary.addEventListener("input", renderPublishChecklist);
   form?.elements.description.addEventListener("input", renderPublishChecklist);
   form?.elements.type.addEventListener("change", syncPreviewUploadMode);
-  form?.elements.saleStatus.addEventListener("change", syncPriceField);
+  form?.elements.accessLevel.addEventListener("change", syncAccessFields);
+  form?.elements.saleStatus.addEventListener("change", syncAccessFields);
   form?.elements.priceAmount.addEventListener("input", renderPublishChecklist);
 
   document.querySelector("[data-admin-tag-suggestions]")?.addEventListener("click", (event) => {

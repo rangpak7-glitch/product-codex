@@ -931,7 +931,11 @@ if (visualPrayerCards) {
   function productForResource(resource) {
     const productId = resource.productId || resource.product_id || resource.id;
     const localProduct = findFaithProduct(productId) || faithProducts().find((product) => product.resourceId === resource.id);
-    if (localProduct) return localProduct;
+    if (localProduct) {
+      return resource.access_level === "free"
+        ? { ...localProduct, salesStatus: "free", priceKrw: null }
+        : localProduct;
+    }
     return normalizeFaithProduct({
       id: productId,
       resourceId: resource.id,
@@ -1072,11 +1076,7 @@ if (visualPrayerCards) {
       return `<div class="resource-access-panel"><p>구매한 자료입니다. 내 자료실에서도 다시 다운로드할 수 있습니다.</p><button class="button primary" type="button" data-resource-download="${escapeHtml(resource.id)}">자료 다운로드</button></div>`;
     }
     if (product.salesStatus === "free") {
-      const publicUrl = resource.downloadUrl || resource.download_url || resource.publicDownloadUrl || "";
-      const action = publicUrl
-        ? `<a class="button primary" href="${escapeHtml(publicUrl)}" download>자료 다운로드</a>`
-        : `<button class="button secondary" type="button" data-resource-detail="${escapeHtml(resource.id)}">자료 구성 보기</button>`;
-      return `<div class="resource-access-panel"><p>공개 자료입니다. 필요한 때에 다시 꺼내 읽을 수 있습니다.</p>${action}</div>`;
+      return `<div class="resource-access-panel"><p>회원 무료자료입니다. 로그인 후 결제 없이 내려받을 수 있습니다.</p><button class="button primary" type="button" data-resource-download="${escapeHtml(resource.id)}">무료 다운로드</button></div>`;
     }
     if (isPurchasable(product)) {
       return `<div class="resource-access-panel"><p>개별 구매 후 바로 내 자료실에서 열 수 있습니다.</p><button class="button primary" type="button" data-product-purchase="${escapeHtml(product.id)}">구매하기 · ${escapeHtml(formatKrw(product.priceKrw))}</button></div>`;
@@ -1408,12 +1408,6 @@ if (visualPrayerCards) {
     const resource = resources.find((item) => item.id === resourceId);
     if (!resource) return;
     const product = productForResource(resource);
-    const publicUrl = resource.downloadUrl || resource.download_url || resource.publicDownloadUrl || "";
-    if (product.salesStatus === "free" && publicUrl) {
-      trackFaithEvent("resource_download", { resource_id: resourceId, product_id: product.id });
-      window.location.assign(publicUrl);
-      return;
-    }
     try {
       if (!window.FaithAuth?.requestProtectedDownload) throw new Error("회원 서비스를 불러오는 중입니다. 잠시 후 다시 시도해 주세요.");
       const download = await window.FaithAuth.requestProtectedDownload(resourceId);

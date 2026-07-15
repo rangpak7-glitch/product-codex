@@ -29,7 +29,7 @@
   <section class="admin-dashboard" data-admin-panel hidden>
     <header class="admin-topbar">
       <a class="admin-brand" href="index.html"><img src="assets/logo-sam.png" alt="" width="38" height="38"><span><strong>기도의샘물</strong><small>신앙자료 관리자</small></span></a>
-      <div class="admin-topbar-actions"><a class="button secondary" href="prayer-cards.html" target="_blank" rel="noopener">신앙자료 페이지 보기</a><button class="text-button" type="button" data-admin-logout>로그아웃</button></div>
+      <div class="admin-topbar-actions"><a class="button secondary" href="admin-faith-orders.html">주문·환불 관리자</a><a class="button secondary" href="prayer-cards.html" target="_blank" rel="noopener">신앙자료 페이지 보기</a><button class="text-button" type="button" data-admin-logout>로그아웃</button></div>
     </header>
 
     <div class="admin-console">
@@ -59,7 +59,7 @@
         <div class="admin-list-toolbar">
           <label class="admin-search"><span>자료 검색</span><input type="search" data-admin-search placeholder="제목 또는 키워드 검색"></label>
           <label><span>공개 상태</span><select data-admin-status-filter><option value="all">전체 상태</option><option value="published">공개</option><option value="draft">초안</option><option value="archived">보관</option></select></label>
-          <label><span>판매 상태</span><select data-admin-sale-filter><option value="all">전체 판매 상태</option><option value="inquiry">문의 안내</option><option value="available">온라인 구매</option><option value="unavailable">판매 비노출</option></select></label>
+          <label><span>판매 상태</span><select data-admin-sale-filter><option value="all">전체 판매 상태</option><option value="free">무료다운</option><option value="inquiry">문의 안내</option><option value="available">온라인 구매</option><option value="unavailable">판매 비노출</option></select></label>
         </div>
         <p class="admin-list-hint" data-admin-order-hint>게시판을 선택하면 드래그 또는 화살표 버튼으로 노출 순서를 바꿀 수 있습니다.</p>
         <p class="form-message admin-global-status" data-admin-status role="status" aria-live="polite"></p>
@@ -108,8 +108,10 @@
       </section>
 
       <section class="admin-editor-step" data-editor-panel="3" hidden>
-        <label>판매 상태<select name="saleStatus" required><option value="inquiry">문의 안내</option><option value="available">온라인 구매 가능</option><option value="unavailable">판매 비노출</option></select></label>
-        <label>판매 가격(원)<input type="number" name="priceAmount" min="1" step="1" inputmode="numeric" placeholder="온라인 구매 가능일 때만 입력"></label>
+        <label>자료 이용 방식<select name="accessLevel" required><option value="paid">유료 판매</option><option value="free">무료다운</option></select></label>
+        <p class="admin-worker-status" data-access-level-help>유료 판매는 판매 상태와 가격을 설정합니다. 무료다운은 로그인 회원이 결제 없이 내려받을 수 있습니다.</p>
+        <label data-paid-sale-field>판매 상태<select name="saleStatus" required><option value="inquiry">문의 안내</option><option value="available">온라인 구매 가능</option><option value="unavailable">판매 비노출</option></select></label>
+        <label data-paid-price-field>판매 가격(원)<input type="number" name="priceAmount" min="1" step="1" inputmode="numeric" placeholder="온라인 구매 가능일 때만 입력"></label>
         <div class="admin-publish-checklist" data-publish-checklist></div>
         <p class="admin-worker-status" data-worker-status></p>
       </section>

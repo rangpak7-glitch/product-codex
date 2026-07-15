@@ -645,9 +645,17 @@ async function downloadResource(request, env, pathname) {
   try { resourceId = decodeURIComponent(pathname.split("/")[2] || ""); } catch { return json({ error: "자료 정보가 올바르지 않습니다." }, 400); }
   if (!isSafeResourceId(resourceId)) return json({ error: "자료 정보가 올바르지 않습니다." }, 400);
 
+  const resources = await rest(
+    env,
+    `faith_resources?id=eq.${encodeURIComponent(resourceId)}&published=eq.true&status=eq.published&limit=1&select=id,access_level`
+  );
+  const resource = resources?.[0] || null;
+  if (!resource) return json({ error: "공개된 자료를 찾지 못했습니다." }, 404);
+  const isFreeResource = resource.access_level === "free";
+
   const profile = await getProfile(env, member.id);
   let order = null;
-  if (profile?.role !== "admin") {
+  if (profile?.role !== "admin" && !isFreeResource) {
     const orders = await rest(
       env,
       `faith_orders?user_id=eq.${encodeURIComponent(member.id)}&resource_id=eq.${encodeURIComponent(resourceId)}&status=eq.paid&order=paid_at.desc&limit=1&select=id,resource_id`
