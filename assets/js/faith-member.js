@@ -457,6 +457,11 @@
     }
     if (orderApiUrl()) return orderRequest(`/resources/${encodeURIComponent(normalizedResourceId)}/download`);
 
+    const paidOrder = await getOrderForResource(normalizedResourceId);
+    if (state.profile?.role !== "admin" && paidOrder?.status !== "paid") {
+      throw new Error("구매를 완료한 자료만 내려받을 수 있습니다.");
+    }
+
     const client = await getClient();
     const { data: files, error: fileError } = await client
       .from("resource_files")
@@ -586,7 +591,8 @@
   async function hasPurchasedResource(resourceId) {
     if (!state.user) return false;
     if (state.profile?.role === "admin") return true;
-    return Boolean(await getOrderForResource(resourceId));
+    const order = await getOrderForResource(resourceId);
+    return order?.status === "paid";
   }
 
   async function initAccountPage() {
