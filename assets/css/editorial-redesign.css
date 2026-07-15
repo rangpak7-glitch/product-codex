@@ -1473,6 +1473,21 @@ body[data-site-page="prayer-cards"] #faithResourceFilterStatus[hidden] { display
   border-radius: 0;
   background: transparent;
 }
+.resource-inline-detail .compact-list {
+  max-height: none;
+  overflow: visible;
+}
+.resource-inline-detail .compact-list li {
+  max-width: 100%;
+  max-height: none;
+  overflow: visible;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: keep-all;
+  text-overflow: clip;
+  -webkit-line-clamp: unset;
+  line-height: 1.8;
+}
 .resource-inline-detail .resource-detail-description { margin: 0; color: #4f5b55; line-height: 1.8; }
 .resource-inline-detail .resource-detail-loading { margin: 0; color: #59645f; font-weight: 700; }
 .resource-media-preview {
