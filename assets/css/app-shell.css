@@ -189,6 +189,14 @@ body[data-site-page="index"] .account-signup {
   width: min(1120px, 100%);
 }
 
+.footer-business-name {
+  margin: 0 auto 0 0;
+  color: rgba(255, 254, 251, .82);
+  font-size: 13px;
+  line-height: 1.5;
+  word-break: keep-all;
+}
+
 .minimal-footer-nav > a,
 .footer-policy-menu > summary {
   display: inline-flex;
@@ -538,5 +546,18 @@ body.app-panel-open {
   .home-category-link:hover,
   .home-category-link:focus-visible {
     transform: none;
+  }
+}
+
+@media (max-width: 520px) {
+  .minimal-footer-nav {
+    flex-wrap: wrap;
+    gap: 8px 18px;
+  }
+
+  .footer-business-name {
+    flex: 0 0 100%;
+    margin: 0;
+    text-align: center;
   }
 }

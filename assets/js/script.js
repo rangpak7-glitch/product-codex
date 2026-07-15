@@ -111,6 +111,24 @@ function normalizeSiteCategoryNav() {
 
 normalizeSiteCategoryNav();
 
+function ensureLegalBusinessName() {
+  document.querySelectorAll(".site-footer").forEach((footer) => {
+    if (footer.querySelector(".footer-business-name")) return;
+    const nav = footer.querySelector(".minimal-footer-nav");
+    if (!nav) return;
+    const businessName = document.createElement("p");
+    businessName.className = "footer-business-name";
+    businessName.textContent = "상호명: 몽자몰(mongzamall)";
+    nav.prepend(businessName);
+  });
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", ensureLegalBusinessName, { once: true });
+} else {
+  ensureLegalBusinessName();
+}
+
 (() => {
   const navRoot = document.getElementById("site-nav");
   if (!navRoot) return;

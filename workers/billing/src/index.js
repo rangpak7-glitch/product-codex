@@ -23,6 +23,8 @@ async function route(request, env) {
   if (request.method === "POST" && url.pathname === "/orders/fail") return failOrder(request, env);
   if (request.method === "POST" && url.pathname === "/toss/webhook") return handleTossWebhook(request, env);
   if (request.method === "POST" && /^\/resources\/[^/]+\/download$/.test(url.pathname)) return downloadResource(request, env, url.pathname);
+  if (request.method === "GET" && url.pathname === "/admin/orders") return getAdminOrders(request, env, url);
+  if (request.method === "POST" && url.pathname === "/admin/orders/refund") return refundAdminOrder(request, env);
   if (request.method === "GET" && url.pathname === "/admin/community/reports") return getCommunityReports(request, env);
   if (request.method === "POST" && url.pathname === "/admin/community/moderate") return moderateCommunity(request, env);
   return json({ error: "찾을 수 없는 API입니다." }, 404);
@@ -107,6 +109,10 @@ function isSafeProductId(value) {
 
 function isSafeOrderId(value) {
   return typeof value === "string" && ORDER_ID_PATTERN.test(value);
+}
+
+function isSafeUuid(value) {
+  return typeof value === "string" && RESOURCE_ID_PATTERN.test(value);
 }
 
 function isSafePaymentKey(value) {
@@ -539,6 +545,7 @@ async function settleTerminalPayment(env, order, payment) {
     payment_key: payment.paymentKey || order.payment_key || null
   };
   if (["canceled", "refunded"].includes(nextStatus)) body.canceled_at = new Date().toISOString();
+  if (nextStatus === "refunded") body.refunded_at = new Date().toISOString();
   const updated = await rest(env, `faith_orders?id=eq.${encodeURIComponent(order.id)}&status=eq.${encodeURIComponent(order.status)}`, {
     method: "PATCH",
     body
@@ -687,6 +694,189 @@ async function requireAdmin(request, env) {
   const profile = await getProfile(env, member.id);
   if (profile?.role !== "admin") return [null, json({ error: "관리자 권한이 필요합니다." }, 403)];
   return [member, null];
+}
+
+async function getAdminUserEmails(env) {
+  requireEnv(env, ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]);
+  const response = await fetch(`${env.SUPABASE_URL}/auth/v1/admin/users?page=1&per_page=1000`, {
+    headers: {
+      apikey: env.SUPABASE_SERVICE_ROLE_KEY,
+      Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`
+    }
+  });
+  if (!response.ok) return new Map();
+  const payload = await response.json().catch(() => ({}));
+  const users = Array.isArray(payload?.users) ? payload.users : [];
+  return new Map(users.map((user) => [user.id, user.email || ""]));
+}
+
+function publicAdminOrder(order, product, email, downloadCount) {
+  return {
+    id: order.id,
+    orderId: order.order_id,
+    userId: order.user_id,
+    buyerEmail: email || "",
+    productId: order.product_id,
+    resourceId: order.resource_id || null,
+    productTitle: product?.title || "삭제된 상품",
+    productType: product?.type || "",
+    amount: Number(order.amount),
+    currency: order.currency,
+    status: order.status,
+    createdAt: order.created_at,
+    paidAt: order.paid_at || null,
+    canceledAt: order.canceled_at || null,
+    refundedAt: order.refunded_at || null,
+    refundReason: order.refund_reason || "",
+    downloadCount
+  };
+}
+
+async function getAdminOrders(request, env, url) {
+  const [_admin, authError] = await requireAdmin(request, env);
+  if (authError) return authError;
+
+  const orders = await rest(
+    env,
+    "faith_orders?order=created_at.desc&limit=200&select=id,user_id,product_id,resource_id,order_id,amount,currency,status,created_at,paid_at,canceled_at,refunded_at,refund_reason"
+  );
+  const products = await rest(env, "faith_products?limit=1000&select=id,title,type");
+  const downloads = await rest(env, "resource_downloads?order_id=not.is.null&limit=5000&select=order_id");
+  const emailMap = await getAdminUserEmails(env);
+  const productMap = new Map((products || []).map((product) => [product.id, product]));
+  const downloadMap = new Map();
+  (downloads || []).forEach((download) => {
+    downloadMap.set(download.order_id, (downloadMap.get(download.order_id) || 0) + 1);
+  });
+
+  const status = String(url.searchParams.get("status") || "all");
+  const type = String(url.searchParams.get("type") || "all");
+  const query = String(url.searchParams.get("q") || "").trim().toLowerCase();
+  const rows = (orders || [])
+    .map((order) => publicAdminOrder(
+      order,
+      productMap.get(order.product_id),
+      emailMap.get(order.user_id),
+      downloadMap.get(order.id) || 0
+    ))
+    .filter((order) => status === "all" || order.status === status)
+    .filter((order) => type === "all" || order.productType === type)
+    .filter((order) => !query || [
+      order.productTitle,
+      order.orderId,
+      order.buyerEmail,
+      order.userId
+    ].some((value) => String(value || "").toLowerCase().includes(query)));
+
+  const stats = (orders || []).reduce((result, order) => {
+    result.total += 1;
+    if (order.status === "paid") result.paid += 1;
+    if (order.status === "refunded") result.refunded += 1;
+    if (order.status === "ready") result.ready += 1;
+    return result;
+  }, { total: 0, paid: 0, refunded: 0, ready: 0 });
+
+  return json({ orders: rows, stats });
+}
+
+async function refundAdminOrder(request, env) {
+  const [admin, authError] = await requireAdmin(request, env);
+  if (authError) return authError;
+
+  const payload = await readJson(request);
+  const orderId = String(payload.orderId || "");
+  const reason = String(payload.reason || "").trim();
+  const confirmDownloaded = payload.confirmDownloaded === true;
+  if (!isSafeUuid(orderId) || reason.length < 2 || reason.length > 300) {
+    return json({ error: "환불 주문과 사유를 확인해 주세요." }, 400);
+  }
+
+  const rows = await rest(env, `faith_orders?id=eq.${encodeURIComponent(orderId)}&select=*`);
+  const order = rows?.[0] || null;
+  if (!order) return json({ error: "주문을 찾지 못했습니다." }, 404);
+  if (order.status === "refunded") {
+    return json({ ok: true, alreadyRefunded: true, order: publicOrder(order) });
+  }
+  if (order.status !== "paid" || !isSafePaymentKey(order.payment_key)) {
+    return json({ error: "결제 완료 주문만 전액 환불할 수 있습니다." }, 409);
+  }
+
+  const downloads = await rest(env, `resource_downloads?order_id=eq.${encodeURIComponent(order.id)}&select=id`);
+  const downloadCount = downloads?.length || 0;
+  if (downloadCount > 0 && !confirmDownloaded) {
+    return json({
+      error: "원본 다운로드 이력이 있습니다. 환불 제한 여부를 확인한 뒤 다시 승인해 주세요.",
+      code: "downloaded_requires_review",
+      downloadCount
+    }, 409);
+  }
+
+  const inserted = await rest(env, "faith_refund_actions", {
+    method: "POST",
+    body: {
+      order_id: order.id,
+      actor_id: admin.id,
+      reason,
+      amount: Number(order.amount),
+      download_count: downloadCount,
+      status: "requested"
+    }
+  });
+  const action = inserted?.[0] || null;
+  if (!action) throw new Error("환불 감사 기록을 만들지 못했습니다.");
+
+  try {
+    const payment = await tossRequest(env, `/v1/payments/${encodeURIComponent(order.payment_key)}/cancel`, {
+      body: { cancelReason: reason },
+      headers: { "Idempotency-Key": `refund:${order.id}` }
+    });
+    if (payment?.status !== "CANCELED") {
+      throw new Error("토스페이먼츠 환불 상태를 확인하지 못했습니다.");
+    }
+
+    const now = new Date().toISOString();
+    const updated = await rest(env, `faith_orders?id=eq.${encodeURIComponent(order.id)}&status=eq.paid`, {
+      method: "PATCH",
+      body: {
+        status: "refunded",
+        canceled_at: now,
+        refunded_at: now,
+        refund_reason: reason
+      }
+    });
+    const refunded = updated?.[0] || null;
+    if (!refunded) throw new Error("환불 주문 상태를 저장하지 못했습니다.");
+
+    const providerTransactionKey = payment?.cancels?.at(-1)?.transactionKey || null;
+    await rest(env, `faith_refund_actions?id=eq.${encodeURIComponent(action.id)}`, {
+      method: "PATCH",
+      body: {
+        status: "completed",
+        provider_transaction_key: providerTransactionKey,
+        completed_at: now
+      }
+    });
+    await recordPaymentEvent(env, {
+      providerEventIdPrefix: "admin-refund",
+      providerEventId: providerTransactionKey || order.payment_key,
+      eventType: "payment.refunded",
+      orderId: order.order_id,
+      paymentKey: order.payment_key,
+      paymentStatus: payment.status
+    });
+
+    return json({ ok: true, order: publicOrder(refunded), downloadCount });
+  } catch (error) {
+    await rest(env, `faith_refund_actions?id=eq.${encodeURIComponent(action.id)}`, {
+      method: "PATCH",
+      body: {
+        status: "failed",
+        error_message: String(error?.message || "환불 처리 실패").slice(0, 1000),
+        completed_at: new Date().toISOString()
+      }
+    }).catch(() => null);
+    return json({ error: "환불을 완료하지 못했습니다. 토스 결제 내역을 확인해 주세요." }, 502);
+  }
 }
 
 async function moderateCommunity(request, env) {

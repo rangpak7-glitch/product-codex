@@ -455,30 +455,10 @@
       open("signup", MEMBER_PURCHASE_GUIDANCE);
       throw new Error(MEMBER_PURCHASE_GUIDANCE);
     }
-    if (orderApiUrl()) return orderRequest(`/resources/${encodeURIComponent(normalizedResourceId)}/download`);
-
-    const paidOrder = await getOrderForResource(normalizedResourceId);
-    if (state.profile?.role !== "admin" && paidOrder?.status !== "paid") {
-      throw new Error("구매를 완료한 자료만 내려받을 수 있습니다.");
+    if (!orderApiUrl()) {
+      throw new Error("보호된 다운로드 서버가 연결되지 않았습니다. 문의하기를 이용해 주세요.");
     }
-
-    const client = await getClient();
-    const { data: files, error: fileError } = await client
-      .from("resource_files")
-      .select("bucket_id,object_path,file_name,sort_order")
-      .eq("resource_id", normalizedResourceId)
-      .order("sort_order", { ascending: true });
-    if (fileError || !files?.length) throw new Error("구매 권한 또는 다운로드할 파일을 확인하지 못했습니다.");
-
-    const downloads = [];
-    for (const file of files) {
-      const { data, error } = await client.storage
-        .from(file.bucket_id || "faith-resources")
-        .createSignedUrl(file.object_path, 300, { download: true });
-      if (error || !data?.signedUrl) throw new Error("다운로드 링크를 만들지 못했습니다. 잠시 후 다시 시도해 주세요.");
-      downloads.push({ url: data.signedUrl, fileName: file.file_name });
-    }
-    return { downloads, expiresIn: 300 };
+    return orderRequest(`/resources/${encodeURIComponent(normalizedResourceId)}/download`);
   }
 
   function downloadEntries(download) {
