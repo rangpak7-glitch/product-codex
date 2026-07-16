@@ -65,7 +65,7 @@ function normalizeSiteCategoryNav() {
       id: "resources",
       title: "신앙자료",
       href: "prayer-cards?type=all",
-      pages: ["prayer-cards.html", "premium-pdf.html", "prayer-audiobook.html", "prayer-card-library.html", "prayer-challenge.html"],
+      pages: ["prayer-cards.html", "premium-pdf.html", "prayer-pdf-library.html", "prayer-audiobook.html", "prayer-card-library.html", "prayer-challenge.html"],
       links: [
         ["premium-pdf.html", "기도문 PDF"],
         ["prayer-audiobook.html", "기도 오디오북"],
@@ -893,6 +893,21 @@ if (visualPrayerCards) {
   const searchInput = $("#faithResourceSearch");
   const resetButton = $("#faithResourceReset");
   const threadPanel = $("#cardThreadDetail");
+  const currentResourceRoute = (window.location.pathname.split("/").pop() || "").replace(/\.html$/i, "");
+  document.querySelector("[data-pdf-guide-link]")?.addEventListener("click", () => trackFaithEvent("pdf_guide_view", { source: currentResourceRoute || "premium_pdf" }));
+  document.querySelectorAll("[data-pdf-library-link]").forEach((link) => {
+    link.addEventListener("click", () => trackFaithEvent("pdf_library_view", { source: link.dataset.pdfLibraryLink || currentResourceRoute || "premium_pdf" }));
+  });
+  if (currentResourceRoute === "premium-pdf" && (!listRoot || !tagRoot)) {
+    const legacyResourceId = new URLSearchParams(window.location.search).get("resource");
+    if (legacyResourceId) {
+      const target = new URL("prayer-pdf-library.html", window.location.href);
+      target.search = window.location.search;
+      target.searchParams.set("type", "pdf");
+      window.location.replace(target);
+    }
+    return;
+  }
   if (!listRoot || !tagRoot) return;
 
   const typeMeta = {
@@ -935,7 +950,7 @@ if (visualPrayerCards) {
   let entitledResourceIds = new Set();
   const resourceRoute = (window.location.pathname.split("/").pop() || "").replace(/\.html$/i, "");
   const resourcePageType = {
-    "premium-pdf": "pdf",
+    "prayer-pdf-library": "pdf",
     "prayer-audiobook": "audio",
     "prayer-card-library": "card"
   }[resourceRoute];
@@ -943,6 +958,7 @@ if (visualPrayerCards) {
   let activeType = Object.hasOwn(typeMeta, requestedType) ? requestedType : "pdf";
   let searchQuery = new URLSearchParams(window.location.search).get("search") || "";
   const activeTags = new Set();
+  let freeDownloadStarted = false;
 
   const isAdmin = () => Boolean(viewer?.role === "admin");
   const hasPurchasedResource = (resource) => isAdmin() || entitledResourceIds.has(resource.id);
@@ -1279,7 +1295,7 @@ if (visualPrayerCards) {
 
   function renderResourceHubSamples(list) {
     const sampleGroups = [
-      { type: "pdf", title: "기도문 PDF", href: "premium-pdf.html", description: "천천히 읽고 보관하며 반복해서 기도할 수 있는 자료" },
+      { type: "pdf", title: "기도문 PDF", href: "prayer-pdf-library.html", description: "천천히 읽고 보관하며 반복해서 기도할 수 있는 자료" },
       { type: "audio", title: "기도 오디오북", href: "prayer-audiobook.html", description: "이동 중이나 잠들기 전에 차분히 듣는 기도 자료" },
       { type: "card", title: "기도카드", href: "prayer-card-library.html", description: "휴대폰에 저장하고 일상에서 다시 보는 말씀과 기도" }
     ];
@@ -1452,6 +1468,24 @@ if (visualPrayerCards) {
     }
   }
 
+  async function handleRequestedFreePdfDownload() {
+    if (freeDownloadStarted || new URLSearchParams(window.location.search).get("download") !== "free" || !resources.length) return;
+    const freePdf = resources.find((resource) => resource.type === "pdf" && productForResource(resource).salesStatus === "free");
+    if (!freePdf) {
+      setResourceActionStatus("현재 다운로드할 수 있는 무료 기도문이 없습니다.");
+      return;
+    }
+    if (!viewer) {
+      promptMemberAccess();
+      return;
+    }
+    freeDownloadStarted = true;
+    const url = new URL(window.location.href);
+    url.searchParams.delete("download");
+    window.history.replaceState({}, "", url);
+    await downloadResource(freePdf.id);
+  }
+
   document.querySelectorAll("[data-resource-tab]").forEach((button) => {
     button.addEventListener("click", () => {
       activeType = button.dataset.resourceTab || "pdf";
@@ -1578,7 +1612,7 @@ if (visualPrayerCards) {
     const cta = document.querySelector("[data-free-pdf-cta]");
     if (!cta) return;
     const freePdf = resources.find((resource) => resource.type === "pdf" && productForResource(resource).salesStatus === "free");
-    if (freePdf) cta.href = `premium-pdf.html?resource=${encodeURIComponent(freePdf.id)}`;
+    if (freePdf) cta.href = `prayer-pdf-library.html?resource=${encodeURIComponent(freePdf.id)}`;
     if (cta.dataset.trackingBound) return;
     cta.dataset.trackingBound = "true";
     cta.addEventListener("click", (event) => {
@@ -1606,19 +1640,20 @@ if (visualPrayerCards) {
     });
   }
 
-  document.querySelector("[data-pdf-guide-link]")?.addEventListener("click", () => trackFaithEvent("pdf_guide_view", { source: "premium_pdf" }));
 
   window.addEventListener("faith-auth-changed", async () => {
     viewer = await loadViewer();
     await refreshEntitlements();
     renderAll();
     await restoreRequestedResourceDetail();
+    await handleRequestedFreePdfDownload();
   });
 
   window.addEventListener("faith-auth-ready", async () => {
     await refreshEntitlements();
     renderAll();
     await restoreRequestedResourceDetail();
+    await handleRequestedFreePdfDownload();
   });
 
   wireFreePdfCta();
@@ -1640,6 +1675,7 @@ if (visualPrayerCards) {
     renderAll();
     wireFreePdfCta();
     await restoreRequestedResourceDetail();
+    await handleRequestedFreePdfDownload();
   })();
 })();
 

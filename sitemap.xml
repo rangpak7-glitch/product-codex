@@ -71,6 +71,11 @@
     <priority>0.6</priority>
   </url>
   <url>
+    <loc>https://product-codex-90j.pages.dev/prayer-pdf-library</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://product-codex-90j.pages.dev/archive</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
