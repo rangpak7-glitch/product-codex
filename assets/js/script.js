@@ -1576,12 +1576,26 @@ if (visualPrayerCards) {
 
   function wireFreePdfCta() {
     const cta = document.querySelector("[data-free-pdf-cta]");
+    if (!cta) return;
     const freePdf = resources.find((resource) => resource.type === "pdf" && productForResource(resource).salesStatus === "free");
-    if (!cta || !freePdf) return;
-    cta.href = `premium-pdf.html?resource=${encodeURIComponent(freePdf.id)}`;
+    if (freePdf) cta.href = `premium-pdf.html?resource=${encodeURIComponent(freePdf.id)}`;
     if (cta.dataset.trackingBound) return;
     cta.dataset.trackingBound = "true";
-    cta.addEventListener("click", () => trackFaithEvent("free_pdf_hero_click", { resource_id: freePdf.id }));
+    cta.addEventListener("click", (event) => {
+      event.preventDefault();
+      const availableFreePdf = resources.find((resource) => resource.type === "pdf" && productForResource(resource).salesStatus === "free");
+      trackFaithEvent("free_pdf_hero_click", availableFreePdf ? { resource_id: availableFreePdf.id } : {});
+      if (!viewer) {
+        promptMemberAccess();
+        return;
+      }
+      if (availableFreePdf) {
+        downloadResource(availableFreePdf.id);
+        return;
+      }
+      setResourceActionStatus("???? ??? ??????? ??????. ??? ?? ??? ???? ?????.");
+      document.querySelector("#faithResourceBrowser")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
   }
 
   document.querySelector("[data-pdf-guide-link]")?.addEventListener("click", () => trackFaithEvent("pdf_guide_view", { source: "premium_pdf" }));
@@ -1598,6 +1612,8 @@ if (visualPrayerCards) {
     renderAll();
     await restoreRequestedResourceDetail();
   });
+
+  wireFreePdfCta();
 
   (async () => {
     if (resourcePageType || !new URLSearchParams(window.location.search).has("type")) {
