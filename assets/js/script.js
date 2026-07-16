@@ -1593,7 +1593,7 @@ if (visualPrayerCards) {
         downloadResource(availableFreePdf.id);
         return;
       }
-      setResourceActionStatus("???? ??? ??????? ??????. ??? ?? ??? ???? ?????.");
+      setResourceActionStatus("\uBB34\uB8CC \uC790\uB8CC\uB97C \uBD88\uB7EC\uC624\uB294 \uC911\uC785\uB2C8\uB2E4. \uC7A0\uC2DC \uD6C4 \uB2E4\uC2DC \uB20C\uB7EC \uC8FC\uC138\uC694.");
       document.querySelector("#faithResourceBrowser")?.scrollIntoView({ behavior: "smooth", block: "start" });
     });
   }
