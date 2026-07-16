@@ -1380,6 +1380,126 @@ body[data-site-page="prayer-cards"] .resource-board-list { border-top: 0; }
 body[data-site-page="prayer-cards"] #faithResourceTags[hidden],
 body[data-site-page="prayer-cards"] #faithResourceFilterStatus[hidden] { display: none; }
 
+.resource-tag-filter.resource-keyword-filter {
+  display: grid;
+  gap: 14px;
+  margin: 22px 0 18px;
+}
+.resource-keyword-heading,
+.resource-keyword-selected {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+.resource-keyword-heading > span,
+.resource-keyword-selected > strong,
+.resource-keyword-label {
+  color: #24322e;
+  font-size: .9rem;
+  font-weight: 800;
+}
+.resource-keyword-toggle,
+.resource-keyword-clear {
+  min-height: 44px !important;
+  padding: 7px 4px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: #2f493f !important;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.resource-keyword-toggle:hover,
+.resource-keyword-toggle:focus-visible,
+.resource-keyword-clear:hover,
+.resource-keyword-clear:focus-visible {
+  color: #826039 !important;
+  outline: 2px solid transparent;
+}
+.resource-keyword-featured {
+  display: grid;
+  gap: 9px;
+}
+.resource-keyword-options,
+.resource-keyword-selected-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.resource-keyword-filter .resource-keyword-options button {
+  min-height: 44px;
+  padding: 8px 13px;
+}
+.resource-keyword-count {
+  display: inline-grid;
+  min-width: 1.45rem;
+  min-height: 1.45rem;
+  place-items: center;
+  padding-inline: 4px;
+  border-radius: 999px;
+  background: rgba(47,73,63,.1);
+  font-size: .72rem;
+  line-height: 1;
+}
+.resource-keyword-filter button.is-active .resource-keyword-count {
+  background: rgba(255,253,248,.18);
+}
+.resource-keyword-selected {
+  padding: 12px 14px;
+  border-left: 3px solid #826039;
+  background: rgba(217,209,197,.25);
+}
+.resource-keyword-selected-list { flex: 1; }
+.resource-keyword-filter .resource-keyword-selected-list button {
+  min-height: 38px;
+  padding: 6px 10px;
+  border-color: #2f493f;
+  background: #fffefb;
+  color: #2f493f;
+}
+.resource-keyword-selected-list button span { margin-left: 4px; }
+.resource-keyword-panel {
+  padding-top: 14px;
+  border-top: 1px solid #d9d1c5;
+}
+.resource-keyword-panel[hidden] { display: none; }
+.resource-keyword-groups {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+.resource-keyword-group {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid #d9d1c5;
+  border-radius: 8px;
+  background: #fffefb;
+}
+.resource-keyword-group summary {
+  display: flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  color: #24322e;
+  font-weight: 800;
+  cursor: pointer;
+}
+.resource-keyword-group summary span:last-child {
+  min-width: 1.65rem;
+  padding: 3px 6px;
+  border-radius: 999px;
+  background: #f0ece4;
+  text-align: center;
+  font-size: .72rem;
+}
+.resource-keyword-group[open] summary { margin-bottom: 8px; }
+.resource-keyword-group summary:focus-visible {
+  outline: 3px solid rgba(130,96,57,.35);
+  outline-offset: 3px;
+}
+
 .resource-board-list .faith-resource-card,
 .resource-board-list .faith-resource-card.resource-type-pdf,
 .resource-board-list .faith-resource-card.resource-type-audio,
@@ -1709,6 +1829,7 @@ body[data-site-page="prayer-cards"] #faithResourceFilterStatus[hidden] { display
   .page-hero h1 { font-size: clamp(1.65rem, 4.6vw, 2rem); }
   .community-board-actions { flex-direction: row; align-items: center; }
   .resource-board-list .faith-resource-card { padding: 20px; }
+  .resource-keyword-groups { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 @media (max-width: 560px) {
@@ -1744,6 +1865,14 @@ body[data-site-page="prayer-cards"] #faithResourceFilterStatus[hidden] { display
   .resource-sample-group > header { align-items: flex-start; flex-direction: column; gap: 8px; }
   .resource-hub-samples { gap: 28px; }
   .resource-public-preview-grid { grid-template-columns: 1fr; }
+  .resource-keyword-heading,
+  .resource-keyword-selected { align-items: flex-start; flex-direction: column; gap: 6px; }
+  .resource-keyword-selected-list { width: 100%; }
+  .resource-keyword-toggle,
+  .resource-keyword-clear { align-self: flex-end; }
+  .resource-keyword-groups { grid-template-columns: 1fr; }
+  .resource-keyword-group { padding: 8px 12px; }
+  .resource-keyword-group:not([open]) { padding-block: 4px; }
   .resource-public-preview-grid.is-compact { grid-template-columns: minmax(0, 140px); }
   .resource-type-card .resource-inline-detail .resource-public-preview-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .resource-media-preview-pages .resource-public-preview-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }

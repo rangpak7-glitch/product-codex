@@ -958,7 +958,18 @@ if (visualPrayerCards) {
   let activeType = Object.hasOwn(typeMeta, requestedType) ? requestedType : "pdf";
   let searchQuery = new URLSearchParams(window.location.search).get("search") || "";
   const activeTags = new Set();
+  let keywordPanelExpanded = false;
   let freeDownloadStarted = false;
+
+  const featuredResourceKeywords = ["자녀", "가정", "건강", "관계", "불안", "수면", "감사", "회복"];
+  const resourceKeywordGroups = [
+    { id: "family", label: "가족·자녀", keywords: new Set(["가정", "가족", "가족기도", "가족대화", "가족안전", "아들", "자녀", "탕자"]) },
+    { id: "heart", label: "마음·감정", keywords: new Set(["걱정", "기다림", "긴장", "닫음", "두려움", "마음", "변화", "불면", "불안", "상처", "소외감", "신뢰", "안식", "외로움", "위로", "자존감", "존재", "죄책감", "탄식", "평안"]) },
+    { id: "health", label: "건강·회복", keywords: new Set(["건강", "수고", "수면", "쉼", "잠", "치유", "피로", "회복"]) },
+    { id: "life", label: "관계·생활", keywords: new Set(["결정", "관계", "관계회복", "발견", "부담", "생업", "성실", "시간", "일터", "재정", "정직", "진로", "책임", "출퇴근"]) },
+    { id: "faith", label: "기도·신앙", keywords: new Set(["감사", "공의", "기도", "말씀카드", "맡김", "믿음", "밤기도", "보호기도", "온유기도"]) },
+    { id: "environment", label: "환경·안전", keywords: new Set(["강풍", "무더위", "열대야", "장맛비"]) }
+  ];
 
   const isAdmin = () => Boolean(viewer?.role === "admin");
   const hasPurchasedResource = (resource) => isAdmin() || entitledResourceIds.has(resource.id);
@@ -1138,12 +1149,58 @@ if (visualPrayerCards) {
     });
   }
 
+  function resourceTagSummary() {
+    const counts = new Map();
+    uploadedThreads().forEach((resource) => {
+      new Set(resource.tags || []).forEach((rawTag) => {
+        const tag = String(rawTag || "").trim();
+        if (tag) counts.set(tag, (counts.get(tag) || 0) + 1);
+      });
+    });
+    return {
+      counts,
+      tags: [...counts.keys()].sort((a, b) => String(a).localeCompare(String(b), "ko"))
+    };
+  }
+
+  function renderResourceKeywordButton(tag, count, extraClass = "") {
+    const selected = activeTags.has(tag);
+    return `<button class="${selected ? "is-active " : ""}${extraClass}" type="button" data-resource-tag="${escapeHtml(tag)}" aria-pressed="${String(selected)}" aria-label="${escapeHtml(tag)} 키워드, 자료 ${count}건">${escapeHtml(tag)}<span class="resource-keyword-count" aria-hidden="true">${count}</span></button>`;
+  }
+
   function renderHubTags() {
-    const tags = [...new Set(uploadedThreads().flatMap((resource) => resource.tags || []))].sort((a, b) => String(a).localeCompare(String(b), "ko"));
+    const { counts, tags } = resourceTagSummary();
     tagRoot.hidden = resourceLoadFailed || !tags.length;
-    tagRoot.innerHTML = [`<button class="${activeTags.size ? "" : "is-active"}" type="button" data-clear-tags aria-pressed="${String(!activeTags.size)}">전체 키워드</button>`]
-      .concat(tags.map((tag) => `<button class="${activeTags.has(tag) ? "is-active" : ""}" type="button" data-resource-tag="${escapeHtml(tag)}" aria-pressed="${String(activeTags.has(tag))}">${escapeHtml(tag)}</button>`))
-      .join("");
+    tagRoot.classList.add("resource-keyword-filter");
+    if (!tags.length) {
+      tagRoot.innerHTML = "";
+      return;
+    }
+
+    const featuredTags = featuredResourceKeywords.filter((tag) => counts.has(tag));
+    const groupedTags = new Set();
+    const groups = resourceKeywordGroups.map((group) => {
+      const groupTags = tags.filter((tag) => group.keywords.has(tag));
+      groupTags.forEach((tag) => groupedTags.add(tag));
+      return { ...group, tags: groupTags };
+    }).filter((group) => group.tags.length);
+    const otherTags = tags.filter((tag) => !groupedTags.has(tag));
+    if (otherTags.length) groups.push({ id: "other", label: "기타", tags: otherTags });
+
+    const selectedTags = [...activeTags].sort((a, b) => String(a).localeCompare(String(b), "ko"));
+    const selectedMarkup = selectedTags.length
+      ? `<div class="resource-keyword-selected" aria-label="선택한 키워드"><strong>선택한 키워드</strong><div class="resource-keyword-selected-list">${selectedTags.map((tag) => `<button type="button" data-resource-tag="${escapeHtml(tag)}" aria-label="${escapeHtml(tag)} 키워드 선택 해제">${escapeHtml(tag)}<span aria-hidden="true">×</span></button>`).join("")}</div><button class="resource-keyword-clear" type="button" data-clear-tags>전체 해제</button></div>`
+      : "";
+    const featuredMarkup = featuredTags.length
+      ? `<div class="resource-keyword-featured"><span class="resource-keyword-label">대표 키워드</span><div class="resource-keyword-options"><button class="${activeTags.size ? "" : "is-active"}" type="button" data-clear-tags aria-pressed="${String(!activeTags.size)}">전체</button>${featuredTags.map((tag) => renderResourceKeywordButton(tag, counts.get(tag), "resource-keyword-featured-button")).join("")}</div></div>`
+      : "";
+    const groupMarkup = groups.map((group) => {
+      const containsActiveTag = group.tags.some((tag) => activeTags.has(tag));
+      const open = containsActiveTag || window.matchMedia?.("(min-width: 561px)").matches;
+      return `<details class="resource-keyword-group" data-resource-keyword-group="${group.id}"${open ? " open" : ""}><summary><span>${group.label}</span><span>${group.tags.length}</span></summary><div class="resource-keyword-options">${group.tags.map((tag) => renderResourceKeywordButton(tag, counts.get(tag))).join("")}</div></details>`;
+    }).join("");
+
+    tagRoot.innerHTML = `${selectedMarkup}<div class="resource-keyword-heading"><span>필요한 주제로 자료를 찾아보세요</span><button class="resource-keyword-toggle" type="button" data-resource-keyword-toggle aria-expanded="${String(keywordPanelExpanded)}" aria-controls="resourceKeywordPanel">${keywordPanelExpanded ? "전체 키워드 접기" : "전체 키워드 보기"}<span aria-hidden="true">(${tags.length})</span></button></div>${featuredMarkup}<div id="resourceKeywordPanel" class="resource-keyword-panel"${keywordPanelExpanded ? "" : " hidden"}><div class="resource-keyword-groups">${groupMarkup}</div></div>`;
   }
 
   function displayResourceTitle(resource) {
@@ -1498,6 +1555,13 @@ if (visualPrayerCards) {
   });
 
   tagRoot.addEventListener("click", (event) => {
+    const keywordToggle = event.target.closest("[data-resource-keyword-toggle]");
+    if (keywordToggle) {
+      keywordPanelExpanded = !keywordPanelExpanded;
+      renderHubTags();
+      tagRoot.querySelector("[data-resource-keyword-toggle]")?.focus();
+      return;
+    }
     if (event.target.closest("[data-clear-tags]")) {
       activeTags.clear();
       renderAll();
