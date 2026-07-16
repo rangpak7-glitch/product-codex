@@ -1590,7 +1590,15 @@ if (visualPrayerCards) {
         return;
       }
       if (availableFreePdf) {
-        downloadResource(availableFreePdf.id);
+        openResourceDetail(availableFreePdf)
+          .then(() => {
+            const sampleCard = [...listRoot.querySelectorAll("[data-resource-id]")]
+              .find((item) => item.dataset.resourceId === availableFreePdf.id);
+            sampleCard?.scrollIntoView({ behavior: "smooth", block: "start" });
+          })
+          .catch(() => {
+            setResourceActionStatus("샘플 기도문 PDF를 열지 못했습니다. 잠시 후 다시 시도해 주세요.");
+          });
         return;
       }
       setResourceActionStatus("\uBB34\uB8CC \uC790\uB8CC\uB97C \uBD88\uB7EC\uC624\uB294 \uC911\uC785\uB2C8\uB2E4. \uC7A0\uC2DC \uD6C4 \uB2E4\uC2DC \uB20C\uB7EC \uC8FC\uC138\uC694.");
