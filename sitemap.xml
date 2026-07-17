@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://product-codex-90j.pages.dev/</loc>
@@ -6,108 +6,98 @@
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://product-codex-90j.pages.dev/about</loc>
+    <loc>https://product-codex-90j.pages.dev/about.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://product-codex-90j.pages.dev/community</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://product-codex-90j.pages.dev/prayers</loc>
+    <loc>https://product-codex-90j.pages.dev/prayers.html</loc>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://product-codex-90j.pages.dev/gratitude-prayer</loc>
+    <loc>https://product-codex-90j.pages.dev/gratitude-prayer.html</loc>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://product-codex-90j.pages.dev/prayer-detail</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://product-codex-90j.pages.dev/morning-prayer</loc>
+    <loc>https://product-codex-90j.pages.dev/morning-prayer.html</loc>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://product-codex-90j.pages.dev/night-prayer</loc>
+    <loc>https://product-codex-90j.pages.dev/night-prayer.html</loc>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://product-codex-90j.pages.dev/meditation</loc>
+    <loc>https://product-codex-90j.pages.dev/meditation.html</loc>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://product-codex-90j.pages.dev/videos</loc>
+    <loc>https://product-codex-90j.pages.dev/videos.html</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://product-codex-90j.pages.dev/prayer-cards</loc>
+    <loc>https://product-codex-90j.pages.dev/prayer-cards.html</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://product-codex-90j.pages.dev/prayer-challenge</loc>
+    <loc>https://product-codex-90j.pages.dev/prayer-challenge.html</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://product-codex-90j.pages.dev/prayer-request</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://product-codex-90j.pages.dev/premium-pdf</loc>
+    <loc>https://product-codex-90j.pages.dev/premium-pdf.html</loc>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://product-codex-90j.pages.dev/prayer-pdf-library</loc>
+    <loc>https://product-codex-90j.pages.dev/prayer-pdf-library.html</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://product-codex-90j.pages.dev/archive</loc>
+    <loc>https://product-codex-90j.pages.dev/archive.html</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://product-codex-90j.pages.dev/contact</loc>
+    <loc>https://product-codex-90j.pages.dev/contact.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://product-codex-90j.pages.dev/prayer-pdf-guide</loc>
+    <loc>https://product-codex-90j.pages.dev/prayer-pdf-guide.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://product-codex-90j.pages.dev/privacy</loc>
+    <loc>https://product-codex-90j.pages.dev/privacy.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.4</priority>
   </url>
   <url>
-    <loc>https://product-codex-90j.pages.dev/terms</loc>
+    <loc>https://product-codex-90j.pages.dev/terms.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.4</priority>
   </url>
   <url>
-    <loc>https://product-codex-90j.pages.dev/disclaimer</loc>
+    <loc>https://product-codex-90j.pages.dev/disclaimer.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.4</priority>
   </url>
   <url>
-    <loc>https://product-codex-90j.pages.dev/adsense-checklist</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.3</priority>
+    <loc>https://product-codex-90j.pages.dev/prayer-audiobook.html</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://product-codex-90j.pages.dev/prayer-card-library.html</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
   </url>
 </urlset>
