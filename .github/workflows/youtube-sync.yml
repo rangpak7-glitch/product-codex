@@ -3,8 +3,9 @@ name: Sync YouTube videos
 on:
   workflow_dispatch:
   schedule:
-    # 19:00 UTC is 04:00 the following day in Asia/Seoul.
-    - cron: "0 19 * * *"
+    # 19:07 UTC is 04:07 the following day in Asia/Seoul.
+    # Avoid the start-of-hour load that can substantially delay scheduled runs.
+    - cron: "7 19 * * *"
 
 permissions:
   contents: write

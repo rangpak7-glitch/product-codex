@@ -97,11 +97,15 @@ function firstDescriptionLine(description) {
     || "기도의샘물 유튜브에 게시된 말씀과 기도 영상입니다.";
 }
 
+function looksLikeShort(video) {
+  return /(?:^|[\s#])(shorts?|쇼츠)(?:$|[\s#])/i.test(`${video.title || ""} ${video.description || ""}`);
+}
+
 function archiveRecord(video, shortIds, playlistNamesByVideoId) {
   const knownPlaylistTitles = new Set(shortsPlaylists.map((playlist) => playlist.title));
   const preservedPlaylists = (video.shortsPlaylists || []).filter((title) => knownPlaylistTitles.has(title));
   const shortsPlaylistsForVideo = playlistNamesByVideoId.get(video.videoId) || preservedPlaylists;
-  const isShort = shortIds.has(video.videoId) || shortsPlaylistsForVideo.length > 0;
+  const isShort = Boolean(video.isShort || shortIds.has(video.videoId) || shortsPlaylistsForVideo.length > 0 || looksLikeShort(video));
   const theme = video.theme || inferTheme(video.title || "");
   return {
     id: video.id || `youtube-${video.videoId}`,
@@ -121,19 +125,28 @@ function archiveRecord(video, shortIds, playlistNamesByVideoId) {
 const existingSource = await readFile(outputPath, "utf8");
 const existing = loadExisting(existingSource);
 const existingByVideoId = new Map(existing.map((video) => [video.videoId, video]));
-const [feedXml, ...playlistFeedXmls] = await Promise.all([
-  fetchText(feedUrl, "YouTube 채널 RSS"),
-  ...shortsPlaylists.map((playlist) => fetchText(
-    `https://www.youtube.com/feeds/videos.xml?playlist_id=${encodeURIComponent(playlist.id)}`,
-    `YouTube ${playlist.title} 재생목록 RSS`
-  ))
-]);
+const feedXml = await fetchText(feedUrl, "YouTube 채널 RSS");
+const playlistFeeds = await Promise.all(shortsPlaylists.map(async (playlist) => {
+  try {
+    const xml = await fetchText(
+      `https://www.youtube.com/feeds/videos.xml?playlist_id=${encodeURIComponent(playlist.id)}`,
+      `YouTube ${playlist.title} 재생목록 RSS`
+    );
+    return { playlist, xml };
+  } catch (error) {
+    console.warn(`${error.message}. 기존 Shorts 분류를 유지하고 이 재생목록은 건너뜁니다.`);
+    return { playlist, xml: "" };
+  }
+}));
 const feedVideos = parseFeed(feedXml);
 const playlistNamesByVideoId = new Map();
-const playlistVideos = playlistFeedXmls.flatMap((xml, index) => {
-  const playlist = shortsPlaylists[index];
+const playlistVideos = playlistFeeds.flatMap(({ playlist, xml }) => {
+  if (!xml) return [];
   const videos = parseFeed(xml);
-  if (!videos.length) throw new Error(`${playlist.title} 재생목록이 비어 있어 기존 파일을 유지합니다.`);
+  if (!videos.length) {
+    console.warn(`${playlist.title} 재생목록이 비어 있어 기존 Shorts 분류를 유지하고 건너뜁니다.`);
+    return [];
+  }
   videos.forEach((video) => {
     const names = playlistNamesByVideoId.get(video.videoId) || [];
     playlistNamesByVideoId.set(video.videoId, [...new Set([...names, playlist.title])]);
@@ -143,7 +156,6 @@ const playlistVideos = playlistFeedXmls.flatMap((xml, index) => {
 const shortIds = new Set(playlistNamesByVideoId.keys());
 
 if (!feedVideos.length) throw new Error("공개 영상 데이터를 찾지 못해 기존 파일을 유지합니다.");
-if (!shortIds.size) throw new Error("Shorts 재생목록 영상을 찾지 못해 기존 파일을 유지합니다.");
 
 const mergedFeedVideos = new Map(feedVideos.map((video) => [video.videoId, video]));
 playlistVideos.forEach((video) => {
@@ -152,7 +164,7 @@ playlistVideos.forEach((video) => {
 
 const currentRecords = [...mergedFeedVideos.values()].map((video) => {
   const previous = existingByVideoId.get(video.videoId) || {};
-  const isShort = shortIds.has(video.videoId);
+  const isShort = Boolean(previous.isShort || shortIds.has(video.videoId) || looksLikeShort(video));
   const text = `${video.title} ${video.description}`;
   const theme = previous.theme || inferTheme(text);
   return {
@@ -191,5 +203,6 @@ if (output === existingSource) {
   console.log("YouTube 영상 데이터가 이미 최신입니다.");
 } else {
   await writeFile(outputPath, output, "utf8");
-  console.log(`YouTube 영상 ${records.length}개를 갱신했습니다. 3개 재생목록의 Shorts ${records.filter((video) => video.isShort).length}개를 포함합니다.`);
+  const availablePlaylistCount = playlistFeeds.filter(({ xml }) => xml).length;
+  console.log(`YouTube 영상 ${records.length}개를 갱신했습니다. 확인 가능한 재생목록 ${availablePlaylistCount}개와 Shorts ${records.filter((video) => video.isShort).length}개를 포함합니다.`);
 }

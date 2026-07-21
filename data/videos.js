@@ -1,5 +1,328 @@
 window.VIDEOS = [
   {
+    "id": "youtube-Cktf4zGG2mc",
+    "videoId": "Cktf4zGG2mc",
+    "title": "가족을 충분히 돌보지 못해 자책합니까",
+    "theme": "저녁기도",
+    "scripture": "룻기 1장 16절",
+    "description": "🌿 기도의샘물 웹페이지: https://product-codex-90j.pages.dev/",
+    "tags": [
+      "Shorts",
+      "저녁기도",
+      "선택",
+      "기도",
+      "말씀"
+    ],
+    "publishedDate": "2026-07-20",
+    "publishedAt": "2026-07-20T15:00:26+00:00",
+    "isShort": true,
+    "shortsPlaylists": [
+      "하루 한 말씀, 인생 회복"
+    ]
+  },
+  {
+    "id": "youtube-dqXw4wE77r4",
+    "videoId": "dqXw4wE77r4",
+    "title": "몸의 약함 때문에 자신감이 줄었습니까",
+    "theme": "저녁기도",
+    "scripture": "고린도후서 12장 9절",
+    "description": "🌿 기도의샘물 웹페이지: https://product-codex-90j.pages.dev/",
+    "tags": [
+      "Shorts",
+      "저녁기도",
+      "회복",
+      "기도",
+      "말씀"
+    ],
+    "publishedDate": "2026-07-20",
+    "publishedAt": "2026-07-20T13:49:29+00:00",
+    "isShort": true,
+    "shortsPlaylists": [
+      "하루 한 말씀, 인생 회복"
+    ]
+  },
+  {
+    "id": "youtube-GkuxdDiZGac",
+    "videoId": "GkuxdDiZGac",
+    "title": "오래가는 통증에 회복 기대가 줄었습니까",
+    "theme": "저녁기도",
+    "scripture": "고린도후서 12장 9절",
+    "description": "🌿 기도의샘물 웹페이지: https://product-codex-90j.pages.dev/",
+    "tags": [
+      "Shorts",
+      "저녁기도",
+      "회복",
+      "기도",
+      "말씀"
+    ],
+    "publishedDate": "2026-07-20",
+    "publishedAt": "2026-07-20T13:49:14+00:00",
+    "isShort": true,
+    "shortsPlaylists": [
+      "하루 한 말씀, 인생 회복"
+    ]
+  },
+  {
+    "id": "youtube-aPWhxwaXbnw",
+    "videoId": "aPWhxwaXbnw",
+    "title": "몸의 약함이 오래가 낙심한 밤｜내 은혜가 네게 족하도다｜고린도후서 12장 말씀기도",
+    "theme": "저녁기도",
+    "scripture": "고린도후서 12장",
+    "description": "기도의샘물 홈페이지: https://product-codex-90j.pages.dev/",
+    "tags": [
+      "저녁기도",
+      "회복",
+      "지혜",
+      "기도",
+      "말씀"
+    ],
+    "publishedDate": "2026-07-20",
+    "publishedAt": "2026-07-20T13:35:28+00:00",
+    "isShort": false,
+    "shortsPlaylists": []
+  },
+  {
+    "id": "youtube-bHRJ5Vau_So",
+    "videoId": "bHRJ5Vau_So",
+    "title": "형편이 여의치 않아 가족 돌봄을 자책합니까",
+    "theme": "저녁기도",
+    "scripture": "룻기 1장 16절",
+    "description": "🌿 기도의샘물 웹페이지: https://product-codex-90j.pages.dev/",
+    "tags": [
+      "Shorts",
+      "저녁기도",
+      "선택",
+      "기도",
+      "말씀"
+    ],
+    "publishedDate": "2026-07-20",
+    "publishedAt": "2026-07-20T09:39:45+00:00",
+    "isShort": true,
+    "shortsPlaylists": [
+      "하루 한 말씀, 인생 회복"
+    ]
+  },
+  {
+    "id": "youtube-BQWJ25zcPuc",
+    "videoId": "BQWJ25zcPuc",
+    "title": "가족을 충분히 돌보지 못해 마음 무거운 밤｜룻과 나오미의 동행｜룻기 말씀기도",
+    "theme": "저녁기도",
+    "scripture": "룻기 1장",
+    "description": "기도의샘물 홈페이지: https://product-codex-90j.pages.dev/",
+    "tags": [
+      "저녁기도",
+      "선택",
+      "기도",
+      "말씀"
+    ],
+    "publishedDate": "2026-07-19",
+    "publishedAt": "2026-07-19T13:15:25+00:00",
+    "isShort": false,
+    "shortsPlaylists": []
+  },
+  {
+    "id": "youtube-gtYLPtHPyHY",
+    "videoId": "gtYLPtHPyHY",
+    "title": "결과를 확인하지 못해 불안한 밤｜이사야 26:3",
+    "theme": "저녁기도",
+    "scripture": "이사야 26장 3절",
+    "description": "🌿 기도의샘물 웹페이지: https://product-codex-90j.pages.dev/",
+    "tags": [
+      "Shorts",
+      "저녁기도",
+      "불안",
+      "기도",
+      "말씀"
+    ],
+    "publishedDate": "2026-07-19",
+    "publishedAt": "2026-07-19T13:15:00+00:00",
+    "isShort": true,
+    "shortsPlaylists": [
+      "하루 한 말씀, 인생 회복"
+    ]
+  },
+  {
+    "id": "youtube-eHSh2-_3K9E",
+    "videoId": "eHSh2-_3K9E",
+    "title": "마음이 메마른 채 시작하는 아침｜시편 90:14",
+    "theme": "아침기도",
+    "scripture": "시편 90편 14절",
+    "description": "🌿 기도의샘물 웹페이지: https://product-codex-90j.pages.dev/",
+    "tags": [
+      "Shorts",
+      "아침기도",
+      "감사",
+      "기도",
+      "말씀"
+    ],
+    "publishedDate": "2026-07-18",
+    "publishedAt": "2026-07-18T22:45:37+00:00",
+    "isShort": true,
+    "shortsPlaylists": [
+      "하루 한 말씀, 인생 회복"
+    ]
+  },
+  {
+    "id": "youtube-uoV8VWNCopE",
+    "videoId": "uoV8VWNCopE",
+    "title": "바쁜데도 중요한 일을 놓치는 이유｜누가복음 10:42",
+    "theme": "말씀묵상",
+    "scripture": "누가복음 10장 42절",
+    "description": "🌿 기도의샘물 웹페이지: https://product-codex-90j.pages.dev/",
+    "tags": [
+      "Shorts",
+      "말씀묵상",
+      "회복",
+      "선택",
+      "기도"
+    ],
+    "publishedDate": "2026-07-18",
+    "publishedAt": "2026-07-18T20:15:09+00:00",
+    "isShort": true,
+    "shortsPlaylists": [
+      "하루 한 말씀, 인생 회복"
+    ]
+  },
+  {
+    "id": "youtube-6s9vAeVFXAM",
+    "videoId": "6s9vAeVFXAM",
+    "title": "하기 싫은 일을 앞둔 아침｜골로새서 3:23",
+    "theme": "아침기도",
+    "scripture": "골로새서 3장 23절",
+    "description": "🌿 기도의샘물 웹페이지: https://product-codex-90j.pages.dev/",
+    "tags": [
+      "Shorts",
+      "아침기도",
+      "기도",
+      "말씀"
+    ],
+    "publishedDate": "2026-07-18",
+    "publishedAt": "2026-07-18T14:45:21+00:00",
+    "isShort": true,
+    "shortsPlaylists": [
+      "하루 한 말씀, 인생 회복"
+    ]
+  },
+  {
+    "id": "youtube-a4fL4AXIyW8",
+    "videoId": "a4fL4AXIyW8",
+    "title": "사랑하는 사람을 떠나보낸 뒤 빈자리가 견디기 어려운 밤ㅣ예수님도 우셨습니다ㅣ요한복음 11장 말씀기도",
+    "theme": "저녁기도",
+    "scripture": "요한복음 11장",
+    "description": "🌿 기도의샘물 웹페이지: https://product-codex-90j.pages.dev/",
+    "tags": [
+      "저녁기도",
+      "기도",
+      "말씀"
+    ],
+    "publishedDate": "2026-07-18",
+    "publishedAt": "2026-07-18T14:15:20+00:00",
+    "isShort": false,
+    "shortsPlaylists": []
+  },
+  {
+    "id": "youtube-_hGhYqd8dIs",
+    "videoId": "_hGhYqd8dIs",
+    "title": "일을 끝내지 못해 늦게 누운 밤｜시편 127:2",
+    "theme": "저녁기도",
+    "scripture": "시편 127편 2절",
+    "description": "🌿 기도의샘물 웹페이지: https://product-codex-90j.pages.dev/",
+    "tags": [
+      "Shorts",
+      "저녁기도",
+      "기도",
+      "말씀"
+    ],
+    "publishedDate": "2026-07-18",
+    "publishedAt": "2026-07-18T13:15:30+00:00",
+    "isShort": true,
+    "shortsPlaylists": [
+      "하루 한 말씀, 인생 회복"
+    ]
+  },
+  {
+    "id": "youtube-MSsVqqRXQZY",
+    "videoId": "MSsVqqRXQZY",
+    "title": "조건이 부족하면 가치도 낮은 걸까요｜사무엘상 16:7",
+    "theme": "말씀묵상",
+    "scripture": "사무엘상 16장 7절",
+    "description": "🌿 기도의샘물 웹페이지: https://product-codex-90j.pages.dev/",
+    "tags": [
+      "Shorts",
+      "말씀묵상",
+      "회복",
+      "위로",
+      "선택"
+    ],
+    "publishedDate": "2026-07-17",
+    "publishedAt": "2026-07-17T20:45:10+00:00",
+    "isShort": true,
+    "shortsPlaylists": [
+      "하루 한 말씀, 인생 회복"
+    ]
+  },
+  {
+    "id": "youtube-YYdL_TRMsPc",
+    "videoId": "YYdL_TRMsPc",
+    "title": "사람들 사이에 있어도 외로운 밤ㅣ예수님은 내 이름을 부르십니다ㅣ누가복음 19장 말씀기도",
+    "theme": "저녁기도",
+    "scripture": "누가복음 19장",
+    "description": "사람들 사이에서 웃고 대화하지만 아무도 내 마음을 보지 못하는 것 같은 밤, 예수님께서 여리고의 군중 속 삭개오를 바라보시고 이름을 부르신 누가복음 19장의 말씀으로 함께 기도합니다.",
+    "tags": [
+      "저녁기도",
+      "불안",
+      "회복",
+      "관계",
+      "기도"
+    ],
+    "publishedDate": "2026-07-17",
+    "publishedAt": "2026-07-17T14:15:02+00:00",
+    "isShort": false,
+    "shortsPlaylists": []
+  },
+  {
+    "id": "youtube-S3sE4qg2u1Q",
+    "videoId": "S3sE4qg2u1Q",
+    "title": "마음의 근심이 가라앉지 않는 밤｜요한복음 14:27",
+    "theme": "아침기도",
+    "scripture": "요한복음 14장 27절",
+    "description": "🌿 기도의샘물 웹페이지: https://product-codex-90j.pages.dev/",
+    "tags": [
+      "Shorts",
+      "아침기도",
+      "평안",
+      "회복",
+      "기도"
+    ],
+    "publishedDate": "2026-07-17",
+    "publishedAt": "2026-07-17T13:45:36+00:00",
+    "isShort": true,
+    "shortsPlaylists": [
+      "하루 한 말씀, 인생 회복"
+    ]
+  },
+  {
+    "id": "youtube-ap2frbE715E",
+    "videoId": "ap2frbE715E",
+    "title": "마음이 어두워 답을 찾지 못할 때｜요한복음 8:12",
+    "theme": "말씀묵상",
+    "scripture": "요한복음 8장 12절",
+    "description": "🌿 기도의샘물 웹페이지: https://product-codex-90j.pages.dev/",
+    "tags": [
+      "Shorts",
+      "말씀묵상",
+      "회복",
+      "기도",
+      "말씀"
+    ],
+    "publishedDate": "2026-07-17",
+    "publishedAt": "2026-07-17T07:00:36+00:00",
+    "isShort": true,
+    "shortsPlaylists": [
+      "하루 한 말씀, 인생 회복"
+    ]
+  },
+  {
     "id": "youtube-dUodDL2-31c",
     "videoId": "dUodDL2-31c",
     "title": "오늘 무엇이 옳은지 망설이는 아침｜미가 6:8",
