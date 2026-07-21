@@ -1,5 +1,42 @@
 window.VIDEOS = [
   {
+    "id": "youtube-zK6EBJlOR-s",
+    "videoId": "zK6EBJlOR-s",
+    "title": "성경을 읽어도 마음이 움직이지 않습니까",
+    "theme": "말씀묵상",
+    "scripture": "누가복음 24장 32절",
+    "description": "🌿 기도의샘물 웹페이지: https://product-codex-90j.pages.dev/",
+    "tags": [
+      "Shorts",
+      "말씀묵상",
+      "기도",
+      "말씀"
+    ],
+    "publishedDate": "2026-07-21",
+    "publishedAt": "2026-07-21T21:14:01+00:00",
+    "isShort": true,
+    "shortsPlaylists": [
+      "하루 한 말씀, 인생 회복"
+    ]
+  },
+  {
+    "id": "youtube-sJ_fOWq8jE4",
+    "videoId": "sJ_fOWq8jE4",
+    "title": "기도할 말이 사라지고 믿음이 식은 것 같을 때｜엠마오 길의 예수님｜누가복음 24장 말씀기도",
+    "theme": "저녁기도",
+    "scripture": "누가복음 24장",
+    "description": "기도의샘물 홈페이지: https://product-codex-90j.pages.dev/",
+    "tags": [
+      "저녁기도",
+      "기도",
+      "말씀"
+    ],
+    "publishedDate": "2026-07-21",
+    "publishedAt": "2026-07-21T13:24:36+00:00",
+    "isShort": false,
+    "shortsPlaylists": []
+  },
+  {
     "id": "youtube-Cktf4zGG2mc",
     "videoId": "Cktf4zGG2mc",
     "title": "가족을 충분히 돌보지 못해 자책합니까",
