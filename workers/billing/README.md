@@ -65,3 +65,22 @@ Worker는 `available`, `purchasable = true`, 양의 `price_amount`, `KRW`가 모
 5. 성공 URL의 `paymentKey`, `orderId`로 `/orders/approve`를 호출하고, Worker가 저장된 금액과 토스 응답을 일치시키는지 확인합니다. 실패 URL은 `/orders/fail` 뒤 결제 내역에 `결제 실패`로 남아야 합니다.
 6. 결제 완료 회원만 해당 자료의 모든 다운로드 URL을 받고, 다른 회원·미결제 주문·다른 자료 ID는 `403`인지 확인합니다.
 7. 같은 승인/웹훅 요청을 다시 보내도 결제 이벤트가 중복 기록되지 않고, 소통게시판 관리자 API가 계속 동작하는지 확인합니다.
+## 고객·문의 관리와 Resend 알림
+
+문의 접수와 고객 현황은 결제 API와 같은 Worker에서 서버 전용 Supabase 권한으로 처리합니다. 이메일과 문의 본문은 브라우저에서 Supabase 테이블을 직접 조회할 수 없으며 관리자 역할만 Worker API를 통해 확인합니다.
+
+| API | 설명 |
+| --- | --- |
+| `POST /contact/inquiries` | 비회원과 회원의 웹 문의를 저장하고 Resend 관리자 알림을 시도합니다. 허용된 사이트 Origin만 접수합니다. |
+| `GET /admin/customers` | 관리자 역할에게 회원·문의 고객·구매 고객 현황과 문의 목록을 반환합니다. |
+| `POST /admin/inquiries/status` | 관리자 역할이 문의 처리 상태와 내부 메모를 저장합니다. |
+
+Resend 설정값은 Git이나 `wrangler.toml`에 실제 값을 넣지 않고 모두 Worker Secret으로 등록합니다.
+
+```text
+wrangler secret put RESEND_API_KEY
+wrangler secret put RESEND_FROM_EMAIL
+wrangler secret put CONTACT_NOTIFICATION_EMAIL
+```
+
+`RESEND_FROM_EMAIL`은 Resend에서 인증한 발신 도메인의 주소를 사용해야 합니다. 메일 전송 설정이 없거나 일시적으로 실패해도 문의 원문은 Supabase에 먼저 저장되고, 관리자 화면의 알림 상태가 `skipped` 또는 `failed`로 남습니다.
