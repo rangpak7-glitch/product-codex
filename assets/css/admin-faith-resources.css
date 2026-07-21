@@ -363,3 +363,50 @@
   .admin-editor-footer { align-items: stretch; flex-direction: column; }
   .admin-editor-footer > div { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
+.admin-customer-board-head,
+.admin-customer-summary,
+.admin-inquiry-board-head,
+.admin-inquiry-summary {
+  grid-template-columns: 46px 132px 110px minmax(180px, 1fr);
+}
+.admin-customer-contact {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  align-items: center;
+  margin-bottom: 16px;
+}
+.admin-customer-contact span {
+  color: var(--color-muted);
+}
+.admin-inquiry-message {
+  max-width: 760px;
+  padding: 18px;
+  border-left: 3px solid var(--color-gold);
+  background: var(--color-surface);
+  white-space: pre-wrap;
+  line-height: 1.7;
+}
+.admin-inquiry-controls {
+  display: grid;
+  gap: 12px;
+  max-width: 760px;
+  margin-top: 18px;
+}
+.admin-inquiry-controls label {
+  display: grid;
+  gap: 7px;
+  font-weight: 700;
+}
+.admin-inquiry-controls select,
+.admin-inquiry-controls textarea {
+  width: 100%;
+}
+@media (max-width: 720px) {
+  .admin-customer-board-head,
+  .admin-customer-summary,
+  .admin-inquiry-board-head,
+  .admin-inquiry-summary {
+    grid-template-columns: 32px 78px 82px minmax(110px, 1fr);
+  }
+}

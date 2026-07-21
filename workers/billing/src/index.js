@@ -1,6 +1,9 @@
 const ORDER_ID_PATTERN = /^[A-Za-z0-9_-]{6,64}$/;
 const PRODUCT_ID_PATTERN = /^[A-Za-z0-9_-]{2,120}$/;
 const RESOURCE_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const INQUIRY_TYPES = new Set(["general", "content", "resource", "account_purchase", "privacy"]);
+const INQUIRY_STATUSES = new Set(["new", "open", "in_progress", "resolved", "spam"]);
 
 export default {
   async fetch(request, env) {
@@ -18,6 +21,7 @@ export default {
 async function route(request, env) {
   const url = new URL(request.url);
   if (request.method === "GET" && url.pathname === "/health") return json({ ok: true, billing: "one-time-orders" });
+  if (request.method === "POST" && url.pathname === "/contact/inquiries") return createCustomerInquiry(request, env);
   if (request.method === "POST" && url.pathname === "/orders/start") return startOrder(request, env);
   if (request.method === "POST" && url.pathname === "/orders/approve") return approveOrder(request, env);
   if (request.method === "POST" && url.pathname === "/orders/fail") return failOrder(request, env);
@@ -25,6 +29,8 @@ async function route(request, env) {
   if (request.method === "POST" && /^\/resources\/[^/]+\/download$/.test(url.pathname)) return downloadResource(request, env, url.pathname);
   if (request.method === "GET" && url.pathname === "/admin/orders") return getAdminOrders(request, env, url);
   if (request.method === "POST" && url.pathname === "/admin/orders/refund") return refundAdminOrder(request, env);
+  if (request.method === "GET" && url.pathname === "/admin/customers") return getAdminCustomers(request, env, url);
+  if (request.method === "POST" && url.pathname === "/admin/inquiries/status") return updateAdminInquiry(request, env);
   if (request.method === "GET" && url.pathname === "/admin/community/reports") return getCommunityReports(request, env);
   if (request.method === "POST" && url.pathname === "/admin/community/moderate") return moderateCommunity(request, env);
   return json({ error: "찾을 수 없는 API입니다." }, 404);
@@ -158,6 +164,187 @@ async function rest(env, path, options = {}) {
   try { data = text ? JSON.parse(text) : null; } catch { data = text; }
   if (!response.ok) throw new Error(typeof data === "object" ? JSON.stringify(data) : text || "Supabase 요청 실패");
   return data;
+}
+
+function trimmedText(value, maxLength) {
+  return String(value || "").trim().slice(0, maxLength);
+}
+
+function normalizedEmail(value) {
+  return trimmedText(value, 254).toLowerCase();
+}
+
+function validEmail(value) {
+  return EMAIL_PATTERN.test(value) && value.length <= 254;
+}
+
+function escapeEmailHtml(value = "") {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+function inquiryTypeLabel(value) {
+  return {
+    general: "일반 문의",
+    content: "콘텐츠 문의",
+    resource: "신앙자료 문의",
+    account_purchase: "계정·구매 문의",
+    privacy: "개인정보 문의"
+  }[value] || "문의";
+}
+
+async function findCustomerContact(env, member, email) {
+  if (member?.id) {
+    const byUser = await rest(
+      env,
+      `customer_contacts?user_id=eq.${encodeURIComponent(member.id)}&limit=1&select=*`
+    );
+    if (byUser?.[0]) return byUser[0];
+  }
+  const byEmail = await rest(
+    env,
+    `customer_contacts?normalized_email=eq.${encodeURIComponent(email)}&limit=1&select=*`
+  );
+  return byEmail?.[0] || null;
+}
+
+async function saveCustomerContact(env, member, payload) {
+  const now = new Date().toISOString();
+  const current = await findCustomerContact(env, member, payload.email);
+  const lifecycleStage = current?.lifecycle_stage === "customer"
+    ? "customer"
+    : (member ? "member" : (current?.lifecycle_stage || "lead"));
+  const body = {
+    email: payload.email,
+    display_name: payload.name,
+    last_seen_at: now,
+    lifecycle_stage: lifecycleStage
+  };
+  if (member?.id) body.user_id = member.id;
+
+  if (current) {
+    const rows = await rest(env, `customer_contacts?id=eq.${encodeURIComponent(current.id)}`, {
+      method: "PATCH",
+      body
+    });
+    return rows?.[0] || current;
+  }
+
+  const rows = await rest(env, "customer_contacts", {
+    method: "POST",
+    body: {
+      ...body,
+      source: member ? "membership" : "contact_form",
+      first_seen_at: now
+    }
+  });
+  return rows?.[0] || null;
+}
+
+async function sendInquiryNotification(env, inquiry) {
+  if (!env.RESEND_API_KEY || !env.RESEND_FROM_EMAIL || !env.CONTACT_NOTIFICATION_EMAIL) {
+    return { status: "skipped", id: null };
+  }
+  const label = inquiryTypeLabel(inquiry.inquiry_type);
+  const response = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${env.RESEND_API_KEY}`,
+      "Content-Type": "application/json",
+      "Idempotency-Key": `contact-inquiry:${inquiry.id}`
+    },
+    body: JSON.stringify({
+      from: env.RESEND_FROM_EMAIL,
+      to: [env.CONTACT_NOTIFICATION_EMAIL],
+      reply_to: inquiry.email,
+      subject: `[기도의샘물] ${label} - ${inquiry.name}`,
+      text: [
+        `문의 유형: ${label}`,
+        `이름: ${inquiry.name}`,
+        `회신 이메일: ${inquiry.email}`,
+        inquiry.product_id ? `자료 ID: ${inquiry.product_id}` : "",
+        "",
+        inquiry.message
+      ].filter(Boolean).join("\n"),
+      html: `<h2>${escapeEmailHtml(label)}</h2>
+        <p><strong>이름:</strong> ${escapeEmailHtml(inquiry.name)}</p>
+        <p><strong>회신 이메일:</strong> ${escapeEmailHtml(inquiry.email)}</p>
+        ${inquiry.product_id ? `<p><strong>자료 ID:</strong> ${escapeEmailHtml(inquiry.product_id)}</p>` : ""}
+        <p style="white-space:pre-wrap">${escapeEmailHtml(inquiry.message)}</p>`
+    })
+  });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) return { status: "failed", id: null };
+  return { status: "sent", id: trimmedText(result.id, 200) || null };
+}
+
+async function createCustomerInquiry(request, env) {
+  const requestOrigin = normalizeOrigin(request.headers.get("Origin"));
+  if (!requestOrigin || !isAllowedOrigin(requestOrigin, env)) {
+    return json({ error: "허용되지 않은 요청입니다." }, 403);
+  }
+  const contentLength = Number(request.headers.get("Content-Length") || 0);
+  if (contentLength > 20000) return json({ error: "문의 내용이 너무 깁니다." }, 413);
+
+  const raw = await readJson(request);
+  if (trimmedText(raw.website, 200)) return json({ ok: true }, 202);
+
+  const payload = {
+    inquiryType: trimmedText(raw.inquiryType, 40),
+    name: trimmedText(raw.name, 100),
+    email: normalizedEmail(raw.email),
+    productId: trimmedText(raw.productId, 120),
+    message: trimmedText(raw.message, 5000)
+  };
+  if (
+    !INQUIRY_TYPES.has(payload.inquiryType)
+    || payload.name.length < 2
+    || !validEmail(payload.email)
+    || payload.message.length < 10
+  ) {
+    return json({ error: "문의 유형, 이름, 이메일, 문의 내용을 확인해 주세요." }, 400);
+  }
+
+  const member = await getMember(request, env);
+  const contact = await saveCustomerContact(env, member, payload);
+  if (!contact?.id) throw new Error("Customer contact was not saved");
+
+  const created = await rest(env, "customer_inquiries", {
+    method: "POST",
+    body: {
+      contact_id: contact.id,
+      user_id: member?.id || null,
+      inquiry_type: payload.inquiryType,
+      name: payload.name,
+      email: payload.email,
+      product_id: payload.productId || null,
+      message: payload.message,
+      status: "new",
+      notification_status: "pending"
+    }
+  });
+  const inquiry = created?.[0] || null;
+  if (!inquiry?.id) throw new Error("Customer inquiry was not saved");
+
+  const notification = await sendInquiryNotification(env, inquiry).catch(() => ({ status: "failed", id: null }));
+  await rest(env, `customer_inquiries?id=eq.${encodeURIComponent(inquiry.id)}`, {
+    method: "PATCH",
+    body: {
+      notification_status: notification.status,
+      notification_id: notification.id,
+      notification_attempted_at: new Date().toISOString()
+    }
+  }).catch(() => null);
+
+  return json({
+    ok: true,
+    inquiryId: inquiry.id,
+    notificationSent: notification.status === "sent"
+  }, 201);
 }
 
 async function getProfile(env, userId) {
@@ -739,6 +926,175 @@ async function requireAdmin(request, env) {
   const profile = await getProfile(env, member.id);
   if (profile?.role !== "admin") return [null, json({ error: "관리자 권한이 필요합니다." }, 403)];
   return [member, null];
+}
+
+async function getAdminUsers(env) {
+  requireEnv(env, ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]);
+  const response = await fetch(`${env.SUPABASE_URL}/auth/v1/admin/users?page=1&per_page=1000`, {
+    headers: {
+      apikey: env.SUPABASE_SERVICE_ROLE_KEY,
+      Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`
+    }
+  });
+  if (!response.ok) return [];
+  const payload = await response.json().catch(() => ({}));
+  return Array.isArray(payload?.users) ? payload.users : [];
+}
+
+function latestIso(...values) {
+  const valid = values
+    .filter(Boolean)
+    .map((value) => new Date(value))
+    .filter((value) => !Number.isNaN(value.getTime()));
+  if (!valid.length) return null;
+  return new Date(Math.max(...valid.map((value) => value.getTime()))).toISOString();
+}
+
+async function getAdminCustomers(request, env, url) {
+  const [_admin, authError] = await requireAdmin(request, env);
+  if (authError) return authError;
+
+  const [users, contacts, inquiries, orders, downloads] = await Promise.all([
+    getAdminUsers(env),
+    rest(env, "customer_contacts?order=last_seen_at.desc&limit=2000&select=*"),
+    rest(env, "customer_inquiries?order=created_at.desc&limit=1000&select=*"),
+    rest(env, "faith_orders?order=created_at.desc&limit=5000&select=id,user_id,amount,status,created_at,paid_at"),
+    rest(env, "resource_downloads?order=downloaded_at.desc&limit=5000&select=user_id,downloaded_at")
+  ]);
+
+  const userMap = new Map((users || []).map((user) => [user.id, user]));
+  const contactByUser = new Map(
+    (contacts || []).filter((contact) => contact.user_id).map((contact) => [contact.user_id, contact])
+  );
+  const contactByEmail = new Map(
+    (contacts || []).map((contact) => [normalizedEmail(contact.email), contact])
+  );
+  const customerMap = new Map();
+
+  (contacts || []).forEach((contact) => {
+    customerMap.set(contact.id, {
+      contact,
+      user: contact.user_id ? userMap.get(contact.user_id) : null
+    });
+  });
+  (users || []).forEach((user) => {
+    const contact = contactByUser.get(user.id) || contactByEmail.get(normalizedEmail(user.email));
+    const key = contact?.id || `member:${user.id}`;
+    if (!customerMap.has(key)) customerMap.set(key, { contact: contact || null, user });
+  });
+
+  const inquiryByContact = new Map();
+  (inquiries || []).forEach((inquiry) => {
+    const bucket = inquiryByContact.get(inquiry.contact_id) || [];
+    bucket.push(inquiry);
+    inquiryByContact.set(inquiry.contact_id, bucket);
+  });
+  const ordersByUser = new Map();
+  (orders || []).forEach((order) => {
+    const bucket = ordersByUser.get(order.user_id) || [];
+    bucket.push(order);
+    ordersByUser.set(order.user_id, bucket);
+  });
+  const downloadsByUser = new Map();
+  (downloads || []).forEach((download) => {
+    const bucket = downloadsByUser.get(download.user_id) || [];
+    bucket.push(download);
+    downloadsByUser.set(download.user_id, bucket);
+  });
+
+  const query = trimmedText(url.searchParams.get("q"), 120).toLowerCase();
+  const stage = trimmedText(url.searchParams.get("stage"), 40) || "all";
+  const customers = [...customerMap.values()].map(({ contact, user }) => {
+    const contactInquiries = contact ? (inquiryByContact.get(contact.id) || []) : [];
+    const userOrders = user?.id ? (ordersByUser.get(user.id) || []) : [];
+    const paidOrders = userOrders.filter((order) => order.status === "paid");
+    const userDownloads = user?.id ? (downloadsByUser.get(user.id) || []) : [];
+    const lifecycleStage = paidOrders.length
+      ? "customer"
+      : (user ? "member" : (contact?.lifecycle_stage || "lead"));
+    return {
+      id: contact?.id || null,
+      userId: user?.id || contact?.user_id || null,
+      email: contact?.email || user?.email || "",
+      displayName: contact?.display_name || "",
+      source: contact?.source || "membership",
+      lifecycleStage,
+      inquiryCount: contactInquiries.length,
+      openInquiryCount: contactInquiries.filter(
+        (inquiry) => ["new", "open", "in_progress"].includes(inquiry.status)
+      ).length,
+      paidOrderCount: paidOrders.length,
+      totalSpent: paidOrders.reduce((sum, order) => sum + Number(order.amount || 0), 0),
+      downloadCount: userDownloads.length,
+      firstSeenAt: contact?.first_seen_at || user?.created_at || null,
+      lastActivityAt: latestIso(
+        contact?.last_seen_at,
+        contactInquiries[0]?.created_at,
+        userOrders[0]?.paid_at || userOrders[0]?.created_at,
+        userDownloads[0]?.downloaded_at
+      )
+    };
+  }).filter((customer) => stage === "all" || customer.lifecycleStage === stage)
+    .filter((customer) => !query || [customer.email, customer.displayName, customer.userId]
+      .some((value) => String(value || "").toLowerCase().includes(query)))
+    .sort((a, b) => String(b.lastActivityAt || "").localeCompare(String(a.lastActivityAt || "")));
+
+  const contactMap = new Map((contacts || []).map((contact) => [contact.id, contact]));
+  const publicInquiries = (inquiries || []).map((inquiry) => {
+    const contact = contactMap.get(inquiry.contact_id);
+    return {
+      id: inquiry.id,
+      contactId: inquiry.contact_id,
+      userId: inquiry.user_id || null,
+      inquiryType: inquiry.inquiry_type,
+      name: inquiry.name,
+      email: inquiry.email,
+      productId: inquiry.product_id || "",
+      message: inquiry.message,
+      status: inquiry.status,
+      adminNotes: inquiry.admin_notes || "",
+      notificationStatus: inquiry.notification_status,
+      createdAt: inquiry.created_at,
+      updatedAt: inquiry.updated_at,
+      resolvedAt: inquiry.resolved_at,
+      customerStage: contact?.lifecycle_stage || (inquiry.user_id ? "member" : "lead")
+    };
+  });
+
+  return json({
+    customers,
+    inquiries: publicInquiries,
+    stats: {
+      total: customers.length,
+      members: customers.filter((customer) => customer.lifecycleStage === "member").length,
+      customers: customers.filter((customer) => customer.lifecycleStage === "customer").length,
+      openInquiries: publicInquiries.filter(
+        (inquiry) => ["new", "open", "in_progress"].includes(inquiry.status)
+      ).length
+    }
+  });
+}
+
+async function updateAdminInquiry(request, env) {
+  const [_admin, authError] = await requireAdmin(request, env);
+  if (authError) return authError;
+  const payload = await readJson(request);
+  const inquiryId = trimmedText(payload.inquiryId, 80);
+  const status = trimmedText(payload.status, 40);
+  const adminNotes = trimmedText(payload.adminNotes, 5000);
+  if (!isSafeUuid(inquiryId) || !INQUIRY_STATUSES.has(status)) {
+    return json({ error: "문의 상태 정보를 확인해 주세요." }, 400);
+  }
+  const rows = await rest(env, `customer_inquiries?id=eq.${encodeURIComponent(inquiryId)}`, {
+    method: "PATCH",
+    body: {
+      status,
+      admin_notes: adminNotes || null,
+      resolved_at: status === "resolved" ? new Date().toISOString() : null
+    }
+  });
+  if (!rows?.[0]) return json({ error: "문의를 찾지 못했습니다." }, 404);
+  return json({ ok: true });
 }
 
 async function getAdminUserEmails(env) {
