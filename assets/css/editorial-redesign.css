@@ -1687,6 +1687,86 @@ body[data-site-page="prayer-cards"] #faithResourceFilterStatus[hidden] { display
 }
 .resource-media-preview-pages .resource-public-preview-grid { margin-bottom: 0; }
 
+.faith-payment-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 240;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+}
+.faith-payment-modal[hidden] { display: none; }
+.faith-payment-backdrop { position: absolute; inset: 0; background: rgba(9, 20, 16, .72); }
+.faith-payment-dialog {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  width: min(720px, 100%);
+  max-height: min(860px, calc(100dvh - 40px));
+  overflow: hidden;
+  border: 1px solid #d9d1c5;
+  border-radius: 12px;
+  background: #fffefb;
+  box-shadow: 0 24px 70px rgba(9, 20, 16, .32);
+}
+.faith-payment-header {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 24px 28px 18px;
+  border-bottom: 1px solid #e4ddd2;
+}
+.faith-payment-header .eyebrow { margin: 0 0 4px; }
+.faith-payment-header h2 { margin: 0; font-size: clamp(1.35rem, 3vw, 1.75rem); }
+.faith-payment-summary {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 18px;
+  margin: 18px 28px 0;
+  padding: 15px 17px;
+  border: 1px solid #ded6ca;
+  border-radius: 10px;
+  background: #f6f2ea;
+  color: #20372f;
+}
+.faith-payment-summary span { min-width: 0; overflow-wrap: anywhere; font-weight: 700; }
+.faith-payment-summary strong { flex: 0 0 auto; color: #17231f; font-size: 1.12rem; }
+.faith-payment-guidance { margin: 12px 28px 0; color: #59645f; font-size: .88rem; line-height: 1.65; }
+.faith-payment-widget {
+  min-height: 250px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 8px 14px 0;
+}
+.faith-payment-widget[aria-busy="true"] { display: grid; place-items: center; }
+.faith-payment-widget[aria-busy="true"]::before {
+  content: "결제수단을 불러오는 중입니다.";
+  color: #59645f;
+  font-weight: 700;
+}
+.faith-payment-widget[aria-busy="true"] > * { display: none; }
+.faith-payment-status {
+  min-height: 1.5em;
+  margin: 4px 28px 12px;
+  color: #315b4c;
+  font-size: .86rem;
+  font-weight: 700;
+}
+.faith-payment-status.is-error { color: #a33a32; }
+.faith-payment-actions {
+  display: grid;
+  grid-template-columns: minmax(100px, .36fr) minmax(180px, 1fr);
+  gap: 10px;
+  padding: 16px 28px calc(16px + env(safe-area-inset-bottom));
+  border-top: 1px solid #e4ddd2;
+  background: #fffefb;
+}
+.faith-payment-actions .button { min-height: 48px; }
+
 .faith-download-modal {
   position: fixed;
   inset: 0;
@@ -1876,7 +1956,25 @@ body[data-site-page="prayer-cards"] #faithResourceFilterStatus[hidden] { display
   .resource-public-preview-grid.is-compact { grid-template-columns: minmax(0, 140px); }
   .resource-type-card .resource-inline-detail .resource-public-preview-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .resource-media-preview-pages .resource-public-preview-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+  .faith-payment-modal,
   .faith-download-modal { padding: 12px; }
+  .faith-payment-dialog { max-height: calc(100dvh - 24px); border-radius: 10px; }
+  .faith-payment-header { padding: 20px 18px 14px; }
+  .faith-payment-summary {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 6px;
+    margin: 14px 18px 0;
+    padding: 12px 14px;
+  }
+  .faith-payment-summary strong { font-size: 1rem; }
+  .faith-payment-guidance { margin: 10px 18px 0; }
+  .faith-payment-widget { min-height: 220px; padding-inline: 0; }
+  .faith-payment-status { margin: 2px 18px 10px; }
+  .faith-payment-actions {
+    grid-template-columns: 92px minmax(0, 1fr);
+    padding: 12px 18px calc(12px + env(safe-area-inset-bottom));
+  }
   .faith-download-dialog { max-height: calc(100dvh - 24px); padding: 24px 18px; }
   .resource-pdf-frame { width: 100%; }
   .resource-private-card-preview { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }

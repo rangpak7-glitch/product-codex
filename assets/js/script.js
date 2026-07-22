@@ -5,7 +5,7 @@ const $ = (selector) => document.querySelector(selector);
   if (window.__faithMemberScriptLoaded) return;
   window.__faithMemberScriptLoaded = true;
   const script = document.createElement("script");
-  script.src = new URL("assets/js/faith-member.js?v=20260715-pdf-sales2", window.location.href).href;
+  script.src = new URL("assets/js/faith-member.js?v=20260722-toss-widget1", window.location.href).href;
   script.async = true;
   document.head.append(script);
 })();

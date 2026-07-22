@@ -16,6 +16,13 @@
     initialized: false
   };
   let modalDownloadFiles = [];
+  const paymentWidgetState = {
+    widgets: null,
+    paymentMethods: null,
+    agreement: null,
+    pending: null,
+    trigger: null
+  };
 
   const escapeHtml = (value = "") => String(value)
     .replaceAll("&", "&amp;")
@@ -168,6 +175,42 @@
     });
   }
 
+  function ensurePaymentModal() {
+    if (document.getElementById("faithPaymentModal")) return;
+    const root = document.createElement("div");
+    root.id = "faithPaymentModal";
+    root.className = "faith-payment-modal";
+    root.hidden = true;
+    root.innerHTML = `
+      <div class="faith-payment-backdrop" data-faith-payment-close></div>
+      <section class="faith-payment-dialog" role="dialog" aria-modal="true" aria-labelledby="faithPaymentTitle" aria-describedby="faithPaymentGuidance">
+        <header class="faith-payment-header">
+          <div>
+            <p class="eyebrow">Secure checkout</p>
+            <h2 id="faithPaymentTitle">신앙자료 결제</h2>
+          </div>
+          <button class="modal-close" type="button" data-faith-payment-close aria-label="결제창 닫기">×</button>
+        </header>
+        <div class="faith-payment-summary" aria-live="polite">
+          <span data-faith-payment-order-name>신앙자료</span>
+          <strong data-faith-payment-amount>결제 금액 확인 중</strong>
+        </div>
+        <p id="faithPaymentGuidance" class="faith-payment-guidance">결제수단을 선택하고 필수 약관에 동의한 뒤 결제를 진행해 주세요.</p>
+        <div class="faith-payment-widget" data-faith-payment-widget aria-busy="true">
+          <div id="faithPaymentMethods"></div>
+          <div id="faithPaymentAgreement"></div>
+        </div>
+        <p class="faith-payment-status" data-faith-payment-status role="status" aria-live="polite">안전한 결제 화면을 불러오고 있습니다.</p>
+        <footer class="faith-payment-actions">
+          <button class="button secondary" type="button" data-faith-payment-close>취소</button>
+          <button class="button primary" type="button" data-faith-payment-submit disabled>결제하기</button>
+        </footer>
+      </section>`;
+    document.body.append(root);
+    root.querySelectorAll("[data-faith-payment-close]").forEach((button) => button.addEventListener("click", () => closePaymentModal()));
+    root.querySelector("[data-faith-payment-submit]")?.addEventListener("click", submitPaymentWidget);
+  }
+
   function getAuthModal(mode) {
     return document.querySelector(`[data-faith-auth-modal="${mode}"]`);
   }
@@ -177,7 +220,7 @@
   }
 
   function syncModalOpenState() {
-    const selector = ".faith-auth-modal:not([hidden]), .faith-auth-notice-modal:not([hidden]), .faith-download-modal:not([hidden])";
+    const selector = ".faith-auth-modal:not([hidden]), .faith-auth-notice-modal:not([hidden]), .faith-download-modal:not([hidden]), .faith-payment-modal:not([hidden])";
     document.body.classList.toggle("modal-open", Boolean(document.querySelector(selector)));
   }
 
@@ -247,6 +290,40 @@
     root.hidden = true;
     modalDownloadFiles = [];
     syncModalOpenState();
+  }
+
+  async function destroyPaymentWidget() {
+    const instances = [paymentWidgetState.paymentMethods, paymentWidgetState.agreement];
+    paymentWidgetState.paymentMethods = null;
+    paymentWidgetState.agreement = null;
+    paymentWidgetState.widgets = null;
+    await Promise.allSettled(instances.map((instance) => {
+      if (!instance || typeof instance.destroy !== "function") return Promise.resolve();
+      return Promise.resolve(instance.destroy());
+    }));
+    const methods = document.getElementById("faithPaymentMethods");
+    const agreement = document.getElementById("faithPaymentAgreement");
+    if (methods) methods.replaceChildren();
+    if (agreement) agreement.replaceChildren();
+  }
+
+  function setPaymentStatus(message, error = false) {
+    const status = document.querySelector("[data-faith-payment-status]");
+    if (!status) return;
+    status.textContent = message;
+    status.classList.toggle("is-error", error);
+  }
+
+  async function closePaymentModal({ restoreFocus = true } = {}) {
+    const root = document.getElementById("faithPaymentModal");
+    if (!root || root.hidden) return;
+    root.hidden = true;
+    await destroyPaymentWidget();
+    const trigger = paymentWidgetState.trigger;
+    paymentWidgetState.pending = null;
+    paymentWidgetState.trigger = null;
+    syncModalOpenState();
+    if (restoreFocus && trigger instanceof HTMLElement) window.setTimeout(() => trigger.focus(), 0);
   }
 
   function setFormPending(form, pending, pendingLabel) {
@@ -509,10 +586,94 @@
   }
 
   function paymentCustomerKey() {
+    const memberId = String(state.user?.id || "").replace(/[^a-zA-Z0-9]/g, "");
+    if (memberId) return ("member_" + memberId).slice(0, 50);
     if (window.crypto?.randomUUID) return `customer_${window.crypto.randomUUID()}`;
     const bytes = window.crypto?.getRandomValues?.(new Uint8Array(16));
     if (bytes) return `customer_${Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("")}`;
     throw new Error("안전한 결제 요청을 시작하지 못했습니다. 문의하기를 이용해 주세요.");
+  }
+
+  async function openPaymentWidget(pending) {
+    ensurePaymentModal();
+    await destroyPaymentWidget();
+
+    const root = document.getElementById("faithPaymentModal");
+    const widgetRoot = root.querySelector("[data-faith-payment-widget]");
+    const submitButton = root.querySelector("[data-faith-payment-submit]");
+    paymentWidgetState.pending = pending;
+    paymentWidgetState.trigger = document.activeElement;
+    root.querySelector("[data-faith-payment-order-name]").textContent = pending.orderName || "기도의샘물 신앙자료";
+    root.querySelector("[data-faith-payment-amount]").textContent = `${Number(pending.amount).toLocaleString("ko-KR")}원`;
+    root.hidden = false;
+    widgetRoot.setAttribute("aria-busy", "true");
+    submitButton.disabled = true;
+    submitButton.textContent = "결제 화면 준비 중";
+    setPaymentStatus("안전한 결제 화면을 불러오고 있습니다.");
+    syncModalOpenState();
+
+    try {
+      if (!window.TossPayments) await loadScript(TOSS_SCRIPT);
+      if (!window.TossPayments) throw new Error("결제 화면을 불러오지 못했습니다.");
+
+      const widgets = window.TossPayments(pending.clientKey).widgets({ customerKey: paymentCustomerKey() });
+      paymentWidgetState.widgets = widgets;
+      await widgets.setAmount({ currency: pending.currency || "KRW", value: Number(pending.amount) });
+      const [paymentMethods, agreement] = await Promise.all([
+        widgets.renderPaymentMethods({ selector: "#faithPaymentMethods", variantKey: "DEFAULT" }),
+        widgets.renderAgreement({ selector: "#faithPaymentAgreement", variantKey: "AGREEMENT" })
+      ]);
+
+      if (paymentWidgetState.pending?.orderId !== pending.orderId) {
+        await Promise.allSettled([paymentMethods, agreement].map((instance) => Promise.resolve(instance?.destroy?.())));
+        return pending;
+      }
+
+      paymentWidgetState.paymentMethods = paymentMethods;
+      paymentWidgetState.agreement = agreement;
+      widgetRoot.removeAttribute("aria-busy");
+      submitButton.disabled = false;
+      submitButton.textContent = `${Number(pending.amount).toLocaleString("ko-KR")}원 결제하기`;
+      setPaymentStatus("결제수단 선택과 필수 약관 동의를 확인해 주세요.");
+      window.setTimeout(() => submitButton.focus(), 0);
+      return pending;
+    } catch (error) {
+      widgetRoot.removeAttribute("aria-busy");
+      submitButton.disabled = true;
+      submitButton.textContent = "결제 화면을 불러오지 못했습니다";
+      setPaymentStatus(error?.message || "결제 화면을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.", true);
+      throw error;
+    }
+  }
+
+  async function submitPaymentWidget() {
+    const pending = paymentWidgetState.pending;
+    const widgets = paymentWidgetState.widgets;
+    const root = document.getElementById("faithPaymentModal");
+    const submitButton = root?.querySelector("[data-faith-payment-submit]");
+    if (!pending || !widgets || !submitButton || submitButton.disabled) return;
+
+    submitButton.disabled = true;
+    submitButton.setAttribute("aria-busy", "true");
+    submitButton.textContent = "결제창 여는 중";
+    setPaymentStatus("토스페이먼츠 결제창을 열고 있습니다.");
+
+    try {
+      await widgets.requestPayment({
+        orderId: pending.orderId,
+        orderName: pending.orderName || "기도의샘물 신앙자료",
+        successUrl: pending.successUrl,
+        failUrl: pending.failUrl,
+        customerEmail: state.user?.email || undefined,
+        customerName: state.publicProfile?.nickname || "기도의샘물 회원"
+      });
+    } catch (error) {
+      const canceled = ["USER_CANCEL", "PAY_PROCESS_CANCELED"].includes(error?.code);
+      setPaymentStatus(canceled ? "결제를 취소했습니다. 결제수단을 다시 선택할 수 있습니다." : (error?.message || "결제를 시작하지 못했습니다. 잠시 후 다시 시도해 주세요."), !canceled);
+      submitButton.disabled = false;
+      submitButton.removeAttribute("aria-busy");
+      submitButton.textContent = `${Number(pending.amount).toLocaleString("ko-KR")}원 결제하기`;
+    }
   }
 
   async function requestPurchase(productId, printCopies = null) {
@@ -540,20 +701,7 @@
     }
 
     sessionStorage.setItem(ORDER_PENDING_KEY, JSON.stringify({ orderId: pending.orderId, productId: pending.productId || normalizedProductId }));
-    if (!window.TossPayments) await loadScript(TOSS_SCRIPT);
-    if (!window.TossPayments) throw new Error("결제 화면을 불러오지 못했습니다.");
-    const payment = window.TossPayments(pending.clientKey).payment({ customerKey: paymentCustomerKey() });
-    await payment.requestPayment({
-      method: "CARD",
-      amount: { currency: pending.currency || "KRW", value: Number(pending.amount) },
-      orderId: pending.orderId,
-      orderName: pending.orderName || "기도의샘물 신앙자료",
-      successUrl: pending.successUrl,
-      failUrl: pending.failUrl,
-      customerEmail: state.user.email,
-      customerName: state.publicProfile?.nickname || "기도의샘물 회원"
-    });
-    return pending;
+    return openPaymentWidget(pending);
   }
 
   async function completeOrderPayment() {
@@ -1131,6 +1279,11 @@
   window.FaithAuth = { open, close, getClient, refreshSession, getOrderForResource, hasPurchasedResource, requestPurchase, requestProtectedDownload, startProtectedDownloads };
   document.addEventListener("keydown", (event) => {
     if (event.key !== "Escape") return;
+    const paymentModal = document.getElementById("faithPaymentModal");
+    if (paymentModal && !paymentModal.hidden) {
+      closePaymentModal();
+      return;
+    }
     const notice = document.getElementById("faithAuthNoticeModal");
     if (notice && !notice.hidden) {
       closeNotice();
