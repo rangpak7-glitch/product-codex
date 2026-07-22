@@ -2211,3 +2211,127 @@ body[data-site-page="videos"] .sub-hero--video > div > p:not(.eyebrow) {
     justify-content: center;
   }
 }
+/* 2026-07-23: ambient hero video and restrained site motion */
+.home-app-hero-video {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  background: #0b1713 url("../images/home-quiet-bible-water.png") center / cover no-repeat;
+  pointer-events: none;
+  animation: hero-video-reveal 1.5s cubic-bezier(.22, 1, .36, 1) both;
+}
+
+body[data-site-page="index"] .home-app-content > * {
+  opacity: 0;
+  animation: hero-copy-rise .9s cubic-bezier(.22, 1, .36, 1) forwards;
+}
+body[data-site-page="index"] .home-app-content > :nth-child(1) { animation-delay: .18s; }
+body[data-site-page="index"] .home-app-content > :nth-child(2) { animation-delay: .3s; }
+body[data-site-page="index"] .home-app-content > :nth-child(3) { animation-delay: .42s; }
+
+html.motion-ready [data-scroll-reveal] {
+  opacity: 0;
+  filter: blur(3px);
+  transform: translate3d(0, 22px, 0);
+  transition:
+    opacity .72s cubic-bezier(.22, 1, .36, 1),
+    filter .72s cubic-bezier(.22, 1, .36, 1),
+    transform .72s cubic-bezier(.22, 1, .36, 1);
+  transition-delay: var(--reveal-delay, 0ms);
+  will-change: opacity, filter, transform;
+}
+html.motion-ready [data-scroll-reveal].is-visible {
+  opacity: 1;
+  filter: none;
+  transform: translate3d(0, 0, 0);
+}
+
+button:not(:disabled),
+.button,
+.account-link,
+.site-nav a,
+.text-link,
+.history-pagination a,
+.category-recent-row {
+  transition:
+    color .22s ease,
+    background-color .22s ease,
+    border-color .22s ease,
+    box-shadow .28s cubic-bezier(.22, 1, .36, 1),
+    filter .28s ease,
+    transform .28s cubic-bezier(.22, 1, .36, 1);
+  transform: translateZ(0);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  button:not(:disabled):hover,
+  .button:hover,
+  .account-link:hover,
+  .site-nav a:hover,
+  .text-link:hover,
+  .history-pagination a:hover,
+  .category-recent-row:hover {
+    filter: brightness(1.025);
+    transform: translate3d(0, -2px, 0);
+  }
+  .button:hover,
+  .account-link:hover,
+  button:not(:disabled):hover {
+    box-shadow: 0 10px 24px rgba(23, 35, 31, .13);
+  }
+}
+
+button:not(:disabled):active,
+.button:active,
+.account-link:active,
+.site-nav a:active,
+.text-link:active {
+  transform: translate3d(0, 0, 0) scale(.985);
+  transition-duration: .1s;
+}
+
+@keyframes hero-video-reveal {
+  from { opacity: 0; transform: scale(1.025); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes hero-copy-rise {
+  from { opacity: 0; transform: translate3d(0, 18px, 0); }
+  to { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+
+@media (max-width: 860px) {
+  .home-app-hero-video { object-position: 68% center; }
+}
+
+@media (max-width: 560px) {
+  .home-app-hero-video { object-position: 72% center; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-app-hero-video { display: none; }
+  body[data-site-page="index"] .home-app-content > * {
+    opacity: 1;
+    animation: none;
+  }
+  html.motion-ready [data-scroll-reveal],
+  html.motion-ready [data-scroll-reveal].is-visible {
+    opacity: 1;
+    filter: none;
+    transform: none;
+    transition: none;
+  }
+  button:not(:disabled),
+  .button,
+  .account-link,
+  .site-nav a,
+  .text-link,
+  .history-pagination a,
+  .category-recent-row {
+    transition: none;
+  }
+}

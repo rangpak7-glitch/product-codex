@@ -2619,3 +2619,32 @@ normalizeSiteNav();
     });
   }
 })();
+// Reveal each content section once as it enters the viewport.
+(() => {
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const selectors = [
+    "main > section:not(.home-app-hero)",
+    "main > article",
+    "main .section",
+    "main .article",
+    ".site-footer"
+  ];
+  const targets = [...new Set(document.querySelectorAll(selectors.join(", ")))];
+  if (!targets.length || reduceMotion || !("IntersectionObserver" in window)) return;
+
+  targets.forEach((target, index) => {
+    target.dataset.scrollReveal = "";
+    target.style.setProperty("--reveal-delay", String(Math.min(index % 4, 3) * 55) + "ms");
+  });
+
+  document.documentElement.classList.add("motion-ready");
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (!entry.isIntersecting) return;
+      entry.target.classList.add("is-visible");
+      observer.unobserve(entry.target);
+    });
+  }, { threshold: .08, rootMargin: "0px 0px -8% 0px" });
+
+  targets.forEach((target) => observer.observe(target));
+})();
