@@ -125,7 +125,7 @@ function ensureLegalBusinessInfo() {
       "대표자명 석민희",
       "사업자등록번호 611-09-42934",
       "사업장 주소 경기도 의왕시 시청1로 10, 103동 1703호(고천동, e편한세상 고천 파크루체)",
-      "전화번호 010-9193-8603"
+      "전화번호 010-9991-3785"
     ].forEach((text) => {
       const item = document.createElement("span");
       item.textContent = text;
