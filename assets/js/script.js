@@ -113,9 +113,22 @@ normalizeSiteCategoryNav();
 
 function ensureLegalBusinessInfo() {
   document.querySelectorAll(".site-footer").forEach((footer) => {
-    if (footer.querySelector(".footer-business-info")) return;
     const nav = footer.querySelector(".minimal-footer-nav");
     if (!nav) return;
+    const policyLinks = nav.querySelector(".footer-policy-links");
+    if (policyLinks && !policyLinks.querySelector('a[href="about.html#business-info"]')) {
+      const businessInfoLink = document.createElement("a");
+      businessInfoLink.href = "about.html#business-info";
+      businessInfoLink.textContent = "사업자 정보";
+      const refundLink = policyLinks.querySelector('a[href="about.html#refund"]');
+      if (refundLink) {
+        refundLink.after(businessInfoLink);
+      } else {
+        policyLinks.append(businessInfoLink);
+      }
+    }
+
+    if (footer.querySelector(".footer-business-info")) return;
     const businessInfo = document.createElement("address");
     businessInfo.className = "footer-business-name footer-business-info";
     businessInfo.setAttribute("aria-label", "사업자 정보");
@@ -123,9 +136,7 @@ function ensureLegalBusinessInfo() {
     [
       "상호명 몽자몰(mongzamall)",
       "대표자명 석민희",
-      "사업자등록번호 611-09-42934",
-      "사업장 주소 경기도 의왕시 시청1로 10, 103동 1703호(고천동, e편한세상 고천 파크루체)",
-      "전화번호 010-9991-3785"
+      "사업자등록번호 611-09-42934"
     ].forEach((text) => {
       const item = document.createElement("span");
       item.textContent = text;
