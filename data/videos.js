@@ -1,5 +1,63 @@
 window.VIDEOS = [
   {
+    "id": "youtube-4YLGSM7kumI",
+    "videoId": "4YLGSM7kumI",
+    "title": "진심을 설명해도 오해가 풀리지 않습니까",
+    "theme": "저녁기도",
+    "scripture": "사무엘상 1장 10절",
+    "description": "🌿 기도의샘물 웹페이지: https://product-codex-90j.pages.dev/",
+    "tags": [
+      "Shorts",
+      "저녁기도",
+      "기도",
+      "말씀"
+    ],
+    "publishedDate": "2026-07-22",
+    "publishedAt": "2026-07-22T22:29:06+00:00",
+    "isShort": true,
+    "shortsPlaylists": [
+      "하루 한 말씀, 인생 회복"
+    ]
+  },
+  {
+    "id": "youtube-UczcQZ-BG24",
+    "videoId": "UczcQZ-BG24",
+    "title": "내 마음을 아무도 알아주지 않는 밤｜오해받은 한나의 기도｜사무엘상 1장 말씀기도",
+    "theme": "저녁기도",
+    "scripture": "사무엘상 1장",
+    "description": "기도의샘물 홈페이지: https://product-codex-90j.pages.dev/",
+    "tags": [
+      "저녁기도",
+      "평안",
+      "기도",
+      "말씀"
+    ],
+    "publishedDate": "2026-07-22",
+    "publishedAt": "2026-07-22T13:35:23+00:00",
+    "isShort": false,
+    "shortsPlaylists": []
+  },
+  {
+    "id": "youtube-9kpVjqPUGYg",
+    "videoId": "9kpVjqPUGYg",
+    "title": "기도할 말이 사라져 당황했습니까",
+    "theme": "말씀묵상",
+    "scripture": "누가복음 24장 32절",
+    "description": "🌿 기도의샘물 웹페이지: https://product-codex-90j.pages.dev/",
+    "tags": [
+      "Shorts",
+      "말씀묵상",
+      "기도",
+      "말씀"
+    ],
+    "publishedDate": "2026-07-22",
+    "publishedAt": "2026-07-22T13:25:23+00:00",
+    "isShort": true,
+    "shortsPlaylists": [
+      "하루 한 말씀, 인생 회복"
+    ]
+  },
+  {
     "id": "youtube-zK6EBJlOR-s",
     "videoId": "zK6EBJlOR-s",
     "title": "성경을 읽어도 마음이 움직이지 않습니까",
