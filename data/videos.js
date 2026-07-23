@@ -1,5 +1,43 @@
 window.VIDEOS = [
   {
+    "id": "youtube-X3LfwsC207k",
+    "videoId": "X3LfwsC207k",
+    "title": "생각이 멈추지 않아 잠들 수 없는 밤｜풍랑을 잠잠케 하신 예수님｜누가복음 8장 수면 말씀기도",
+    "theme": "저녁기도",
+    "scripture": "누가복음 8장",
+    "description": "기도의샘물 홈페이지: https://product-codex-90j.pages.dev/",
+    "tags": [
+      "저녁기도",
+      "수면",
+      "기도",
+      "말씀"
+    ],
+    "publishedDate": "2026-07-23",
+    "publishedAt": "2026-07-23T13:35:24+00:00",
+    "isShort": false,
+    "shortsPlaylists": []
+  },
+  {
+    "id": "youtube--daHWBwNXj8",
+    "videoId": "-daHWBwNXj8",
+    "title": "오해가 남아 억울하고 외롭습니까",
+    "theme": "저녁기도",
+    "scripture": "사무엘상 1장 10절",
+    "description": "🌿 기도의샘물 웹페이지: https://product-codex-90j.pages.dev/",
+    "tags": [
+      "Shorts",
+      "저녁기도",
+      "기도",
+      "말씀"
+    ],
+    "publishedDate": "2026-07-23",
+    "publishedAt": "2026-07-23T11:35:06+00:00",
+    "isShort": true,
+    "shortsPlaylists": [
+      "하루 한 말씀, 인생 회복"
+    ]
+  },
+  {
     "id": "youtube-4YLGSM7kumI",
     "videoId": "4YLGSM7kumI",
     "title": "진심을 설명해도 오해가 풀리지 않습니까",
