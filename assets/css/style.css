@@ -1995,7 +1995,7 @@ label { font-weight: 700; }
 
 /* 회원, 구매 자료, 소통게시판 */
 .faith-account-control { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; white-space: nowrap; }
-.account-link { display: inline-flex; align-items: center; min-height: 38px; padding: 7px 11px; border: 1px solid transparent; border-radius: 999px; background: transparent; color: var(--navy); font: inherit; font-size: .85rem; font-weight: 700; text-decoration: none; cursor: pointer; }
+.account-link { display: inline-flex; align-items: center; min-height: 44px; padding: 9px 11px; border: 1px solid transparent; border-radius: 999px; background: transparent; color: var(--navy); font: inherit; font-size: .85rem; font-weight: 700; text-decoration: none; cursor: pointer; }
 .account-link:hover { border-color: rgba(167,124,53,.35); background: rgba(255,253,243,.7); }
 .account-signup { background: var(--navy); color: var(--color-surface); }
 .account-signup:hover { background: var(--gold); color: var(--navy-deep); }
@@ -2004,7 +2004,7 @@ label { font-weight: 700; }
 .faith-auth-notice-modal[hidden],
 .faith-auth-form[hidden] { display: none; }
 .faith-auth-backdrop { position: absolute; inset: 0; background: rgba(11,20,48,.55); backdrop-filter: blur(4px); }
-.faith-auth-dialog { position: relative; z-index: 1; width: min(470px, 100%); max-height: min(760px, calc(100vh - 40px)); overflow-y: auto; padding: clamp(28px, 5vw, 42px); border: 1px solid rgba(255,255,255,.6); border-radius: 22px; background: var(--color-surface); box-shadow: 0 32px 90px rgba(11,20,48,.38); }
+.faith-auth-dialog { position: relative; z-index: 1; width: min(470px, 100%); max-height: min(760px, calc(100vh - 40px)); overflow-y: auto; overscroll-behavior: contain; padding: clamp(28px, 5vw, 42px); border: 1px solid rgba(255,255,255,.6); border-radius: 22px; background: var(--color-surface); box-shadow: 0 32px 90px rgba(11,20,48,.38); }
 .modal-close { position: absolute; top: 14px; right: 16px; width: 40px; height: 40px; border: 0; border-radius: 50%; background: rgba(180,217,230,.42); color: var(--navy); font-size: 1.7rem; line-height: 1; cursor: pointer; }
 .faith-auth-dialog h2 { margin-bottom: 20px; font-size: clamp(1.8rem, 5vw, 2.25rem); }
 .faith-auth-form { display: grid; gap: 14px; }
@@ -2105,7 +2105,7 @@ body.modal-open { overflow: hidden; }
 .account-access-panel p { max-width: 540px; margin-left: auto; margin-right: auto; }
 
 @media (max-width: 1180px) { .site-header { gap: 12px; } .site-nav a { padding: 7px 8px; font-size: .84rem; } .faith-account-control { margin-left: 0; } }
-@media (max-width: 860px) { .faith-account-control { order: 2; margin-left: auto; margin-right: 4px; } .account-link { min-height: 36px; padding: 6px 9px; } .community-layout, .account-grid, .account-history-grid { grid-template-columns: 1fr; } .community-detail-panel { position: static; } .community-compose-form { grid-template-columns: 1fr 1fr; } .community-compose-form label:last-of-type { grid-column: 1 / -1; } .community-compose-form textarea { min-height: 92px; height: 92px; } .community-detail-head { display: grid; } }
+@media (max-width: 860px) { .faith-account-control { order: 2; margin-left: auto; margin-right: 4px; } .account-link { min-height: 44px; padding: 8px 9px; } .community-layout, .account-grid, .account-history-grid { grid-template-columns: 1fr; } .community-detail-panel { position: static; } .community-compose-form { grid-template-columns: 1fr 1fr; } .community-compose-form label:last-of-type { grid-column: 1 / -1; } .community-compose-form textarea { min-height: 92px; height: 92px; } .community-detail-head { display: grid; } }
 @media (max-width: 560px) { .community-compose-heading { display: grid; gap: 8px; } .community-compose-form { grid-template-columns: 1fr; } .community-compose-form label:last-of-type { grid-column: auto; } .community-compose-form textarea { min-height: 128px; height: 128px; } }
 @media (max-width: 700px) {
   .account-content-section .section-heading-row { align-items: flex-start; }

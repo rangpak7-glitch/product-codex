@@ -16,6 +16,9 @@
     initialized: false
   };
   let modalDownloadFiles = [];
+  let authReturnFocus = null;
+  let downloadReturnFocus = null;
+  const openModalSelector = ".faith-auth-modal:not([hidden]), .faith-auth-notice-modal:not([hidden]), .faith-download-modal:not([hidden]), .faith-payment-modal:not([hidden])";
   const paymentWidgetState = {
     widgets: null,
     paymentMethods: null,
@@ -219,9 +222,33 @@
     return [...document.querySelectorAll("[data-faith-auth-modal]")].find((modal) => !modal.hidden) || null;
   }
 
+  function getOpenModalRoot() {
+    return [...document.querySelectorAll(openModalSelector)].at(-1) || null;
+  }
+
   function syncModalOpenState() {
-    const selector = ".faith-auth-modal:not([hidden]), .faith-auth-notice-modal:not([hidden]), .faith-download-modal:not([hidden]), .faith-payment-modal:not([hidden])";
-    document.body.classList.toggle("modal-open", Boolean(document.querySelector(selector)));
+    const openModal = getOpenModalRoot();
+    document.body.classList.toggle("modal-open", Boolean(openModal));
+    document.querySelectorAll(".site-header, main, .site-footer").forEach((element) => {
+      if (openModal && !element.inert) {
+        element.inert = true;
+        element.dataset.faithModalManagedInert = "true";
+      } else if (!openModal && element.dataset.faithModalManagedInert === "true") {
+        element.inert = false;
+        delete element.dataset.faithModalManagedInert;
+      }
+    });
+  }
+
+  function modalFocusableElements(root) {
+    const dialog = root?.querySelector('[role="dialog"], [role="alertdialog"]');
+    if (!dialog) return [];
+    return [...dialog.querySelectorAll('a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])')]
+      .filter((element) => {
+        if (element.closest("[hidden]")) return false;
+        const style = window.getComputedStyle(element);
+        return style.display !== "none" && style.visibility !== "hidden";
+      });
   }
 
   function setStatus(message, error = false, mode = "") {
@@ -256,6 +283,9 @@
   function open(mode = "login", message = "") {
     ensureModal();
     const normalizedMode = ["login", "signup", "reset"].includes(mode) ? mode : "login";
+    if (!getOpenAuthModal() && document.activeElement instanceof HTMLElement) {
+      authReturnFocus = document.activeElement;
+    }
     closeNotice();
     document.querySelectorAll("[data-faith-auth-modal]").forEach((modal) => {
       modal.hidden = modal.dataset.faithAuthModal !== normalizedMode;
@@ -282,14 +312,23 @@
       document.querySelectorAll("[data-faith-auth-modal]").forEach((modal) => { modal.hidden = true; });
     }
     syncModalOpenState();
+    if (!getOpenAuthModal()) {
+      const focusTarget = authReturnFocus;
+      authReturnFocus = null;
+      if (focusTarget?.isConnected) window.setTimeout(() => focusTarget.focus(), 0);
+    }
   }
 
   function closeDownloadModal() {
     const root = document.getElementById("faithDownloadModal");
     if (!root) return;
+    const wasOpen = !root.hidden;
     root.hidden = true;
     modalDownloadFiles = [];
     syncModalOpenState();
+    const focusTarget = downloadReturnFocus;
+    downloadReturnFocus = null;
+    if (wasOpen && focusTarget?.isConnected) window.setTimeout(() => focusTarget.focus(), 0);
   }
 
   async function destroyPaymentWidget() {
@@ -814,11 +853,12 @@
       const root = document.getElementById("faithDownloadModal");
       const list = root.querySelector("[data-faith-download-list]");
       const status = root.querySelector("[data-faith-download-status]");
+      downloadReturnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
       modalDownloadFiles = files;
       list.innerHTML = files.map((file, index) => `<button class="faith-download-file" type="button" data-faith-download-index="${index}" aria-label="${escapeHtml(`${file.fileName || `자료 파일 ${index + 1}`} 다운로드`)}"><span>${index + 1}</span><strong>${escapeHtml(file.fileName || `자료 파일 ${index + 1}`)}</strong><span data-faith-download-icon aria-hidden="true">↓</span></button>`).join("");
       if (status) status.textContent = "";
       root.hidden = false;
-      document.body.classList.add("modal-open");
+      syncModalOpenState();
       window.setTimeout(() => list.querySelector("button")?.focus(), 0);
       return files.length;
     }
@@ -1278,6 +1318,22 @@
 
   window.FaithAuth = { open, close, getClient, refreshSession, getOrderForResource, hasPurchasedResource, requestPurchase, requestProtectedDownload, startProtectedDownloads };
   document.addEventListener("keydown", (event) => {
+    const openModal = getOpenModalRoot();
+    if (event.key === "Tab" && openModal) {
+      const focusable = modalFocusableElements(openModal);
+      if (!focusable.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      const active = document.activeElement;
+      if (event.shiftKey && (active === first || !openModal.contains(active))) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && (active === last || !openModal.contains(active))) {
+        event.preventDefault();
+        first.focus();
+      }
+      return;
+    }
     if (event.key !== "Escape") return;
     const paymentModal = document.getElementById("faithPaymentModal");
     if (paymentModal && !paymentModal.hidden) {

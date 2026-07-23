@@ -1,5 +1,5 @@
 @import url("../fonts/vendor/noto-serif-kr/package/index.css");
-@import url("app-shell.css");
+@import url("app-shell.css?v=20260723-a11y1");
 
 @font-face {
   font-family: "Pretendard Variable";
@@ -49,6 +49,24 @@ body {
   font-weight: 400;
   line-height: 1.65;
 }
+
+.skip-link {
+  position: fixed;
+  top: max(8px, env(safe-area-inset-top));
+  left: max(8px, env(safe-area-inset-left));
+  z-index: 1000;
+  min-height: 44px;
+  padding: 11px 16px;
+  border: 2px solid var(--champagne);
+  border-radius: 10px;
+  background: var(--deep-forest);
+  color: var(--warm-white);
+  font-weight: 800;
+  text-decoration: none;
+  transform: translateY(calc(-100% - 16px));
+  transition: transform .16s ease;
+}
+.skip-link:focus-visible { transform: translateY(0); }
 
 h1, h2, h3 { color: var(--navy-deep); font-family: "Noto Serif KR Variable", "Noto Serif KR Variable", "Noto Serif KR", serif; font-weight: 700; letter-spacing: -.025em; }
 h1 { font-size: clamp(1.85rem, 4.2vw, 2.625rem); line-height: 1.25; }
@@ -136,7 +154,7 @@ h3 { font-size: clamp(1.15rem, 2vw, 1.35rem); line-height: 1.42; }
 .site-nav-panel span { color: var(--gray); font-size: .76rem; font-weight: 500; line-height: 1.5; }
 .site-nav-mobile-utility { display: none; }
 .faith-account-control { order: 3; }
-.account-link { min-height: 42px; border-radius: 10px; }
+.account-link { min-height: 44px; border-radius: 10px; }
 .account-signup { background: var(--navy); }
 
 .menu-toggle { flex: 0 0 46px; width: 46px; height: 46px; border-radius: 12px; }
@@ -1240,7 +1258,7 @@ body[data-site-page="prayer-card-library"] .page-hero {
 .site-nav-map { gap: 0; }
 .site-nav-primary { gap: 2px; }
 .site-nav-primary a {
-  min-height: 40px;
+  min-height: 44px;
   padding: 6px 8px;
   border-radius: 8px;
   font-size: clamp(.76rem, 1.15vw, .9rem);
@@ -1251,7 +1269,7 @@ body[data-site-page="prayer-card-library"] .page-hero {
   padding: 2px 6px 0;
 }
 .site-nav-secondary a {
-  min-height: 34px;
+  min-height: 44px;
   padding: 5px 12px;
   font-size: .8rem;
 }
@@ -1279,7 +1297,7 @@ body[data-site-page="index"] .home-app-hero {
   padding-top: clamp(154px, 16vw, 190px);
 }
 body[data-site-page="index"] .home-app-content { width: min(700px, 100%); }
-body[data-site-page="index"] .home-app-content h1 { font-size: clamp(2.65rem, 5.1vw, 4.4rem); line-height: 1.25; }
+body[data-site-page="index"] .home-app-content h1 { font-size: clamp(2.65rem, 5.1vw, 4rem); line-height: 1.25; }
 body[data-site-page="index"] .home-app-description { max-width: 600px; font-size: clamp(1rem, 1.5vw, 1.15rem); }
 .home-category-nav { display: none !important; }
 
@@ -1880,14 +1898,14 @@ body[data-site-page="prayer-cards"] #faithResourceFilterStatus[hidden] { display
   }
   .site-nav-primary a {
     min-width: 0;
-    min-height: 34px;
-    padding: 5px 2px;
+    min-height: 44px;
+    padding: 8px 2px;
     font-size: clamp(.66rem, 2.35vw, .82rem);
     letter-spacing: 0;
   }
   .site-nav-secondary {
     justify-content: flex-start;
-    min-height: 30px;
+    min-height: 44px;
     gap: 0;
     padding: 0;
     overflow: visible;
@@ -1895,8 +1913,8 @@ body[data-site-page="prayer-cards"] #faithResourceFilterStatus[hidden] { display
   .site-nav-secondary a {
     flex: 0 1 auto;
     min-width: 0;
-    min-height: 28px;
-    padding: 4px 12px;
+    min-height: 44px;
+    padding: 8px 12px;
     font-size: .76rem;
   }
   body[data-site-page="index"] .site-header { padding-top: calc(4px + env(safe-area-inset-top)); }
@@ -1904,7 +1922,7 @@ body[data-site-page="prayer-cards"] #faithResourceFilterStatus[hidden] { display
     min-height: 100dvh;
     padding: calc(146px + env(safe-area-inset-top)) 24px 54px;
   }
-  body[data-site-page="index"] .home-app-content h1 { font-size: clamp(2.35rem, 7vw, 3.45rem); }
+  body[data-site-page="index"] .home-app-content h1 { font-size: clamp(2.375rem, 7vw, 3.45rem); }
   body[data-site-page] .page-hero { min-height: 240px; padding: 30px 32px; }
   .page-hero h1 { font-size: clamp(1.65rem, 4.6vw, 2rem); }
   .community-board-actions { flex-direction: row; align-items: center; }
@@ -1926,7 +1944,7 @@ body[data-site-page="prayer-cards"] #faithResourceFilterStatus[hidden] { display
     z-index: 5;
   }
   .site-header .faith-account-control a,
-  .site-header .faith-account-control button { display: inline-flex !important; min-height: 36px; padding: 6px 8px; font-size: .75rem; }
+  .site-header .faith-account-control button { display: inline-flex !important; min-height: 44px; padding: 8px; font-size: .75rem; }
   .site-header .faith-account-control .account-signup { display: inline-flex !important; }
   .site-nav-primary a { font-size: clamp(.67rem, 2.5vw, .76rem); }
   .site-nav-secondary a { padding-inline: 9px; font-size: .72rem; }
@@ -2036,7 +2054,7 @@ body[data-site-page="prayer-cards"] #faithResourceFilterStatus[hidden] { display
 .site-nav-primary .site-nav-dropdown-panel a,
 body[data-site-page="index"] .site-nav-primary .site-nav-dropdown-panel a {
   justify-content: flex-start;
-  min-height: 42px;
+  min-height: 44px;
   padding: 9px 12px;
   border-radius: 7px;
   color: #24322e !important;
@@ -2220,7 +2238,7 @@ body[data-site-page="videos"] .sub-hero--video > div > p:not(.eyebrow) {
   height: 100%;
   object-fit: cover;
   object-position: center;
-  background: #0b1713 url("../images/home-quiet-bible-water.png") center / cover no-repeat;
+  background: #0b1713 url("../images/home-quiet-bible-water.webp") center / cover no-repeat;
   pointer-events: none;
   animation: hero-video-reveal 1.5s cubic-bezier(.22, 1, .36, 1) both;
 }
@@ -2257,6 +2275,8 @@ button:not(:disabled),
 .text-link,
 .history-pagination a,
 .category-recent-row {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: rgba(214, 189, 139, .24);
   transition:
     color .22s ease,
     background-color .22s ease,

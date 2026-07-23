@@ -62,7 +62,7 @@ body[data-site-page="index"] .account-signup {
   min-height: calc(100dvh - 74px);
   padding: 124px max(24px, calc((100% - 1180px) / 2)) 64px;
   overflow: hidden;
-  background-image: url("../images/home-quiet-bible-water.png");
+  background-image: url("../images/home-quiet-bible-water.webp");
   background-position: center;
   background-size: cover;
 }

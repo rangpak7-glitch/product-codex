@@ -1,11 +1,25 @@
 const $ = (selector) => document.querySelector(selector);
 
+function ensureSkipLink() {
+  const main = document.querySelector("main");
+  if (!main) return;
+  if (!main.id) main.id = "main-content";
+  if (document.querySelector(".skip-link")) return;
+  const skipLink = document.createElement("a");
+  skipLink.className = "skip-link";
+  skipLink.href = `#${main.id}`;
+  skipLink.textContent = "본문 바로가기";
+  document.body.prepend(skipLink);
+}
+
+ensureSkipLink();
+
 // 공개 페이지 어디에서나 동일한 로그인/회원가입 UI를 사용할 수 있도록 한 번만 로드합니다.
 (() => {
   if (window.__faithMemberScriptLoaded) return;
   window.__faithMemberScriptLoaded = true;
   const script = document.createElement("script");
-  script.src = new URL("assets/js/faith-member.js?v=20260722-toss-widget1", window.location.href).href;
+  script.src = new URL("assets/js/faith-member.js?v=20260723-a11y1", window.location.href).href;
   script.async = true;
   document.head.append(script);
 })();
@@ -136,7 +150,9 @@ function ensureLegalBusinessInfo() {
     [
       "상호명 몽자몰(mongzamall)",
       "대표자명 석민희",
-      "사업자등록번호 611-09-42934"
+      "사업자등록번호 611-09-42934",
+      "사업장 주소 경기도 의왕시 시청1로 10, 103동 1703호(고천동, e편한세상 고천 파크루체)",
+      "전화번호 010-9991-3785"
     ].forEach((text) => {
       const item = document.createElement("span");
       item.textContent = text;
@@ -212,27 +228,27 @@ if (document.readyState === "loading") {
     dropdown.addEventListener("focusout", () => scheduleClose(dropdown));
 
     trigger?.addEventListener("click", (event) => {
-      const directLink = trigger.hasAttribute("data-nav-direct");
       const compactNavigation = window.matchMedia("(max-width: 860px)").matches;
-      if (directLink && !compactNavigation) return;
-      if (directLink && dropdown.classList.contains("is-open") && dropdown.dataset.openMethod === "click") return;
+      const coarsePointer = window.matchMedia("(hover: none), (pointer: coarse)").matches;
+      const modifiedClick = event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey;
+      const keyboardClick = event.detail === 0;
+      if (keyboardClick || modifiedClick || (!compactNavigation && !coarsePointer)) return;
+      if (dropdown.classList.contains("is-open")) return;
       event.preventDefault();
-      if (directLink) event.stopPropagation();
-      if (dropdown.classList.contains("is-open") && dropdown.dataset.openMethod === "hover") {
-        dropdown.dataset.openMethod = "click";
-        return;
-      }
-      const nextOpen = directLink || !dropdown.classList.contains("is-open");
       closeOthers(dropdown);
-      setOpen(dropdown, nextOpen, { method: "click" });
+      setOpen(dropdown, true, { method: "click" });
+    });
+    trigger?.addEventListener("focus", () => {
+      if (!trigger.matches(":focus-visible")) return;
+      closeOthers(dropdown);
+      setOpen(dropdown, true, { method: "keyboard" });
     });
     trigger?.addEventListener("keydown", (event) => {
-      if (trigger.hasAttribute("data-nav-direct")) return;
-      if (event.key === "Enter") {
+      if (event.key === "ArrowDown") {
         event.preventDefault();
-        const nextOpen = !dropdown.classList.contains("is-open");
         closeOthers(dropdown);
-        setOpen(dropdown, nextOpen, { method: "keyboard" });
+        setOpen(dropdown, true, { method: "keyboard" });
+        panel?.querySelector("a")?.focus();
         return;
       }
       if (event.key === "Escape") {
@@ -580,8 +596,8 @@ if ($("#meditationList")) {
 
 function videoCard(v, { inline = false, featured = false } = {}) {
   const thumb = inline
-    ? `<button class="video-thumb" type="button" data-play-video="${escapeHtml(v.videoId)}" aria-label="${escapeHtml(v.title)} 이 페이지에서 재생"><img src="${v.thumbnail}" alt="${escapeHtml(v.title)} 썸네일" loading="lazy"><span class="play-mark" aria-hidden="true">▶</span></button>`
-    : `<a class="video-thumb" href="${v.url}" target="_blank" rel="noopener" aria-label="${escapeHtml(v.title)} 영상 보기"><img src="${v.thumbnail}" alt="${escapeHtml(v.title)} 썸네일" loading="lazy"><span class="play-mark" aria-hidden="true">▶</span></a>`;
+    ? `<button class="video-thumb" type="button" data-play-video="${escapeHtml(v.videoId)}" aria-label="${escapeHtml(v.title)} 이 페이지에서 재생"><img src="${v.thumbnail}" alt="${escapeHtml(v.title)} 썸네일" width="480" height="360" loading="lazy"><span class="play-mark" aria-hidden="true">▶</span></button>`
+    : `<a class="video-thumb" href="${v.url}" target="_blank" rel="noopener" aria-label="${escapeHtml(v.title)} 영상 보기"><img src="${v.thumbnail}" alt="${escapeHtml(v.title)} 썸네일" width="480" height="360" loading="lazy"><span class="play-mark" aria-hidden="true">▶</span></a>`;
   return `<article class="video-card${featured ? " home-featured-video" : ""}">
     ${thumb}
     <p class="eyebrow">${escapeHtml(v.theme)}${v.publishedDate ? ` · ${escapeHtml(v.publishedDate)}` : ""}</p>
@@ -627,7 +643,7 @@ function inlineVideoMarkup(video) {
 function renderFeaturedVideo(video) {
   const root = document.getElementById("featuredVideo");
   if (!root || !video) return;
-  root.innerHTML = `<div data-featured-video-media><button class="video-thumb" type="button" data-play-video="${escapeHtml(video.videoId)}" aria-label="${escapeHtml(video.title)} 이 페이지에서 재생"><img src="${video.thumbnail}" alt="${escapeHtml(video.title)} 썸네일"><span class="play-mark" aria-hidden="true">▶</span></button></div><div><p class="eyebrow">${escapeHtml(video.theme)} · ${escapeHtml(video.publishedDate || "")}</p><h2>${escapeHtml(video.title)}</h2><p><strong>${escapeHtml(video.scripture)}</strong></p><p>${escapeHtml(video.description)}</p><div class="hero-actions"><button class="button primary" type="button" data-play-video="${escapeHtml(video.videoId)}">이 페이지에서 재생</button><a class="button secondary" href="${video.url}" target="_blank" rel="noopener">유튜브에서 보기</a></div></div>`;
+  root.innerHTML = `<div data-featured-video-media><button class="video-thumb" type="button" data-play-video="${escapeHtml(video.videoId)}" aria-label="${escapeHtml(video.title)} 이 페이지에서 재생"><img src="${video.thumbnail}" alt="${escapeHtml(video.title)} 썸네일" width="480" height="360" fetchpriority="high"><span class="play-mark" aria-hidden="true">▶</span></button></div><div><p class="eyebrow">${escapeHtml(video.theme)} · ${escapeHtml(video.publishedDate || "")}</p><h2>${escapeHtml(video.title)}</h2><p><strong>${escapeHtml(video.scripture)}</strong></p><p>${escapeHtml(video.description)}</p><div class="hero-actions"><button class="button primary" type="button" data-play-video="${escapeHtml(video.videoId)}">이 페이지에서 재생</button><a class="button secondary" href="${video.url}" target="_blank" rel="noopener">유튜브에서 보기</a></div></div>`;
 }
 
 function replaceWithInlinePlayer(button) {
@@ -1157,7 +1173,7 @@ if (visualPrayerCards) {
     if (isPurchasable(product)) {
       if (resource.type === "pdf") {
         const license = calculatePrintLicense(product, product.basePrintCopies);
-        return `<div class="resource-access-panel pdf-print-license" data-print-license="${escapeHtml(product.id)}"><p>개인 열람과 비영리 인쇄 ${license.licensed}부까지 포함됩니다.</p><label>필요한 인쇄 부수<input type="number" min="1" max="10000" step="1" value="${license.requested}" data-print-copies></label><p class="pdf-print-price"><span>${license.licensed}부 인쇄 권한</span><strong data-print-total>${escapeHtml(formatKrw(license.total))}</strong></p><small>20부 초과 시 10부당 3,000원이 자동 추가됩니다.</small><button class="button primary" type="button" data-product-purchase="${escapeHtml(product.id)}">구매하기</button></div>`;
+        return `<div class="resource-access-panel pdf-print-license" data-print-license="${escapeHtml(product.id)}"><p>개인 열람과 비영리 인쇄 ${license.licensed}부까지 포함됩니다.</p><label>필요한 인쇄 부수<input type="number" name="printCopies" min="1" max="10000" step="1" inputmode="numeric" autocomplete="off" value="${license.requested}" data-print-copies></label><p class="pdf-print-price"><span>${license.licensed}부 인쇄 권한</span><strong data-print-total>${escapeHtml(formatKrw(license.total))}</strong></p><small>20부 초과 시 10부당 3,000원이 자동 추가됩니다.</small><button class="button primary" type="button" data-product-purchase="${escapeHtml(product.id)}">구매하기</button></div>`;
       }
       return `<div class="resource-access-panel"><p>개별 구매 후 바로 내 자료실에서 열 수 있습니다.</p><button class="button primary" type="button" data-product-purchase="${escapeHtml(product.id)}">구매하기 · ${escapeHtml(formatKrw(product.priceKrw))}</button></div>`;
     }
@@ -1241,7 +1257,7 @@ if (visualPrayerCards) {
     dialog.className = "resource-preview-dialog";
     dialog.setAttribute("aria-labelledby", "resourcePreviewCaption");
     dialog.innerHTML = `<div class="resource-preview-dialog-inner">
-      <img data-resource-preview-dialog-image alt="">
+      <img data-resource-preview-dialog-image alt="" width="1600" height="1200">
       <p id="resourcePreviewCaption" data-resource-preview-dialog-caption></p>
       <button class="resource-preview-dialog-close" type="button" data-resource-preview-close aria-label="미리보기 닫기">×</button>
     </div>`;
@@ -1286,7 +1302,7 @@ if (visualPrayerCards) {
     }
     const gallery = `<div class="resource-public-preview-grid${compact ? " is-compact" : ""}">${previews.map((item, index) => {
       const alt = item.alt_text || `${displayResourceTitle(resource)} ${index + 1}페이지 미리보기`;
-      return `<figure><button class="resource-preview-open" type="button" data-resource-preview-url="${escapeHtml(item.url)}" data-resource-preview-alt="${escapeHtml(alt)}" aria-label="${escapeHtml(`${alt} 크게 보기`)}" title="미리보기 크게 보기"><img src="${escapeHtml(item.url)}" alt="${escapeHtml(alt)}" loading="lazy"></button><figcaption>${escapeHtml(alt)}</figcaption></figure>`;
+      return `<figure><button class="resource-preview-open" type="button" data-resource-preview-url="${escapeHtml(item.url)}" data-resource-preview-alt="${escapeHtml(alt)}" aria-label="${escapeHtml(`${alt} 크게 보기`)}" title="미리보기 크게 보기"><img src="${escapeHtml(item.url)}" alt="${escapeHtml(alt)}" width="1200" height="900" loading="lazy"></button><figcaption>${escapeHtml(alt)}</figcaption></figure>`;
     }).join("")}</div>`;
     if (compact || resource.type !== "pdf") return gallery;
     return `<section class="resource-media-preview resource-media-preview-pages" aria-label="PDF 1페이지부터 4페이지 미리보기"><div class="resource-media-heading"><p class="eyebrow">PDF Preview</p><h3>1~4페이지 미리보기</h3><p>표지, 자료 정보, 1일차 읽기와 기록까지 실제 4쪽을 공개합니다.</p></div>${gallery}</section>`;
@@ -1348,7 +1364,7 @@ if (visualPrayerCards) {
       const file = files[0];
       return `<section class="resource-media-preview resource-media-preview-audio" aria-label="오디오 미리듣기"><div class="resource-media-heading"><p class="eyebrow">Audio Preview</p><h3>미리듣기</h3><p>페이지에서 바로 재생하거나 원하는 위치로 이동해 들을 수 있습니다.</p></div><audio controls preload="metadata" controlslist="nodownload"><source src="${escapeHtml(file.url)}" type="${escapeHtml(file.mime_type || "audio/mpeg")}">브라우저에서 오디오 재생을 지원하지 않습니다.</audio></section>`;
     }
-    return `<section class="resource-media-preview resource-media-preview-card" aria-label="무작위 기도카드 미리보기"><div class="resource-media-heading"><p class="eyebrow">Card Preview</p><h3>무작위 카드 2장 미리보기</h3></div><div class="resource-private-card-preview">${files.map((file, index) => `<figure><img src="${escapeHtml(file.url)}" alt="${escapeHtml(`${displayResourceTitle(resource)} 무작위 미리보기 ${index + 1}`)}" loading="lazy"><figcaption>기도카드 ${index + 1}</figcaption></figure>`).join("")}</div></section>`;
+    return `<section class="resource-media-preview resource-media-preview-card" aria-label="무작위 기도카드 미리보기"><div class="resource-media-heading"><p class="eyebrow">Card Preview</p><h3>무작위 카드 2장 미리보기</h3></div><div class="resource-private-card-preview">${files.map((file, index) => `<figure><img src="${escapeHtml(file.url)}" alt="${escapeHtml(`${displayResourceTitle(resource)} 무작위 미리보기 ${index + 1}`)}" width="1200" height="1500" loading="lazy"><figcaption>기도카드 ${index + 1}</figcaption></figure>`).join("")}</div></section>`;
   }
 
   function renderHubCard(resource) {
