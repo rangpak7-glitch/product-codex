@@ -50,6 +50,13 @@ Worker는 `available`, `purchasable = true`, 양의 `price_amount`, `KRW`가 모
 7. `wrangler secret put TOSS_SECRET_KEY`
 8. `wrangler deploy`
 
+`TOSS_CLIENT_KEY`와 `TOSS_SECRET_KEY`는 반드시 같은 결제위젯 연동 키 쌍이어야 합니다.
+
+- 테스트: `test_gck_...` 클라이언트 키 + `test_gsk_...` 시크릿 키
+- 라이브: `live_gck_...` 클라이언트 키 + `live_gsk_...` 시크릿 키
+
+`test_ck_...` 또는 `live_ck_...`로 시작하는 API 개별 연동 클라이언트 키는 결제위젯 SDK에 사용할 수 없습니다. 테스트 키로 연동하면 결제 화면과 승인·취소 흐름은 검증할 수 있지만 실제 금액은 청구되지 않습니다. 라이브 전환 시에는 토스페이먼츠 개발자센터에서 같은 상점아이디의 라이브 결제위젯 키 쌍을 확인한 뒤 두 Worker Secret을 함께 교체하고 다시 배포합니다.
+
 `SUPABASE_SERVICE_ROLE_KEY`와 토스 비밀키는 브라우저 코드, Git, Cloudflare Pages 환경 변수에 넣지 않습니다. Worker Secret으로만 관리합니다.
 
 토스 일반 결제 웹훅은 Worker가 받은 원본 payload를 신뢰하지 않고 `paymentKey`로 토스 결제 조회 API를 호출해 검증합니다. 카드·구매자 정보가 포함될 수 있는 원본 payload는 DB에 저장하지 않습니다.

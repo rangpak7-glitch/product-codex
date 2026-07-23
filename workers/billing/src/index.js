@@ -486,6 +486,14 @@ async function getActiveOrPaidOrderForProduct(env, userId, productId) {
   return rows?.[0] || null;
 }
 
+function tossPaymentMode(clientKey, secretKey) {
+  const client = String(clientKey || "").trim();
+  const secret = String(secretKey || "").trim();
+  if (client.startsWith("test_gck_") && secret.startsWith("test_gsk_")) return "test";
+  if (client.startsWith("live_gck_") && secret.startsWith("live_gsk_")) return "live";
+  return null;
+}
+
 function checkoutPayload(product, order, env, origin, reused = false) {
   return {
     orderId: order.order_id,
@@ -499,6 +507,7 @@ function checkoutPayload(product, order, env, origin, reused = false) {
     basePriceAmount: Number(order.base_price_amount || order.amount),
     licenseSurchargeAmount: Number(order.license_surcharge_amount || 0),
     clientKey: env.TOSS_CLIENT_KEY,
+    paymentMode: tossPaymentMode(env.TOSS_CLIENT_KEY, env.TOSS_SECRET_KEY),
     successUrl: `${origin}/account.html?order=success`,
     failUrl: `${origin}/account.html?order=fail`,
     reused
@@ -535,7 +544,13 @@ async function recordPaymentEvent(env, event) {
 async function startOrder(request, env) {
   const [member, authError] = await requireMember(request, env);
   if (authError) return authError;
-  requireEnv(env, ["TOSS_CLIENT_KEY", "SITE_ORIGIN"]);
+  requireEnv(env, ["TOSS_CLIENT_KEY", "TOSS_SECRET_KEY", "SITE_ORIGIN"]);
+  if (!tossPaymentMode(env.TOSS_CLIENT_KEY, env.TOSS_SECRET_KEY)) {
+    return json({
+      error: "결제 설정을 확인하고 있습니다. 잠시 후 다시 시도해 주세요.",
+      code: "payment_configuration_error"
+    }, 503);
+  }
   const { productId, printCopies } = await readJson(request);
   if (!isSafeProductId(productId)) return json({ error: "상품 정보가 올바르지 않습니다." }, 400);
 

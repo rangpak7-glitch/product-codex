@@ -644,6 +644,12 @@
     paymentWidgetState.trigger = document.activeElement;
     root.querySelector("[data-faith-payment-order-name]").textContent = pending.orderName || "기도의샘물 신앙자료";
     root.querySelector("[data-faith-payment-amount]").textContent = `${Number(pending.amount).toLocaleString("ko-KR")}원`;
+    const guidance = root.querySelector("#faithPaymentGuidance");
+    if (guidance) {
+      guidance.textContent = pending.paymentMode === "test"
+        ? "테스트 결제입니다. 실제 금액은 청구되지 않습니다. 결제수단을 선택하고 필수 약관에 동의해 결제 흐름을 확인해 주세요."
+        : "결제수단을 선택하고 필수 약관에 동의한 뒤 결제를 진행해 주세요.";
+    }
     root.hidden = false;
     widgetRoot.setAttribute("aria-busy", "true");
     submitButton.disabled = true;
@@ -737,6 +743,9 @@
     }
     if (!pending?.orderId || !pending?.clientKey || !Number.isFinite(Number(pending.amount)) || Number(pending.amount) <= 0) {
       return openPurchaseInquiry(normalizedProductId);
+    }
+    if (!["test", "live"].includes(pending.paymentMode)) {
+      throw new Error("결제 설정을 확인하고 있습니다. 잠시 후 다시 시도해 주세요.");
     }
 
     sessionStorage.setItem(ORDER_PENDING_KEY, JSON.stringify({ orderId: pending.orderId, productId: pending.productId || normalizedProductId }));
